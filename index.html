@@ -3285,65 +3285,103 @@
 
     function renderPeerQuestions() {
       const container = document.getElementById('statutory-questions-container');
+      if (!container) return;
       container.innerHTML = '';
 
-      const dept = currentTargetEmp ? currentTargetEmp.dept : '인사총무';
-      const isManager = currentTargetEmp ? (currentTargetEmp.type === '팀장급' || currentTargetEmp.role.includes('팀장') || currentTargetEmp.role.includes('부장')) : false;
+      const emp = currentTargetEmp;
+      if (!emp) return;
 
-      // Department Statutory Wording Map (Article 22 ~ 28)
-      let statutoryTaskText = "문서 규칙 예규 관리 및 채용, 급여지급의 정확성 (사칙 제22조)";
-      if (dept.includes('경리')) statutoryTaskText = "수입지출 관리, 자금 계획 및 결산의 정확성 (사칙 제23조)";
-      else if (dept.includes('사업') || dept.includes('영업부')) statutoryTaskText = "노선 인허가, 매표/검표 위탁 관리, 운행일보 심사 및 통계 (사칙 제24조)";
-      else if (dept.includes('차량')) statutoryTaskText = "차량 등록/검사, 폐차 관리 및 부품 절감 방안 연구 (사칙 제25조)";
-      else if (dept.includes('안전')) statutoryTaskText = "교통안전계획, 사고 조사 분석 및 승무원 배차/근태 (사칙 제26조)";
-      else if (dept.includes('영업소')) statutoryTaskText = "현장 수입금 정산 마감 및 고객 서비스, 현장 민원 조율 (사칙 제27조)";
-      else if (dept.includes('정비')) statutoryTaskText = "차량 보수용품 출납 및 공구기계 관리, 기술 전수 (사칙 제28조)";
+      const dept = emp.dept || '인사총무';
+      const isManager = emp.type === '팀장급' || emp.role.includes('팀장') || emp.role.includes('부장');
+      const isBranch = emp.workplace.includes('영업소') || emp.dept.includes('영업소');
+      const isTechnician = emp.dept.includes('정비');
 
-      // 10 Detailed Statutory Categories
-      const tenCategories = [
-        { cat: "1. [공통]", text: "회사 정관 및 사칙, 기본 일터 규율을 철저히 준수하는가?" },
-        { cat: "2. [부서공통]", text: `${dept}부 소속 공동 목표 및 주요 성과(KPI) 달성을 위해 책임감 있게 기여하는가?` },
-        { cat: "3. [직무전문성]", text: `사칙 기반 고유 직무 역량: ${statutoryTaskText}` },
-        { cat: "4. [세부전문성]", text: `${dept}부 실무 전산, 마감, 서류 검토 및 행정 처리 완결성이 뛰어난가?` },
-        { cat: "5. [업무적합성]", text: "과업의 완급을 조율하여 주어진 기한 내 완성도 있게 과업을 수행하는가?" },
-        { cat: "6. [협조능력]", text: "타 부서 및 동료의 업무 요청 시 적극적으로 소통하고 협조를 제공하는가?" },
-        { cat: "7. [분위기 환경조성]", text: "근무지 내 긍정적이고 화목한 일터 분위기를 조성하며 배려하는가?" },
-        { cat: "8. [성격]", text: "예의 바르고 배려 있는 어투로 동료의 의견을 경청하는 성숙한 애티튜드를 갖추었는가?" },
-        { cat: "9. [장차 활용가능성]", text: "타 직무 순환 배치 및 융합 업무 수행 시에도 뛰어난 활약 가능성을 갖추었는가?" },
-        { cat: "10. [잠재력]", text: "신기술 습득 및 실무 프로세스 개선(자동화) 혁신 태도가 우수한가?" }
-      ];
+      let targetTrackName = "본사 팀원급";
+      if (isTechnician) targetTrackName = "정비사";
+      else if (isManager) targetTrackName = "팀장/부서장급";
+      else if (isBranch) targetTrackName = "영업소";
 
-      // Render Track Info Badge Header
+      // Dynamically query matching questions from customQuestionsDb
+      const questionSelect = document.getElementById('question-cycle-select');
+      const selectedCycleId = questionSelect && questionSelect.value ? parseInt(questionSelect.value) : 1;
+
+      const matchedQuestions = customQuestionsDb.filter(q => {
+        // Cycle check
+        if (q.cycleId && String(q.cycleId) !== String(selectedCycleId)) return false;
+
+        const trackMatch = (q.targetTrack === '기본 필수질문') || (q.targetTrack === targetTrackName);
+        const deptMatch = (!q.targetDept || q.targetDept === '전체') || emp.dept.includes(q.targetDept);
+
+        return trackMatch && deptMatch;
+      });
+
+      // Update Top Track Info Badge Header
       const trackBadge = document.createElement('div');
-      trackBadge.className = 'p-3 bg-slate-900/90 rounded-xl border border-slate-800 flex justify-between items-center text-xs mb-3';
+      trackBadge.className = 'p-3.5 bg-gradient-to-r from-slate-900 via-slate-900 to-teal-950/40 rounded-xl border border-teal-500/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-xs mb-4';
       trackBadge.innerHTML = `
-        <span class="font-bold text-brandTeal">
-          <i class="fa-solid fa-layer-group mr-1"></i>
-          적용 트랙: <strong>${isManager ? 'Track B (팀장급)' : 'Track A (일반 사무직)'}</strong>
-        </span>
-        <span class="text-slate-400 text-[11px]">
-          ${isManager ? '외부 타 부서장 평가(70%) + 임원 평가(30%)' : '동료(40%) + 외부(20%) + 부서장(30%) + 임원(10%)'}
+        <div class="flex items-center gap-2">
+          <span class="bg-brandTeal/20 text-brandTeal border border-brandTeal/40 px-2.5 py-0.5 rounded-full font-bold text-[10px]">SMART DYNAMIC MATCH</span>
+          <span class="font-bold text-white">
+            적용 대상 트랙: <strong class="text-brandGold font-black">${targetTrackName}</strong> (${dept}부 • ${emp.workplace})
+          </span>
+        </div>
+        <span class="text-slate-300 text-[11px]">
+          🎯 매칭된 질문 수: <strong class="text-cyan-300 font-bold">${matchedQuestions.length}문항</strong> (관리자 등록 실시간 연동)
         </span>
       `;
       container.appendChild(trackBadge);
 
-      tenCategories.forEach((q, idx) => {
+      if (matchedQuestions.length === 0) {
+        const emptyNotice = document.createElement('div');
+        emptyNotice.className = 'p-6 bg-slate-900/60 rounded-xl border border-slate-800 text-center text-slate-400 text-xs';
+        emptyNotice.innerText = '해당 피평가자의 직군/부서에 등록된 질문이 없습니다. 기본 평가 슬라이더 및 서술 코멘트를 작성해 주세요.';
+        container.appendChild(emptyNotice);
+        return;
+      }
+
+      matchedQuestions.forEach((q, idx) => {
         const item = document.createElement('div');
-        item.className = 'bg-slate-900/60 p-4 rounded-xl border border-slate-800 space-y-2';
-        item.innerHTML = `
-          <div class="flex justify-between items-center">
-            <p class="text-xs font-bold text-slate-200">Q${idx + 1}. ${q.cat} ${q.text}</p>
-            <span class="text-[10px] bg-teal-500/20 text-brandTeal font-bold px-2 py-0.5 rounded">5지선다형</span>
-          </div>
-          <div class="flex items-center gap-3 pt-1">
-            ${[1, 2, 3, 4, 5].map(num => `
-              <label class="flex items-center gap-1 cursor-pointer">
-                <input type="radio" name="pq_${idx}" value="${num}" ${num === 4 ? 'checked' : ''} class="accent-brandTeal">
-                <span class="text-xs text-slate-300 font-bold">${num}점</span>
-              </label>
-            `).join('')}
-          </div>
-        `;
+        item.className = 'bg-slate-900/60 p-4 rounded-xl border border-slate-800 space-y-2.5 hover:border-slate-700 transition';
+
+        let categoryBadge = "bg-teal-500/20 text-brandTeal border border-brandTeal/30";
+        if (q.category === "성과") categoryBadge = "bg-amber-500/20 text-amber-300 border border-amber-500/30";
+        else if (q.category === "협업") categoryBadge = "bg-blue-500/20 text-blue-300 border border-blue-500/30";
+        else if (q.category === "성장") categoryBadge = "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
+        else if (q.category === "조화") categoryBadge = "bg-rose-500/20 text-rose-300 border border-rose-500/30";
+
+        if (q.type === "서술형") {
+          item.innerHTML = `
+            <div class="flex justify-between items-center">
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded ${categoryBadge}">${q.category}</span>
+                <span class="text-[10px] bg-purple-500/20 text-purple-300 font-bold px-2 py-0.5 rounded border border-purple-500/30">서술형 코멘트</span>
+              </div>
+              <span class="text-[10px] text-slate-400">정성 참고용 문항</span>
+            </div>
+            <p class="text-xs font-bold text-white pt-1">Q${idx + 1}. (서술형) ${q.text}</p>
+            <p class="text-[11px] text-slate-400 italic">※ 이 문항에 대한 의견은 하단 [서술형 종합 피드백] 란에 함께 기재해 주세요.</p>
+          `;
+        } else {
+          item.innerHTML = `
+            <div class="flex justify-between items-center">
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded ${categoryBadge}">${q.category}</span>
+                <span class="text-[10px] bg-teal-500/20 text-brandTeal font-bold px-2 py-0.5 rounded border border-brandTeal/30">5지선다형</span>
+              </div>
+              <span class="text-[10px] text-slate-400">가중치 ${q.weight}%</span>
+            </div>
+            <p class="text-xs font-bold text-white pt-0.5">Q${idx + 1}. ${q.text}</p>
+            <div class="flex items-center gap-3 pt-1">
+              ${[1, 2, 3, 4, 5].map(num => `
+                <label class="flex items-center gap-1.5 cursor-pointer bg-slate-950/40 px-2.5 py-1 rounded-lg border border-slate-800 hover:border-brandTeal transition">
+                  <input type="radio" name="pq_dynamic_${q.id}" value="${num}" ${num === 4 ? 'checked' : ''} class="accent-brandTeal">
+                  <span class="text-xs text-slate-300 font-bold">${num}점</span>
+                </label>
+              `).join('')}
+            </div>
+          `;
+        }
+
         container.appendChild(item);
       });
     }
@@ -3393,16 +3431,14 @@
       if (currentTargetEmp) {
         currentTargetEmp.completed = currentTargetEmp.total;
 
-        // Dynamic 10 Statutory Questions Score Calculation (1~5 scaled to 100)
+        // Dynamic Custom Questions Score Calculation (1~5 scaled to 100)
         let qSum = 0;
         let qCount = 0;
-        for (let i = 0; i < 10; i++) {
-          const checkedRadio = document.querySelector(`input[name="pq_${i}"]:checked`);
-          if (checkedRadio) {
-            qSum += (parseInt(checkedRadio.value) * 20);
-            qCount++;
-          }
-        }
+        const dynamicRadios = document.querySelectorAll(`input[name^="pq_dynamic_"]:checked`);
+        dynamicRadios.forEach(radio => {
+          qSum += (parseInt(radio.value) * 20);
+          qCount++;
+        });
 
         const perfVal = parseFloat(document.getElementById('slider-perf').value) || 85;
         const collabVal = parseFloat(document.getElementById('slider-collab').value) || 90;
