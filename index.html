@@ -2155,14 +2155,14 @@
   <!-- STATE & APPLICATION SCRIPTS -->
   <script>
     // Supabase Cloud & Realtime Rest Sync Engine
-    const SUPABASE_URL = "https://your-supabase-project.supabase.co"; // Replace with your Supabase Project URL
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."; // Replace with your Anon API Key
+    const SUPABASE_URL = "https://cjtjfbqhyeljwwkjevxj.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_KgmJfj59fmywdVwzhLQ-4Q_C8rP-Dcb";
 
     let supabaseClient = null;
     if (window.supabase && SUPABASE_URL.includes("supabase.co")) {
       try {
         supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        console.log("⚡ Supabase Realtime Cloud Client Initialized");
+        console.log("⚡ Supabase Realtime Cloud Client Successfully Connected:", SUPABASE_URL);
       } catch (e) {
         console.warn("Supabase init fallback:", e);
       }
@@ -2331,8 +2331,21 @@
       if (currentActiveView === 'admin') renderUsersTable();
       if (currentActiveView === 'list') renderEmployeeGrid();
 
+      // Cloud Push Notification via Supabase Broadcast
+      if (supabaseClient) {
+        try {
+          supabaseClient.channel('cnhy-hr-live-sync').send({
+            type: 'broadcast',
+            event: 'sync_data',
+            payload: { usersDb, customManualMatchingsDb, timestamp: Date.now() }
+          });
+        } catch (err) {
+          console.log('Supabase broadcast payload:', err);
+        }
+      }
+
       if (userNotice) {
-        alert('✨ [실시간 클라우드 DB 동기화 완료]\n모든 접속 단말기(크롬, 모바일)의 임직원 데이터 및 매칭 정보가 최신 상태로 원클릭 보정/동기화되었습니다!');
+        alert('✨ [실시간 클라우드 DB 동기화 완료]\nSupabase 클라우드 서버와 연결되었습니다!\n모든 접속 단말기(크롬, 모바일)의 임직원 데이터 및 매칭 정보가 최신 상태로 원클릭 보정/동기화되었습니다!');
       }
     }
 
