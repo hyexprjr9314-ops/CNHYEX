@@ -17,8 +17,8 @@ end $$;
 alter table public.evaluations alter column matching_id set not null;
 
 alter table public.evaluation_questions
-  add column if not exists target_track text not null default '湲곕낯 ?꾩닔吏덈Ц',
-  add column if not exists target_dept text not null default '?꾩껜',
+  add column if not exists target_track text not null default '기본 필수질문',
+  add column if not exists target_dept text not null default '전체',
   add column if not exists required boolean not null default true,
   add column if not exists is_default boolean not null default true,
   add column if not exists max_score numeric not null default 5;
@@ -65,7 +65,7 @@ create or replace function public.current_user_is_privileged()
 returns boolean language sql stable security definer set search_path = public, pg_temp
 as $$
   select coalesce((
-    select sys_role::text in ('愿由ъ옄', '?꾩썝')
+    select sys_role::text in ('관리자', '임원')
     from public.users
     where auth_user_id = auth.uid() and active is true
     limit 1
@@ -228,4 +228,3 @@ begin
 end $$;
 
 commit;
-

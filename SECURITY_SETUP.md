@@ -3,6 +3,7 @@
 1. Back up the Supabase database.
 2. Create one bootstrap administrator in Supabase Auth and link its UID to the matching `public.users.auth_user_id`.
 3. Apply `supabase/migrations/202607220001_security_rebuild.sql` in a staging project first.
+   Then apply `supabase/migrations/202607220002_ai_reports.sql`.
 4. Configure the Vercel server environment variables below.
 5. Use the administrator CSV screen to create/link the remaining Auth accounts.
 6. Test with an employee account, an HR administrator account, and an unauthenticated browser.
@@ -11,6 +12,8 @@ Required Vercel environment variables:
 
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY` (server-only; never prefix with `NEXT_PUBLIC_` or expose it in HTML)
+- `OPENAI_API_KEY` (server-only; never expose it in HTML or commit it to GitHub)
+- `OPENAI_MODEL` (optional; defaults to `gpt-5.6-terra`)
 
 The inspected production database currently has no evaluations or matchings, so no legacy `matching_id` mapping is required. Recheck this immediately before applying the migration.
 
@@ -24,3 +27,6 @@ Required checks:
 - Closed or future cycles reject submissions.
 - Score adjustment tables are readable only by privileged users and writable only through a trusted server operation.
 - `/api/users` and `/api/questions` reject callers who are not linked, active administrators.
+- `/api/ai-report` never generates a report until every matching for that employee and cycle has a submitted evaluation.
+- Employees can see only approved AI reports for cycles whose `results_published` flag is enabled.
+- AI drafts are reviewed and approved by an administrator before employee publication.
