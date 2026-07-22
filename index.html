@@ -2159,10 +2159,33 @@
     const SUPABASE_ANON_KEY = "sb_publishable_KgmJfj59fmywdVwzhLQ-4Q_C8rP-Dcb";
 
     let supabaseClient = null;
+    let realtimeChannel = null;
+
     if (window.supabase && SUPABASE_URL.includes("supabase.co")) {
       try {
         supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         console.log("⚡ Supabase Realtime Cloud Client Successfully Connected:", SUPABASE_URL);
+
+        // Listen for Realtime Broadcasts from other devices
+        realtimeChannel = supabaseClient.channel('cnhy-hr-live-sync');
+        realtimeChannel
+          .on('broadcast', { event: 'sync_data' }, (payload) => {
+            console.log("📡 Received Realtime Broadcast Data from another device:", payload);
+            if (payload && payload.payload) {
+              if (payload.payload.usersDb && Array.isArray(payload.payload.usersDb)) {
+                usersDb = payload.payload.usersDb;
+              }
+              if (payload.payload.customManualMatchingsDb && Array.isArray(payload.payload.customManualMatchingsDb)) {
+                customManualMatchingsDb = payload.payload.customManualMatchingsDb;
+              }
+              saveToLocalStorage();
+              populateCycleSelects();
+              if (currentActiveView === 'myresults') renderMyResults();
+              if (currentActiveView === 'admin') renderUsersTable();
+              if (currentActiveView === 'list') renderEmployeeGrid();
+            }
+          })
+          .subscribe();
       } catch (e) {
         console.warn("Supabase init fallback:", e);
       }
@@ -2332,15 +2355,15 @@
       if (currentActiveView === 'list') renderEmployeeGrid();
 
       // Cloud Push Notification via Supabase Broadcast
-      if (supabaseClient) {
+      if (realtimeChannel) {
         try {
-          supabaseClient.channel('cnhy-hr-live-sync').send({
+          realtimeChannel.send({
             type: 'broadcast',
             event: 'sync_data',
             payload: { usersDb, customManualMatchingsDb, timestamp: Date.now() }
           });
         } catch (err) {
-          console.log('Supabase broadcast payload:', err);
+          console.log('Supabase broadcast error:', err);
         }
       }
 
