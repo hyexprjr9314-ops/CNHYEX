@@ -2327,23 +2327,11 @@
 
     async function loadFromLocalStorage() {
       try {
-        const u = localStorage.getItem('cnhy_users_db');
-        const c = localStorage.getItem('cnhy_cycles_db');
-        const q = localStorage.getItem('cnhy_questions_db');
-        const h = localStorage.getItem('cnhy_history_db');
-        const cs = localStorage.getItem('cnhy_cycle_scores_db');
-        const m = localStorage.getItem('cnhy_manual_matchings_db');
         const sessCur = sessionStorage.getItem('cnhy_session_user');
-
-        usersDb = u ? JSON.parse(u) : JSON.parse(JSON.stringify(DEFAULT_USERS_DB));
-        cyclesDb = c ? JSON.parse(c) : JSON.parse(JSON.stringify(DEFAULT_CYCLES_DB));
-        customQuestionsDb = q ? JSON.parse(q) : JSON.parse(JSON.stringify(DEFAULT_QUESTIONS_DB));
-        evaluationHistoryDb = h ? JSON.parse(h) : JSON.parse(JSON.stringify(DEFAULT_HISTORY_DB));
-        cycleScoresDb = cs ? JSON.parse(cs) : JSON.parse(JSON.stringify(DEFAULT_CYCLE_SCORES_DB));
-        if (m) customManualMatchingsDb = JSON.parse(m);
         if (sessCur) currentLoggedInUser = JSON.parse(sessCur);
 
-        // Fetch Central Master State from Supabase Cloud Table
+        // 100% Cloud-First Architecture: Read directly from Supabase Cloud Table FIRST
+        let loadedFromCloud = false;
         if (supabaseClient) {
           try {
             const { data, error } = await supabaseClient
@@ -2353,27 +2341,42 @@
               .maybeSingle();
 
             if (data && data.state_data) {
-              console.log("☁️ Successfully Connected & Loaded Master State from Supabase Central Cloud DB!");
+              console.log("☁️ Supabase Cloud DB Direct Connected: Loaded Pure Master Cloud State!");
               if (data.state_data.usersDb && Array.isArray(data.state_data.usersDb)) {
                 usersDb = data.state_data.usersDb;
+                loadedFromCloud = true;
               }
               if (data.state_data.customManualMatchingsDb && Array.isArray(data.state_data.customManualMatchingsDb)) {
                 customManualMatchingsDb = data.state_data.customManualMatchingsDb;
               }
-              // Save locally after cloud fetch
-              localStorage.setItem('cnhy_users_db', JSON.stringify(usersDb));
-              localStorage.setItem('cnhy_manual_matchings_db', JSON.stringify(customManualMatchingsDb));
-
-              // Re-render UI views after cloud state load
-              populateCycleSelects();
-              if (currentActiveView === 'myresults') renderMyResults();
-              if (currentActiveView === 'admin') renderUsersTable();
-              if (currentActiveView === 'list') renderEmployeeGrid();
             }
           } catch (cloudFetchErr) {
             console.log('Supabase Cloud State fetch fallback:', cloudFetchErr);
           }
         }
+
+        // Fallback to local storage ONLY if cloud connection fails completely
+        if (!loadedFromCloud) {
+          const u = localStorage.getItem('cnhy_users_db');
+          const c = localStorage.getItem('cnhy_cycles_db');
+          const q = localStorage.getItem('cnhy_questions_db');
+          const h = localStorage.getItem('cnhy_history_db');
+          const cs = localStorage.getItem('cnhy_cycle_scores_db');
+          const m = localStorage.getItem('cnhy_manual_matchings_db');
+
+          usersDb = u ? JSON.parse(u) : JSON.parse(JSON.stringify(DEFAULT_USERS_DB));
+          cyclesDb = c ? JSON.parse(c) : JSON.parse(JSON.stringify(DEFAULT_CYCLES_DB));
+          customQuestionsDb = q ? JSON.parse(q) : JSON.parse(JSON.stringify(DEFAULT_QUESTIONS_DB));
+          evaluationHistoryDb = h ? JSON.parse(h) : JSON.parse(JSON.stringify(DEFAULT_HISTORY_DB));
+          cycleScoresDb = cs ? JSON.parse(cs) : JSON.parse(JSON.stringify(DEFAULT_CYCLE_SCORES_DB));
+          if (m) customManualMatchingsDb = JSON.parse(m);
+        }
+
+        // Re-render UI views immediately with pure Cloud State
+        populateCycleSelects();
+        if (currentActiveView === 'myresults') renderMyResults();
+        if (currentActiveView === 'admin') renderUsersTable();
+        if (currentActiveView === 'list') renderEmployeeGrid();
 
         // MANDATORY SECURITY AUTO-GUARD: System Master Admin (유종열) MUST ALWAYS EXIST
         const masterAdminSeed = DEFAULT_USERS_DB.find(u => u.email.toLowerCase() === 'jongyeol@hanyang.com');
