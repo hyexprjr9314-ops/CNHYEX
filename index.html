@@ -2340,15 +2340,19 @@
               .eq('id', 'master_state')
               .maybeSingle();
 
-            if (data && data.state_data) {
+            if (data && data.state_data && data.state_data.usersDb && data.state_data.usersDb.length > 0) {
               console.log("☁️ Supabase Cloud DB Direct Connected: Loaded Pure Master Cloud State!");
-              if (data.state_data.usersDb && Array.isArray(data.state_data.usersDb)) {
-                usersDb = data.state_data.usersDb;
-                loadedFromCloud = true;
-              }
+              usersDb = data.state_data.usersDb;
+              loadedFromCloud = true;
               if (data.state_data.customManualMatchingsDb && Array.isArray(data.state_data.customManualMatchingsDb)) {
                 customManualMatchingsDb = data.state_data.customManualMatchingsDb;
               }
+            } else {
+              // Newly created Cloud Table is empty! Auto-seed DEFAULT_USERS_DB to Cloud DB!
+              console.log("☁️ Initial Cloud DB Table empty. Seeding Master Default Users to Supabase Cloud DB...");
+              usersDb = JSON.parse(JSON.stringify(DEFAULT_USERS_DB));
+              loadedFromCloud = true;
+              saveToLocalStorage(); // Pushes default seed to Supabase Cloud Table!
             }
           } catch (cloudFetchErr) {
             console.log('Supabase Cloud State fetch fallback:', cloudFetchErr);
