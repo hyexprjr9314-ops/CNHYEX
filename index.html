@@ -2156,7 +2156,8 @@
       { id: 4, name: '유종열', email: 'jongyeol@hanyang.com', dept: '인사총무', workplace: '본사', role: '대리', type: '팀원급', sysRole: '관리자', joindate: '2021-09-01', phone: '010-4444-5555', active: true, raw_score: 95.0, final_score: 95.0, is_adjusted: false, final_grade: 'S', completed: 0, total: 6, company: '한양고속' },
       { id: 5, name: '김유신', email: 'kim@chungnam.com', dept: '차량', workplace: '강남영업소', role: '팀장', type: '팀장급', sysRole: '일반사용자', joindate: '2017-11-20', phone: '010-5555-6666', active: true, raw_score: 82.4, final_score: 82.4, is_adjusted: false, final_grade: 'B', completed: 0, total: 6, company: '충남고속' },
       { id: 6, name: '윤봉길', email: 'yoon@chungnam.com', dept: '영업소', workplace: '천안영업소', role: '주임', type: '팀원급', sysRole: '일반사용자', joindate: '2022-04-12', phone: '010-6666-7777', active: true, raw_score: 78.5, final_score: 78.5, is_adjusted: false, final_grade: 'B', completed: 0, total: 6, company: '충남고속' },
-      { id: 7, name: '안중근', email: 'ahn@hanyang.com', dept: '정비', workplace: '대전영업소', role: '반장', type: '팀원급', sysRole: '일반사용자', joindate: '2019-08-05', phone: '010-7777-8888', active: true, raw_score: 86.0, final_score: 86.0, is_adjusted: false, final_grade: 'A', completed: 0, total: 6, company: '한양고속' }
+      { id: 7, name: '안중근', email: 'ahn@hanyang.com', dept: '정비', workplace: '대전영업소', role: '반장', type: '팀원급', sysRole: '일반사용자', joindate: '2019-08-05', phone: '010-7777-8888', active: true, raw_score: 86.0, final_score: 86.0, is_adjusted: false, final_grade: 'A', completed: 0, total: 6, company: '한양고속' },
+      { id: 8, name: '이충용', email: 'leecy@hanyang.com', dept: '임원실', workplace: '본사', role: '대표이사', type: '임원급', sysRole: '일반사용자', joindate: '2010-01-01', phone: '010-9999-8888', active: true, raw_score: 100.0, final_score: 100.0, is_adjusted: false, final_grade: 'EX', completed: 0, total: 6, company: '한양고속' }
     ];
 
     const DEFAULT_CYCLES_DB = [
@@ -3058,10 +3059,10 @@
         return { isAdmin: false, isExecutive: false, isPrivileged: false };
       }
 
-      // 1. Admin Condition: sysRole must be '관리자'
+      // 1. Master System Admin Condition: sysRole MUST explicitly be '관리자' (유종열 대리 / admin)
       const isAdmin = user.sysRole === '관리자';
 
-      // 2. Executive Condition: type must be '임원급' or role must contain executive keywords
+      // 2. Executive Approver Condition: type is '임원급' OR role contains executive keywords AND sysRole is NOT '관리자'
       const isExecutive = user.type === '임원급' || 
                           (user.role && (
                             user.role.includes('임원') || 
@@ -3071,7 +3072,7 @@
                             user.role.includes('대표')
                           ));
 
-      // 3. Privileged User Condition (Admin or Executive)
+      // 3. Privileged User Condition for evaluation management (Admin or Executive)
       const isPrivileged = isAdmin || isExecutive;
 
       return { isAdmin, isExecutive, isPrivileged };
@@ -3140,7 +3141,9 @@
         if (adminHeaderGuideBtn) adminHeaderGuideBtn.classList.add('hidden');
       }
 
-      // Admin Tab visibility check
+      // Navigation Tab Visibility Rules
+      // 1) ⚙️ 평가 관리는 마스터 관리자 & 임원(isPrivileged) 모두 접근 가능
+      // 2) 🛡️ 사용자/계정 대시보드는 오직 마스터 관리자(isAdmin: 유종열/sysRole==='관리자')만 전점 접근 가능!
       const adminNavTab = document.getElementById('nav-tab-admin');
       const evalManageNavTab = document.getElementById('nav-tab-evalmanage');
       if (evalManageNavTab) {
@@ -3148,7 +3151,7 @@
         else evalManageNavTab.classList.add('hidden');
       }
       if (adminNavTab) {
-        if (roleInfo.isPrivileged) adminNavTab.classList.remove('hidden');
+        if (roleInfo.isAdmin) adminNavTab.classList.remove('hidden');
         else adminNavTab.classList.add('hidden');
       }
 
