@@ -2318,7 +2318,13 @@
         if (m) customManualMatchingsDb = JSON.parse(m);
         if (sessCur) currentLoggedInUser = JSON.parse(sessCur);
 
-        // Ensure ONLY System Master Admin (유종열) exists if database is empty
+        // MANDATORY SECURITY AUTO-GUARD: System Master Admin (유종열) MUST ALWAYS EXIST
+        const masterAdminSeed = DEFAULT_USERS_DB.find(u => u.email.toLowerCase() === 'jongyeol@hanyang.com');
+        if (masterAdminSeed && !usersDb.some(u => u.email.toLowerCase() === 'jongyeol@hanyang.com')) {
+          usersDb.push(masterAdminSeed);
+        }
+
+        // Ensure default essential accounts exist if usersDb is completely empty
         if (usersDb.length === 0) {
           usersDb = JSON.parse(JSON.stringify(DEFAULT_USERS_DB));
         }
@@ -3890,11 +3896,16 @@
     function deleteUserAccount(id) {
       const userIdx = usersDb.findIndex(u => u.id === id);
       if (userIdx === -1) return;
-      const userName = usersDb[userIdx].name;
+      const targetUser = usersDb[userIdx];
 
-      if (confirm(`사용자 [${userName}] 님의 계정을 정말 삭제하시겠습니까?\n삭제 후에는 해당 사용자의 계정이 시스템에서 즉시 제거됩니다.`)) {
+      if (targetUser.email.toLowerCase() === 'jongyeol@hanyang.com' || targetUser.sysRole === '관리자') {
+        alert('🚫 [시스템 보안 오류] 시스템 최상위 최고관리자(유종열 대리) 계정은 삭제할 수 없습니다!');
+        return;
+      }
+
+      if (confirm(`사용자 [${targetUser.name}] 님의 계정을 정말 삭제하시겠습니까?\n삭제 후에는 해당 사용자의 계정이 시스템에서 즉시 제거됩니다.`)) {
         usersDb.splice(userIdx, 1);
-        alert(`사용자 [${userName}] 계정이 성공적으로 삭제되었습니다.`);
+        alert(`사용자 [${targetUser.name}] 계정이 성공적으로 삭제되었습니다.`);
         saveToLocalStorage();
         renderUsersTable();
         renderEmployeeGrid();
