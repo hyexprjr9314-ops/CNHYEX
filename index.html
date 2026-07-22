@@ -4004,34 +4004,26 @@
         company
       };
 
-      // Save to D Drive FastAPI Backend
-      fetch('http://localhost:8000/api/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newUserObj)
-      })
-      .then(res => res.json())
-      .then(data => {
-        alert(`[D드라이브 DB 연동완료] 사용자 [${name} (${company})] 님이 D드라이브 hr_eval.db 파일에 안전하게 저장되었습니다!`);
-        loadFromLocalStorage();
-      })
-      .catch(err => {
-        usersDb.push({
-          id: usersDb.length + 1,
-          ...newUserObj,
-          active: true,
-          raw_score: 85.0,
-          final_score: 85.0,
-          is_adjusted: false,
-          final_grade: 'A',
-          completed: 6,
-          total: 6,
-          assigned_task: `${dept}부 고유 업무`
-        });
-        saveToLocalStorage();
-        renderUsersTable();
-        alert(`사용자 [${name} (${company})] 님이 등록되었습니다.`);
+      // Directly save to usersDb and sync to Supabase Central Cloud DB
+      const nextId = usersDb.length > 0 ? Math.max(...usersDb.map(u => u.id)) + 1 : 1;
+      usersDb.push({
+        id: nextId,
+        ...newUserObj,
+        active: true,
+        raw_score: 85.0,
+        final_score: 85.0,
+        is_adjusted: false,
+        final_grade: 'A',
+        completed: 6,
+        total: 6,
+        assigned_task: `${dept}부 고유 업무`
       });
+
+      saveToLocalStorage();
+      triggerRealtimeCloudSync(false);
+      renderUsersTable();
+      renderEmployeeGrid();
+      alert(`사용자 [${name} (${company})] 님이 성공적으로 등록되었습니다.`);
     }
 
     function downloadCSVTemplate() {
