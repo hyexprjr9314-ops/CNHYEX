@@ -2161,17 +2161,21 @@
 
     let supabaseClient = null;
     let syncDebounceTimer = null;
+    let isChannelSubscribed = false;
 
     if (window.supabase && SUPABASE_URL.includes("supabase.co")) {
       try {
         supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         console.log("⚡ Supabase Realtime Cloud Client Successfully Connected:", SUPABASE_URL);
 
-        // Smart Scoped Realtime Listener
-        realtimeChannel = supabaseClient.channel('cnhy-hr-live-sync');
+        // Ultra-Fast Realtime Channel Engine (WebSocket Instant Mode)
+        realtimeChannel = supabaseClient.channel('cnhy-hr-live-sync', {
+          config: { broadcast: { self: false } }
+        });
+
         realtimeChannel
           .on('broadcast', { event: 'sync_data' }, (payload) => {
-            console.log("📡 Received Smart Scoped Realtime Broadcast Data:", payload);
+            console.log("📡 Received Ultra-Fast Broadcast Data:", payload);
             if (payload && payload.payload) {
               isReceivingBroadcast = true;
               if (payload.payload.usersDb && Array.isArray(payload.payload.usersDb)) {
@@ -2182,14 +2186,12 @@
               }
               saveToLocalStorage();
 
-              // Smart Scoped Safety Fence: Skip DOM re-rendering if user is currently writing an evaluation in 'eval' view!
               if (currentActiveView === 'eval') {
-                console.log("🔒 Smart Scoped Sync: User is actively writing evaluation form. Postponed UI re-rendering to protect input.");
                 isReceivingBroadcast = false;
                 return;
               }
 
-              // Debounced UI Refresh (300ms) to prevent screen flickering & render collisions
+              // Ultra-Fast 50ms Instant UI Refresh
               clearTimeout(syncDebounceTimer);
               syncDebounceTimer = setTimeout(() => {
                 populateCycleSelects();
@@ -2197,10 +2199,15 @@
                 if (currentActiveView === 'admin') renderUsersTable();
                 if (currentActiveView === 'list') renderEmployeeGrid();
                 isReceivingBroadcast = false;
-              }, 300);
+              }, 50);
             }
           })
-          .subscribe();
+          .subscribe((status) => {
+            if (status === 'SUBSCRIBED') {
+              isChannelSubscribed = true;
+              console.log("⚡ Supabase Realtime WebSocket Subscribed & Ultra-Fast Ready!");
+            }
+          });
       } catch (e) {
         console.warn("Supabase init fallback:", e);
       }
@@ -2329,39 +2336,41 @@
           usersDb = JSON.parse(JSON.stringify(DEFAULT_USERS_DB));
         }
 
-        // Sync with D Drive FastAPI SQLite Database
-        fetch('http://localhost:8000/api/users')
-          .then(res => res.json())
-          .then(dbUsers => {
-            if (dbUsers && dbUsers.length > 0) {
-              usersDb = dbUsers.map(u => ({
-                id: u.id,
-                name: u.name,
-                email: u.email,
-                dept: u.dept,
-                workplace: u.workplace,
-                role: u.role,
-                type: u.type,
-                sysRole: u.sysRole,
-                joindate: u.joindate || '2021-01-01',
-                phone: u.phone || '010-0000-0000',
-                active: true,
-                raw_score: u.raw_score || 85.0,
-                final_score: u.final_score || 85.0,
-                is_adjusted: Boolean(u.is_adjusted),
-                final_grade: u.final_grade || 'A',
-                completed: 6,
-                total: 6,
-                company: u.company || '한양고속'
-              }));
-              saveToLocalStorage();
-              populateCycleSelects();
-              if (currentActiveView === 'myresults') renderMyResults();
-              if (currentActiveView === 'admin') renderUsersTable();
-              if (currentActiveView === 'list') renderEmployeeGrid();
-            }
-          })
-          .catch(err => console.log('Local D-Drive DB Sync (Standalone mode active)'));
+        // Sync with D Drive FastAPI SQLite Database (Only when running on local machine)
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+          fetch('http://localhost:8000/api/users')
+            .then(res => res.json())
+            .then(dbUsers => {
+              if (dbUsers && dbUsers.length > 0) {
+                usersDb = dbUsers.map(u => ({
+                  id: u.id,
+                  name: u.name,
+                  email: u.email,
+                  dept: u.dept,
+                  workplace: u.workplace,
+                  role: u.role,
+                  type: u.type,
+                  sysRole: u.sysRole,
+                  joindate: u.joindate || '2021-01-01',
+                  phone: u.phone || '010-0000-0000',
+                  active: true,
+                  raw_score: u.raw_score || 85.0,
+                  final_score: u.final_score || 85.0,
+                  is_adjusted: Boolean(u.is_adjusted),
+                  final_grade: u.final_grade || 'A',
+                  completed: 6,
+                  total: 6,
+                  company: u.company || '한양고속'
+                }));
+                saveToLocalStorage();
+                populateCycleSelects();
+                if (currentActiveView === 'myresults') renderMyResults();
+                if (currentActiveView === 'admin') renderUsersTable();
+                if (currentActiveView === 'list') renderEmployeeGrid();
+              }
+            })
+            .catch(err => console.log('Local D-Drive DB Sync (Standalone mode active)'));
+        }
       } catch (e) {
         console.error('LocalStorage read failed:', e);
         usersDb = JSON.parse(JSON.stringify(DEFAULT_USERS_DB));
