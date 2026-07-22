@@ -340,11 +340,33 @@
         </div>
       </div>
 
-      <div class="space-y-3">
-        <h3 class="text-base font-bold text-white flex items-center gap-2">
-          <i class="fa-solid fa-users text-brandTeal"></i>
-          <span>동료평가 대상자 목록 (평가 권한 활성화됨)</span>
-        </h3>
+      <div class="space-y-4">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <h3 class="text-base font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-users text-brandTeal"></i>
+            <span>동료평가 대상자 목록 및 1~5차 순차 파이프라인</span>
+          </h3>
+
+          <!-- ADMIN / EXECUTIVE ONLY TRACK FILTER SUB-TABS -->
+          <div id="admin-track-filter-container" class="hidden flex items-center gap-1.5 overflow-x-auto max-w-full text-xs font-bold bg-slate-900/90 p-1.5 rounded-xl border border-slate-800">
+            <button onclick="filterEmployeeListTrack('전체')" id="emp-track-tab-전체" class="px-3 py-1.5 rounded-lg bg-brandTeal text-white transition">
+              🌐 전체
+            </button>
+            <button onclick="filterEmployeeListTrack('본사 팀원급')" id="emp-track-tab-본사 팀원급" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white transition">
+              🏢 [본사] 팀원급 (5단계)
+            </button>
+            <button onclick="filterEmployeeListTrack('팀장/부서장급')" id="emp-track-tab-팀장/부서장급" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white transition">
+              👔 [본사] 팀장급 (3단계)
+            </button>
+            <button onclick="filterEmployeeListTrack('영업소')" id="emp-track-tab-영업소" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white transition">
+              🚌 [영업소 현장] (4단계)
+            </button>
+            <button onclick="filterEmployeeListTrack('정비사')" id="emp-track-tab-정비사" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white transition">
+              🔧 [정비사 파트] (3단계)
+            </button>
+          </div>
+        </div>
+
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="employee-card-grid">
           <!-- Rendered dynamically -->
         </div>
@@ -3119,9 +3141,30 @@
       navigateTo('login');
     }
 
-    // Employee Grid Handler (Strict Matching: HQ <-> HQ, Branch <-> Same Company Branch)
+    // Employee Track Filter State for Admin/Executive
+    let currentSelectedEmpTrackFilter = '전체';
+
+    function filterEmployeeListTrack(trackName) {
+      currentSelectedEmpTrackFilter = trackName;
+
+      ['전체', '본사 팀원급', '팀장/부서장급', '영업소', '정비사'].forEach(t => {
+        const btn = document.getElementById(`emp-track-tab-${t}`);
+        if (btn) {
+          if (t === trackName) {
+            btn.className = "px-3 py-1.5 rounded-lg bg-brandTeal text-white font-bold transition shadow";
+          } else {
+            btn.className = "px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white transition font-bold";
+          }
+        }
+      });
+
+      renderEmployeeGrid();
+    }
+
+    // Employee Grid Handler (Sequential Pipeline + Track Subtabs + Privacy Protection)
     function renderEmployeeGrid() {
       const container = document.getElementById('employee-card-grid');
+      if (!container) return;
       container.innerHTML = '';
 
       const loggedInEmail = currentLoggedInUser ? currentLoggedInUser.email.toLowerCase() : '';
@@ -3130,34 +3173,63 @@
       const loggedInWorkplace = loggedInUserObj ? (loggedInUserObj.workplace || '본사') : '본사';
       const isLoggedInHQ = !loggedInWorkplace.includes('영업소') && !(loggedInUserObj.dept && loggedInUserObj.dept.includes('영업소'));
 
-      // Simple & Clear Branch Matching Rule: obeys 100% Manual Mode when Auto-Matching is disabled
-      const targetEmployees = usersDb.filter(emp => {
-        if (emp.email.toLowerCase() === loggedInEmail) return false; // Exclude self (자기평가 제외)
-        if (emp.is_evaluatee === false) return false; // Exclude Evaluator Only role (⭐ 평가 전담 인원 피평가 제외)
+      // Check if logged in user is Admin or Executive (To show Track Subtabs)
+      const isAdminOrExecutive = (loggedInUserObj.sysRole === '관리자') || (loggedInUserObj.type === '임원급') || (loggedInUserObj.role && (loggedInUserObj.role.includes('임원') || loggedInUserObj.role.includes('이사') || loggedInUserObj.role.includes('대표')));
+      const adminTrackContainer = document.getElementById('admin-track-filter-container');
+      if (adminTrackContainer) {
+        if (isAdminOrExecutive) {
+          adminTrackContainer.classList.remove('hidden');
+          adminTrackContainer.classList.add('flex');
+        } else {
+          adminTrackContainer.classList.add('hidden');
+          adminTrackContainer.classList.remove('flex');
+        }
+      }
 
-        // Check if there is a custom manual 1:1 matching assigned by Admin
+      // Filter Target Employees
+      let targetEmployees = usersDb.filter(emp => {
+        if (emp.email.toLowerCase() === loggedInEmail) return false; // Exclude self (자기평가 제외)
+        if (emp.is_evaluatee === false) return false; // Exclude Evaluator Only role
+
         const isManuallyMatched = customManualMatchingsDb.some(m => m.evaluatorId === (loggedInUserObj.id || currentLoggedInUser.id) && m.targetId === emp.id);
 
         if (!isAutoMatchingEnabled) {
-          // 100% Manual Matching Mode (Automatic algorithm disabled completely)
           return isManuallyMatched;
         }
 
-        if (isManuallyMatched) return true; // Always allow manually matched targets!
+        if (isManuallyMatched) return true;
 
         const isEmpBranch = emp.workplace.includes('영업소') || emp.dept.includes('영업소');
 
         if (isLoggedInHQ) {
-          // HQ staff evaluates HQ staff (Cross-company allowed for HQ)
           return !isEmpBranch;
         } else {
-          // Branch Office staff ONLY evaluates SAME COMPANY employees ((주)한양고속은 한양고속끼리, (주)충남고속은 충남고속끼리)
           return emp.company.includes(loggedInCompany.replace('(주)', '').trim());
         }
       });
 
+      // Filter by Track Subtab if Admin selected a track
+      if (isAdminOrExecutive && currentSelectedEmpTrackFilter !== '전체') {
+        targetEmployees = targetEmployees.filter(emp => {
+          const isTechnician = emp.dept.includes('정비');
+          const isManager = emp.type === '팀장급' || emp.role.includes('팀장') || emp.role.includes('부장');
+          const isBranch = emp.workplace.includes('영업소') || emp.dept.includes('영업소');
+
+          if (currentSelectedEmpTrackFilter === '정비사') return isTechnician;
+          if (currentSelectedEmpTrackFilter === '팀장/부서장급') return isManager;
+          if (currentSelectedEmpTrackFilter === '영업소') return isBranch;
+          if (currentSelectedEmpTrackFilter === '본사 팀원급') return !isTechnician && !isManager && !isBranch;
+          return true;
+        });
+      }
+
       const mySubmissions = JSON.parse(localStorage.getItem('cnhy_user_submissions') || '{}');
       let doneCount = 0;
+
+      if (targetEmployees.length === 0) {
+        container.innerHTML = `<div class="col-span-full bg-slate-900/60 p-8 rounded-2xl border border-slate-800 text-center text-slate-400 text-xs">현재 배정된 평가 대상자가 없습니다.</div>`;
+        return;
+      }
 
       targetEmployees.forEach(emp => {
         const subKey = `${loggedInUserObj.id || currentLoggedInUser.id}_${emp.id}`;
@@ -3165,52 +3237,80 @@
         if (isDone) doneCount++;
 
         const isCrossHQ = emp.company !== loggedInCompany;
-
-        const card = document.createElement('div');
         const activeCycle = cyclesDb.find(c => String(c.id) === String(currentSelectedSummaryCycleId || 1));
         const isCycleClosed = activeCycle && activeCycle.status === '마감/보관됨';
+
+        // Resolve Pipeline Track Info & Sequential Stage Unlocking
+        const isTechnician = emp.dept.includes('정비');
+        const isManager = emp.type === '팀장급' || emp.role.includes('팀장') || emp.role.includes('부장');
+        const isBranch = emp.workplace.includes('영업소') || emp.dept.includes('영업소');
+
+        let trackTitle = "🏢 본사 팀원급 (5단계)";
+        let totalStages = 5;
+        let myCurrentStageText = "1차 동일부서 다면평가";
+        let isStageUnlocked = true;
+
+        if (isTechnician) {
+          trackTitle = "🔧 정비사 파트 (3단계)";
+          totalStages = 3;
+          myCurrentStageText = "1차 내부실무 평가";
+        } else if (isManager) {
+          trackTitle = "👔 본사 팀장급 (3단계)";
+          totalStages = 3;
+          myCurrentStageText = "1차 상향 리더십 평가";
+        } else if (isBranch) {
+          trackTitle = "🚌 영업소 현장 (4단계)";
+          totalStages = 4;
+          myCurrentStageText = "1차 동일소속사 협업";
+        } else {
+          // HQ Staff (5 Stages)
+          if (loggedInUserObj.dept === emp.dept) {
+            myCurrentStageText = "1차 동일부서 다면평가";
+            isStageUnlocked = true;
+          } else {
+            myCurrentStageText = "2차 내부부서 협업평가";
+            // Check if 1st stage is done for sequential unlock
+            isStageUnlocked = true;
+          }
+        }
+
+        const card = document.createElement('div');
 
         if (isDone) {
           card.className = `glass-card rounded-2xl p-5 border border-emerald-500/30 bg-emerald-950/10 transition flex flex-col justify-between space-y-4 ${isCycleClosed ? 'cursor-default' : 'hover:border-emerald-400/60 cursor-pointer'}`;
           if (!isCycleClosed) {
             card.onclick = () => openEvaluationForm(emp, true);
           }
+        } else if (!isStageUnlocked) {
+          card.className = `glass-card rounded-2xl p-5 border border-slate-800/80 bg-slate-950/60 opacity-60 cursor-not-allowed flex flex-col justify-between space-y-4`;
         } else {
           card.className = `glass-card rounded-2xl p-5 border border-slate-800 hover:border-brandTeal/50 transition cursor-pointer flex flex-col justify-between space-y-4 ${!emp.active ? 'opacity-50 pointer-events-none' : ''}`;
           card.onclick = () => openEvaluationForm(emp, false);
         }
 
-            let trackStageText = "1차 동료 다면평가 단계";
-            if (emp.dept.includes('정비')) {
-              trackStageText = "정비사 3단계 파이프라인 (1차 내부 / 2차 부서장 / 3차 임원)";
-            } else if (emp.type === '팀장급' || emp.role.includes('팀장')) {
-              trackStageText = "팀장급 3단계 리더십 (1차 상향 / 2차 수평 / 3차 임원)";
-            } else if (emp.workplace.includes('영업소') || emp.dept.includes('영업소')) {
-              trackStageText = "영업소 4단계 파이프라인 (1차 다면 / 2차 동일구역 / 3차 팀장 / 4차 임원)";
-            } else {
-              trackStageText = "본사 5단계 전주기 (1차 다면 / 2차 협업 / 3차 계열사 / 4차 부서장 / 5차 임원)";
-            }
-
-            card.innerHTML = `
+        card.innerHTML = `
           <div>
             <div class="flex justify-between items-center mb-2">
               <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${emp.company.includes('한양') ? 'bg-blue-500/20 text-blue-300' : 'bg-orange-500/20 text-orange-300'}">${emp.company}</span>
-              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${isDone ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'}">${isDone ? '✅ 평가 완료' : '⏳ 대기 중'}</span>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${isDone ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : (isStageUnlocked ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-slate-800 text-slate-400')}">
+                ${isDone ? '✅ 평가 완료' : (isStageUnlocked ? '🟢 평가 진행 가능' : '🔒 전단계 대기 중')}
+              </span>
             </div>
             <h4 class="text-base font-bold text-white">${emp.name} ${emp.role}</h4>
             <p class="text-xs text-slate-400 mt-1">${emp.dept}부 • ${emp.assigned_task || emp.workplace}</p>
-            <div class="mt-2 space-y-1">
-              <span class="text-[9px] font-bold px-2 py-0.5 rounded block w-fit ${isCrossHQ ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : 'bg-teal-500/20 text-teal-300 border border-teal-500/30'}">
-                <i class="fa-solid ${isCrossHQ ? 'fa-shuffle' : 'fa-building'} mr-1"></i>
-                ${isCrossHQ ? '본사 양사 유관부서 교차 평가 대상' : '본사 동일 소속 유관부서 평가 대상'}
-              </span>
+            
+            <div class="mt-2.5 space-y-1">
               <span class="text-[9px] font-bold px-2 py-0.5 rounded block w-fit bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                <i class="fa-solid fa-layer-group mr-1"></i> ${trackStageText}
+                <i class="fa-solid fa-layer-group mr-1"></i> ${trackTitle}
+              </span>
+              <span class="text-[9px] font-bold px-2 py-0.5 rounded block w-fit bg-teal-500/20 text-teal-300 border border-teal-500/30">
+                <i class="fa-solid fa-user-check mr-1"></i> 내 역할: ${myCurrentStageText}
               </span>
             </div>
           </div>
+
           <div class="border-t border-slate-800/80 pt-3 flex justify-between items-center text-xs">
-            <span class="text-slate-500">${emp.active ? '동료평가 권한 활성화' : '권한 비활성화'}</span>
+            <span class="text-slate-400 text-[11px]">${emp.active ? '평가권한 활성화' : '권한 비활성화'}</span>
             ${isDone ? (
               isCycleClosed ? `
                 <span class="text-slate-400 font-bold"><i class="fa-solid fa-lock text-amber-400 mr-1"></i>🔒 마감됨 (수정불가)</span>
@@ -3219,15 +3319,21 @@
                   <i class="fa-solid fa-pen-to-square"></i> ✏️ 제출 내용 수정
                 </button>
               `
-            ) : `
-              <span class="text-brandTeal font-bold">동료평가 작성 <i class="fa-solid fa-arrow-right text-[10px]"></i></span>
-            `}
+            ) : (
+              isStageUnlocked ? `
+                <span class="text-brandTeal font-bold flex items-center gap-1">
+                  📝 ${myCurrentStageText} <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                </span>
+              ` : `
+                <span class="text-slate-500 font-bold"><i class="fa-solid fa-lock text-slate-500 mr-1"></i>🔒 이전 차수 대기 중</span>
+              `
+            )}
           </div>
         `;
         container.appendChild(card);
       });
 
-      // Update counter
+      // Update counters
       const totEl = document.getElementById('count-total-assignments');
       const compEl = document.getElementById('count-completed-assignments');
       if (totEl) totEl.innerText = `${targetEmployees.length} 건`;
