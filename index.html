@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>충남한양 인사평가 시스템</title>
+  <!-- HTTP Strict Cache-Control: Force Browser Zero-Cache -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚌</text></svg>">
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -2466,8 +2470,11 @@
       }
     }
 
-    // Load persisted state on script execution
-    loadFromLocalStorage();
+    // Ensure Cloud State is fetched first before initial UI rendering
+    window.addEventListener('DOMContentLoaded', async () => {
+      await loadFromLocalStorage();
+      populateCycleSelects();
+    });
 
     function populateCycleSelects() {
       const myReportSelect = document.getElementById('my-report-cycle-select');
