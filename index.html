@@ -2169,8 +2169,8 @@
         console.log("⚡ Supabase Realtime Cloud Client Successfully Connected:", SUPABASE_URL);
 
         // Ultra-Fast Realtime Channel Engine (WebSocket Instant Mode)
-        realtimeChannel = supabaseClient.channel('cnhy-hr-live-sync', {
-          config: { broadcast: { self: false } }
+        realtimeChannel = supabaseClient.channel('cnhy-hr-live-sync-v2', {
+          config: { broadcast: { self: true } }
         });
 
         realtimeChannel
@@ -2191,7 +2191,7 @@
                 return;
               }
 
-              // Ultra-Fast 50ms Instant UI Refresh
+              // Instant UI Refresh
               clearTimeout(syncDebounceTimer);
               syncDebounceTimer = setTimeout(() => {
                 populateCycleSelects();
@@ -2199,7 +2199,7 @@
                 if (currentActiveView === 'admin') renderUsersTable();
                 if (currentActiveView === 'list') renderEmployeeGrid();
                 isReceivingBroadcast = false;
-              }, 50);
+              }, 10);
             }
           })
           .subscribe((status) => {
