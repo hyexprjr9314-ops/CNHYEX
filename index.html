@@ -3876,9 +3876,17 @@
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-800/40 transition';
         const accountStatus = u.auth_user_id ? 'Auth 연결됨' : 'Auth 미연결';
-        const roleBadge = u.sysRole === '관리자'
+        const isSuperAdmin = u.email?.toLowerCase() === 'admin@cnhyex.com';
+        const roleBadge = isSuperAdmin
+          ? `<span class="bg-purple-500/20 text-purple-200 border border-purple-500/40 px-2 py-0.5 rounded font-bold text-[10px]">🛡️ 최고관리자</span>`
+          : u.sysRole === '관리자'
           ? `<span class="bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded font-bold text-[10px]">👑 관리자</span>`
           : `<span class="bg-slate-800 text-slate-400 px-2 py-0.5 rounded font-bold text-[10px]">👤 일반사용자</span>`;
+        const activeButton = isSuperAdmin
+          ? `<span class="text-[10px] font-bold px-2 py-1 rounded border border-purple-500/30 text-purple-300 bg-purple-500/10">보호됨</span>`
+          : u.active
+            ? `<button onclick="setUserActive(${u.id}, false)" class="bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white px-2 py-1 rounded text-[11px] font-bold transition flex items-center gap-1 border border-rose-500/30"><i class="fa-solid fa-user-slash"></i> 비활성화</button>`
+            : `<button onclick="setUserActive(${u.id}, true)" class="bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white px-2 py-1 rounded text-[11px] font-bold transition flex items-center gap-1 border border-emerald-500/30"><i class="fa-solid fa-user-check"></i> 활성화</button>`;
 
         tr.innerHTML = `
           <td class="py-2.5 px-3 font-bold text-white">${u.name}</td>
@@ -3896,9 +3904,7 @@
               <button onclick="openEditUserModal(${u.id})" class="bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white px-2 py-1 rounded text-[11px] font-bold transition flex items-center gap-1 border border-blue-500/30">
                 <i class="fa-solid fa-pen-to-square"></i> 수정
               </button>
-              <button onclick="deleteUserAccount(${u.id})" class="bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white px-2 py-1 rounded text-[11px] font-bold transition flex items-center gap-1 border border-rose-500/30">
-                <i class="fa-solid fa-trash-can"></i> 삭제
-              </button>
+              ${activeButton}
             </div>
           </td>
         `;
@@ -3922,12 +3928,17 @@
       document.getElementById('edit-user-sysrole').value = user.sysRole || '일반사용자';
       document.getElementById('edit-user-joindate').value = user.joindate;
       document.getElementById('edit-user-phone').value = user.phone;
+      const isSuperAdmin = user.email?.toLowerCase() === 'admin@cnhyex.com';
+      document.getElementById('edit-user-email').readOnly = isSuperAdmin;
+      document.getElementById('edit-user-sysrole').disabled = isSuperAdmin;
 
       document.getElementById('modal-edit-user').classList.remove('hidden');
     }
 
     function closeEditUserModal() {
       document.getElementById('modal-edit-user').classList.add('hidden');
+      document.getElementById('edit-user-email').readOnly = false;
+      document.getElementById('edit-user-sysrole').disabled = false;
     }
 
     async function handleEditUserSubmit(e) {
@@ -3960,18 +3971,22 @@
       }
     }
 
-    async function deleteUserAccount(id) {
+    async function setUserActive(id, active) {
       const userIdx = usersDb.findIndex(u => u.id === id);
       if (userIdx === -1) return;
       const targetUser = usersDb[userIdx];
+      const actionLabel = active ? '활성화' : '비활성화';
+      const detail = active
+        ? '다시 로그인하고 시스템을 이용할 수 있습니다.'
+        : '로그인이 차단되지만 기존 평가 이력은 안전하게 보존됩니다.';
 
-      if (confirm(`사용자 [${targetUser.name}] 님의 계정을 정말 삭제하시겠습니까?\n삭제 후에는 해당 사용자의 계정이 시스템에서 즉시 제거됩니다.`)) {
+      if (confirm(`사용자 [${targetUser.name}] 계정을 ${actionLabel}하시겠습니까?\n${detail}`)) {
         try {
-          await callUsersApi('DELETE', { id });
+          await callUsersApi('PUT', { id, active });
           await refreshAdminUsers();
-          alert(`사용자 [${targetUser.name}] 계정을 비활성화했습니다.`);
+          alert(`사용자 [${targetUser.name}] 계정을 ${actionLabel}했습니다.`);
         } catch (error) {
-          alert(`비활성화 실패: ${error.message}`);
+          alert(`${actionLabel} 실패: ${error.message}`);
         }
       }
     }
