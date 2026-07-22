@@ -234,10 +234,16 @@
         <i class="fa-solid fa-book-open text-brandTeal"></i>
         <span>📘 평가 가이드</span>
       </button>
-      <div class="hidden md:flex items-center gap-2 bg-slate-800/80 border border-slate-700/60 px-3 py-1.5 rounded-xl text-xs">
+
+      <!-- Clickable User Profile Badge to Change Password -->
+      <button onclick="openChangePasswordModal()" title="클릭하여 비밀번호 변경" class="hidden md:flex items-center gap-2 bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 hover:border-brandTeal/60 px-3 py-1.5 rounded-xl text-xs transition shadow cursor-pointer group">
         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-        <span class="text-slate-300 font-semibold" id="current-user-badge">유종열 대리 (jongyeol@hanyang.com)</span>
-      </div>
+        <span class="text-slate-300 group-hover:text-white font-semibold flex items-center gap-1.5" id="current-user-badge">
+          유종열 대리 (jongyeol@hanyang.com)
+        </span>
+        <i class="fa-solid fa-key text-[10px] text-amber-400 ml-0.5 group-hover:scale-110 transition"></i>
+      </button>
+
       <button onclick="handleLogout()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-xl font-bold transition border border-slate-700 flex items-center gap-1.5">
         <i class="fa-solid fa-right-from-bracket"></i>
         <span>로그아웃</span>
@@ -297,7 +303,7 @@
             <label class="block text-xs font-bold text-slate-300 mb-1">비밀번호 (Password)</label>
             <div class="relative">
               <i class="fa-solid fa-key absolute left-3.5 top-3.5 text-slate-500 text-sm"></i>
-              <input type="password" id="login-password" placeholder="최초 로그인 시 1234 입력" required class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-brandTeal focus:ring-1 focus:ring-brandTeal">
+              <input type="password" id="login-password" placeholder="초기 비밀번호: 휴대폰 번호 뒤 4자리 (예: 5555)" required class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-brandTeal focus:ring-1 focus:ring-brandTeal">
             </div>
           </div>
 
@@ -307,10 +313,15 @@
           </button>
         </form>
 
-        <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-800 text-left text-[11px] text-slate-400 space-y-1">
-          <p class="font-bold text-brandGold"><i class="fa-solid fa-circle-info mr-1"></i> 테스트 접속 이메일 계정</p>
-          <p>• <strong>유종열 대리 (일반 평가자)</strong>: <code class="text-teal-300 font-mono">jongyeol@hanyang.com</code> (암호 1234)</p>
-          <p>• <strong>관리자 대시보드</strong>: <code class="text-amber-300 font-mono">admin@hanyang.com</code> (암호 1234)</p>
+        <div class="p-3.5 bg-slate-900/80 rounded-2xl border border-slate-800 text-left text-[11px] text-slate-400 space-y-1.5 shadow">
+          <p class="font-bold text-brandGold flex items-center gap-1.5">
+            <i class="fa-solid fa-shield-halved text-amber-400"></i>
+            <span>초기 비밀번호 접속 안내 (휴대폰 뒤 4자리)</span>
+          </p>
+          <p>• <strong>유종열 대리 (관리자)</strong>: <code class="text-teal-300 font-mono font-bold">jongyeol@hanyang.com</code> (초기암호: <code class="text-amber-400 font-bold font-mono">5555</code>)</p>
+          <p>• <strong>홍길동 과장 (경리부)</strong>: <code class="text-teal-300 font-mono font-bold">hong@hanyang.com</code> (초기암호: <code class="text-amber-400 font-bold font-mono">2222</code>)</p>
+          <p>• <strong>이순신 차장 (안전관리)</strong>: <code class="text-teal-300 font-mono font-bold">lee@chungnam.com</code> (초기암호: <code class="text-amber-400 font-bold font-mono">3333</code>)</p>
+          <p class="text-[10px] text-slate-400 pt-1 border-t border-slate-800/80">※ 최초 로그인 후 상단 프로필 [유종열 대리] 영역을 클릭하면 원하는 비밀번호로 변경할 수 있습니다.</p>
         </div>
       </div>
     </section>
@@ -2089,6 +2100,52 @@
     </div>
   </div>
 
+  <!-- MODAL: CHANGE USER PASSWORD DIALOG -->
+  <div id="modal-change-password" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center z-50 p-4">
+    <div class="glass-card max-w-md w-full rounded-3xl p-6 border border-brandTeal/40 shadow-2xl space-y-4 bg-slate-900 relative">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-key text-amber-400"></i>
+          <span>개인 비밀번호 변경</span>
+        </h3>
+        <button onclick="closeChangePasswordModal()" class="text-slate-400 hover:text-white text-lg p-1 rounded-xl transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form onsubmit="handleUserPasswordChangeSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">현재 비밀번호</label>
+          <input type="password" id="change-current-pass" placeholder="현재 비밀번호 (초기: 휴대폰 번호 뒤 4자리)" required class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">새 비밀번호 (4자리 이상)</label>
+          <input type="password" id="change-new-pass" placeholder="새로 사용할 비밀번호 입력" required class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">새 비밀번호 확인</label>
+          <input type="password" id="change-confirm-pass" placeholder="새 비밀번호 다시 입력" required class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white">
+        </div>
+
+        <div class="p-3 bg-slate-950/70 rounded-xl border border-slate-800 text-[11px] text-slate-400 space-y-1">
+          <p class="font-bold text-brandGold"><i class="fa-solid fa-shield-halved mr-1"></i> 비밀번호 보안 규칙</p>
+          <p>비밀번호 변경 후 다음 로그인부터는 새 비밀번호로만 포털에 접속할 수 있습니다.</p>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
+          <button type="button" onclick="closeChangePasswordModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition">
+            취소
+          </button>
+          <button type="submit" class="px-5 py-2 bg-gradient-to-r from-brandTeal to-teal-500 hover:from-teal-600 hover:to-teal-400 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-teal-900/30">
+            비밀번호 변경 완료
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- STATE & APPLICATION SCRIPTS -->
   <script>
     // Default Seed Databases (For Initial Setup & Reset)
@@ -3022,27 +3079,46 @@
 
     let currentLoggedInUser = { name: '유종열', email: 'jongyeol@hanyang.com', role: '대리', dept: '인사총무', sysRole: '관리자', isAdmin: true, isExecutive: false };
 
-    // Login Handler
+    // Helper: Get user password (default to last 4 digits of phone number if custom password not set)
+    function getUserPassword(user) {
+      if (user.custom_password) return user.custom_password;
+
+      // Extract last 4 digits of phone number (e.g. "010-4444-5555" -> "5555")
+      if (user.phone) {
+        const cleanPhone = user.phone.replace(/[^0-9]/g, '');
+        if (cleanPhone.length >= 4) {
+          return cleanPhone.slice(-4);
+        }
+      }
+      return '1234'; // Default fallback
+    }
+
+    // Strict Password Authentication Login Handler
     function handleLoginSubmit(e) {
       e.preventDefault();
       const email = document.getElementById('login-emp-id').value.trim().toLowerCase();
-      const pass = document.getElementById('login-password').value;
+      const pass = document.getElementById('login-password').value.trim();
 
       const foundUser = usersDb.find(u => u.email.toLowerCase() === email);
-      
-      let isAdminUser = false;
-      let isExecUser = false;
 
-      if (foundUser) {
-        const roles = checkUserRole(foundUser);
-        isAdminUser = roles.isAdmin;
-        isExecUser = roles.isExecutive;
-        currentLoggedInUser = { ...foundUser, isAdmin: isAdminUser, isExecutive: isExecUser };
-      } else {
-        currentLoggedInUser = { name: '일반사용자', email: email, role: '사원', dept: '운영', sysRole: '일반사용자', isAdmin: false, isExecutive: false };
+      if (!foundUser) {
+        alert('⚠️ 등록되지 않은 이메일 주소입니다. 이메일을 다시 확인해 주세요.');
+        return;
       }
 
-      // Show/Hide top header items
+      // Strict Password Verification
+      const expectedPass = getUserPassword(foundUser);
+      if (pass !== expectedPass) {
+        alert(`🔒 비밀번호가 일치하지 않습니다!\n\n초기 비밀번호는 휴대폰 번호 뒤 4자리(예: ${getUserPassword(foundUser)})이거나, 본인이 변경한 비밀번호입니다.`);
+        return;
+      }
+
+      const roles = checkUserRole(foundUser);
+      const isAdminUser = roles.isAdmin;
+      const isExecUser = roles.isExecutive;
+      currentLoggedInUser = { ...foundUser, isAdmin: isAdminUser, isExecutive: isExecUser };
+
+      // Show top header items
       const headerUserInfo = document.getElementById('header-user-info');
       const mainNavTabs = document.getElementById('main-nav-tabs');
       if (headerUserInfo) headerUserInfo.classList.remove('hidden');
@@ -3051,7 +3127,7 @@
       // Update header badge
       document.getElementById('current-user-badge').innerText = `${currentLoggedInUser.name} (${currentLoggedInUser.email})`;
 
-      // Guide Button Toggle Check (Normal Employee -> '📘 평가 가이드', Executive & Admin -> '👑 관리자 전용 가이드')
+      // Guide Button Toggle Check
       const userHeaderGuideBtn = document.getElementById('user-header-guide-btn');
       const adminHeaderGuideBtn = document.getElementById('admin-header-guide-btn');
       const roleInfo = checkUserRole(currentLoggedInUser);
@@ -3064,66 +3140,80 @@
         if (adminHeaderGuideBtn) adminHeaderGuideBtn.classList.add('hidden');
       }
 
-      // Admin Tab visibility check (Visible for Admins & Executives)
+      // Admin Tab visibility check
       const adminNavTab = document.getElementById('nav-tab-admin');
       const evalManageNavTab = document.getElementById('nav-tab-evalmanage');
       if (evalManageNavTab) {
-        if (roleInfo.isPrivileged) {
-          evalManageNavTab.classList.remove('hidden');
-        } else {
-          evalManageNavTab.classList.add('hidden');
-        }
+        if (roleInfo.isPrivileged) evalManageNavTab.classList.remove('hidden');
+        else evalManageNavTab.classList.add('hidden');
       }
       if (adminNavTab) {
-        if (roleInfo.isPrivileged) {
-          adminNavTab.classList.remove('hidden');
-        } else {
-          adminNavTab.classList.add('hidden');
-        }
+        if (roleInfo.isPrivileged) adminNavTab.classList.remove('hidden');
+        else adminNavTab.classList.add('hidden');
       }
 
       saveToLocalStorage();
       populateCycleSelects();
 
-      // 최초 로그인 시 직급/권한과 상관없이 무조건 '평가 대상자 목록(list)' 뷰로 진입 (절대 고정)
+      // Land on 'list' view always post-login
       navigateTo('list');
       renderEmployeeGrid();
     }
 
-    function handlePasswordChangeSubmit(e) {
-      e.preventDefault();
-      const newP = document.getElementById('modal-new-password').value;
-      const confP = document.getElementById('modal-confirm-password').value;
+    // Modal Password Change Controls
+    function openChangePasswordModal() {
+      const modal = document.getElementById('modal-change-password');
+      if (modal) {
+        document.getElementById('change-current-pass').value = '';
+        document.getElementById('change-new-pass').value = '';
+        document.getElementById('change-confirm-pass').value = '';
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      }
+    }
 
-      if (newP.length < 4 || newP !== confP) {
-        alert('비밀번호 확인이 일치하지 않거나 4자리 미만입니다.');
+    function closeChangePasswordModal() {
+      const modal = document.getElementById('modal-change-password');
+      if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+    }
+
+    function handleUserPasswordChangeSubmit(e) {
+      e.preventDefault();
+      if (!currentLoggedInUser) return;
+
+      const currP = document.getElementById('change-current-pass').value.trim();
+      const newP = document.getElementById('change-new-pass').value.trim();
+      const confP = document.getElementById('change-confirm-pass').value.trim();
+
+      const userInDb = usersDb.find(u => u.id === currentLoggedInUser.id || u.email.toLowerCase() === currentLoggedInUser.email.toLowerCase());
+      if (!userInDb) return;
+
+      const expectedPass = getUserPassword(userInDb);
+      if (currP !== expectedPass) {
+        alert('⚠️ 현재 비밀번호가 일치하지 않습니다.');
         return;
       }
 
-      document.getElementById('modal-password-change').classList.add('hidden');
-      alert('비밀번호가 안전하게 변경되었습니다!');
-      
-      const email = document.getElementById('login-emp-id').value.trim().toLowerCase();
-      const foundUser = usersDb.find(u => u.email.toLowerCase() === email);
-      const isAdminUser = email.includes('admin') || email.includes('jongyeol') || (foundUser && (foundUser.sysRole === '관리자' || foundUser.email.includes('jongyeol')));
-      const isExecUser = foundUser && (foundUser.type === '임원급' || (foundUser.role && (foundUser.role.includes('임원') || foundUser.role.includes('이사') || foundUser.role.includes('상무') || foundUser.role.includes('전무') || foundUser.role.includes('대표'))));
-
-      if (foundUser) {
-        currentLoggedInUser = { ...foundUser, isAdmin: isAdminUser, isExecutive: isExecUser };
-      } else {
-        currentLoggedInUser = { name: '유종열', email: email, role: '대리', dept: '인사총무', sysRole: isAdminUser ? '관리자' : '일반사용자', isAdmin: isAdminUser, isExecutive: false };
+      if (newP.length < 4) {
+        alert('⚠️ 새 비밀번호는 4자리 이상 입력해 주세요.');
+        return;
       }
 
-      const headerUserInfo = document.getElementById('header-user-info');
-      const mainNavTabs = document.getElementById('main-nav-tabs');
-      if (headerUserInfo) headerUserInfo.classList.remove('hidden');
-      if (mainNavTabs) mainNavTabs.classList.remove('hidden');
-      document.getElementById('current-user-badge').innerText = `${currentLoggedInUser.name} (${currentLoggedInUser.email})`;
+      if (newP !== confP) {
+        alert('⚠️ 새 비밀번호와 비밀번호 확인이 일치하지 않습니다.');
+        return;
+      }
 
+      // Update password in DB
+      userInDb.custom_password = newP;
+      currentLoggedInUser.custom_password = newP;
+
+      alert(`🎉 [${userInDb.name}] 님의 비밀번호가 성공적으로 변경되었습니다!\n다음 로그인부터 새 비밀번호로 접속하실 수 있습니다.`);
+      closeChangePasswordModal();
       saveToLocalStorage();
-      populateCycleSelects();
-      navigateTo('list');
-      renderEmployeeGrid();
     }
 
     function handleLogout() {
