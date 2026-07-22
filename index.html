@@ -2370,17 +2370,17 @@
           if (m) customManualMatchingsDb = JSON.parse(m);
         }
 
-        // Re-render UI views immediately with pure Cloud State
-        populateCycleSelects();
-        if (currentActiveView === 'myresults') renderMyResults();
-        if (currentActiveView === 'admin') renderUsersTable();
-        if (currentActiveView === 'list') renderEmployeeGrid();
-
         // MANDATORY SECURITY AUTO-GUARD: System Master Admin (유종열) MUST ALWAYS EXIST
         const masterAdminSeed = DEFAULT_USERS_DB.find(u => u.email.toLowerCase() === 'jongyeol@hanyang.com');
         if (masterAdminSeed && !usersDb.some(u => u.email.toLowerCase() === 'jongyeol@hanyang.com')) {
           usersDb.push(masterAdminSeed);
         }
+
+        // Re-render UI views immediately with pure Cloud State
+        populateCycleSelects();
+        if (currentActiveView === 'myresults') renderMyResults();
+        if (currentActiveView === 'admin') renderUsersTable();
+        if (currentActiveView === 'list') renderEmployeeGrid();
 
         // Sync with D Drive FastAPI SQLite Database (Only when running on local machine)
         if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
