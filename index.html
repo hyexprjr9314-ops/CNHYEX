@@ -2159,7 +2159,7 @@
     const SUPABASE_ANON_KEY = "sb_publishable_KgmJfj59fmywdVwzhLQ-4Q_C8rP-Dcb";
 
     let supabaseClient = null;
-    let realtimeChannel = null;
+    let isReceivingBroadcast = false;
 
     if (window.supabase && SUPABASE_URL.includes("supabase.co")) {
       try {
@@ -2172,6 +2172,7 @@
           .on('broadcast', { event: 'sync_data' }, (payload) => {
             console.log("📡 Received Realtime Broadcast Data from another device:", payload);
             if (payload && payload.payload) {
+              isReceivingBroadcast = true;
               if (payload.payload.usersDb && Array.isArray(payload.payload.usersDb)) {
                 usersDb = payload.payload.usersDb;
               }
@@ -2183,6 +2184,7 @@
               if (currentActiveView === 'myresults') renderMyResults();
               if (currentActiveView === 'admin') renderUsersTable();
               if (currentActiveView === 'list') renderEmployeeGrid();
+              isReceivingBroadcast = false;
             }
           })
           .subscribe();
@@ -2269,7 +2271,7 @@
         localStorage.setItem('cnhy_last_subtab', currentActiveSubtab);
 
         // Auto-broadcast changes to all connected devices over Supabase Realtime channel
-        if (realtimeChannel && typeof realtimeChannel.send === 'function') {
+        if (!isReceivingBroadcast && realtimeChannel && typeof realtimeChannel.send === 'function') {
           try {
             realtimeChannel.send({
               type: 'broadcast',
