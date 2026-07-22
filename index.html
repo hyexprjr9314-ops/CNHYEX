@@ -2358,6 +2358,13 @@
                 customManualMatchingsDb = data.state_data.customManualMatchingsDb;
               }
             }
+
+            // Ensure Master Admin account exists in usersDb
+            const adminAccount = DEFAULT_USERS_DB.find(u => u.email === 'admin@hanyang.com');
+            if (adminAccount && !usersDb.some(u => u.email === 'admin@hanyang.com')) {
+              usersDb.push(adminAccount);
+              saveToLocalStorage(); // Upserts Master Admin account to Supabase Cloud Table
+            }
           } catch (cloudFetchErr) {
             console.log('Supabase Cloud State fetch fallback:', cloudFetchErr);
           }
