@@ -2267,6 +2267,19 @@
           sessionStorage.removeItem('cnhy_session_view');
         }
         localStorage.setItem('cnhy_last_subtab', currentActiveSubtab);
+
+        // Auto-broadcast changes to all connected devices over Supabase Realtime channel
+        if (realtimeChannel && typeof realtimeChannel.send === 'function') {
+          try {
+            realtimeChannel.send({
+              type: 'broadcast',
+              event: 'sync_data',
+              payload: { usersDb, customManualMatchingsDb, timestamp: Date.now() }
+            });
+          } catch (broadcastErr) {
+            console.log('Realtime auto-broadcast:', broadcastErr);
+          }
+        }
       } catch (e) {
         console.error('LocalStorage write failed:', e);
       }
