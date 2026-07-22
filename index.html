@@ -997,20 +997,40 @@
         </div>
       </div>
 
-      <!-- ADMIN SUB-TAB 3: QUESTION & WEIGHT CUSTOMIZATION -->
+      <!-- ADMIN SUB-TAB 3: QUESTION & WEIGHT CUSTOMIZATION (5대 직군 & 부서별 커스텀 & CSV 일괄등록) -->
       <div id="admin-subtab-questions" class="hidden space-y-6">
-        <!-- Guidance Header -->
-        <div class="glass-card rounded-2xl p-6 border border-slate-800 space-y-3">
-          <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <!-- Guidance & Category Weight Card -->
+        <div class="glass-card rounded-2xl p-6 border border-slate-800 space-y-4">
+          <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 border-b border-slate-800 pb-3">
             <div>
-              <h3 class="text-base font-bold text-white">평가 질문 및 카테고리 가중치 설정</h3>
-              <p class="text-xs text-slate-400 mt-0.5">평가 주기별 질문과 가중치를 설정합니다 (자기평가는 무조건 제외)</p>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="bg-brandTeal/20 text-brandTeal border border-brandTeal/30 text-[10px] font-bold px-2 py-0.5 rounded-full">SMART QUESTION MATRIX</span>
+                <span class="text-xs text-slate-400">직군별 • 부서별 커스텀 문항 관리</span>
+              </div>
+              <h3 class="text-lg font-black text-white flex items-center gap-2">
+                <i class="fa-solid fa-sliders text-brandTeal"></i>
+                <span>평가 질문 & 직군/부서별 문항 커스텀</span>
+              </h3>
+              <p class="text-xs text-slate-400 mt-0.5">평가 주기별 문항과 가중치를 세부 설정하고 CSV 일괄 파일 등록을 지원합니다.</p>
             </div>
-            <div class="flex items-center gap-2">
-              <span class="text-xs font-bold text-slate-300 whitespace-nowrap"><i class="fa-solid fa-calendar-check text-brandTeal mr-1"></i>평가 주기 선택:</span>
-              <select id="question-cycle-select" onchange="renderQuestionsList()" class="bg-slate-900 border border-slate-700 text-xs font-bold text-white rounded-xl px-3 py-2">
-                <!-- Dynamically Populated -->
-              </select>
+
+            <!-- CSV Import & Download Action Buttons -->
+            <div class="flex flex-wrap items-center gap-2">
+              <button onclick="downloadCSVQuestionTemplate()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-3.5 py-2 rounded-xl text-xs transition border border-slate-700 flex items-center gap-1.5 shadow">
+                <i class="fa-solid fa-file-csv text-emerald-400"></i>
+                <span>📥 CSV 템플릿 양식 다운로드</span>
+              </button>
+              <label class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold px-3.5 py-2 rounded-xl text-xs transition cursor-pointer flex items-center gap-1.5 shadow-lg shadow-teal-900/30">
+                <i class="fa-solid fa-file-import"></i>
+                <span>📤 CSV 질문 일괄 업로드</span>
+                <input type="file" id="csv-question-file-input" accept=".csv" onchange="handleCSVQuestionUpload(event)" class="hidden">
+              </label>
+              <div class="flex items-center gap-1 ml-2">
+                <span class="text-xs font-bold text-slate-300 whitespace-nowrap"><i class="fa-solid fa-calendar-check text-brandTeal mr-1"></i>주기:</span>
+                <select id="question-cycle-select" onchange="renderQuestionsList()" class="bg-slate-900 border border-slate-700 text-xs font-bold text-white rounded-xl px-3 py-2">
+                  <!-- Dynamically Populated -->
+                </select>
+              </div>
             </div>
           </div>
 
@@ -1044,7 +1064,7 @@
                 <input type="number" id="weight-harmony-in" value="10.0" step="0.1" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white" oninput="recalculateWeights()">
               </div>
             </div>
-            <button onclick="saveCategoryWeights()" class="bg-brandTeal text-white font-bold text-xs px-4 py-2 rounded-lg">가중치 저장</button>
+            <button onclick="saveCategoryWeights()" class="bg-brandTeal hover:bg-teal-600 text-white font-bold text-xs px-4 py-2 rounded-lg transition shadow">가중치 저장</button>
           </div>
         </div>
 
@@ -1052,64 +1072,118 @@
         <div class="glass-card rounded-2xl p-6 border border-slate-800 space-y-4">
           <h3 class="text-base font-bold text-white flex items-center gap-2">
             <i class="fa-solid fa-plus-circle text-brandTeal"></i>
-            <span>새 질문 추가 (커스텀 문항)</span>
+            <span>새 질문 추가 (직군 & 부서 타깃 지정 가능)</span>
           </h3>
 
-          <form onsubmit="handleAddQuestionSubmit(event)" class="space-y-3">
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+          <form onsubmit="handleAddQuestionSubmit(event)" class="space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
               <div>
-                <label class="block text-xs font-bold text-slate-300 mb-1">카테고리 선택</label>
-                <select id="q-category-in" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white">
+                <label class="block text-xs font-bold text-slate-300 mb-1">평가 영역 (카테고리)</label>
+                <select id="q-category-in" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-white font-bold">
                   <option value="성과">성과</option>
                   <option value="협업">협업</option>
                   <option value="성장">성장</option>
                   <option value="조화">조화</option>
                 </select>
               </div>
+
               <div>
-                <label class="block text-xs font-bold text-slate-300 mb-1">질문 유형</label>
-                <select id="q-type-in" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white">
-                  <option value="5지선다형">5지선다형 (1~5점)</option>
-                  <option value="서술형">서술형</option>
+                <label class="block text-xs font-bold text-slate-300 mb-1">적용 대상 직군 🎯</label>
+                <select id="q-track-in" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-amber-300 font-bold">
+                  <option value="기본 필수질문">📌 기본 필수질문 (전사)</option>
+                  <option value="본사 팀원급">🏢 본사 팀원급</option>
+                  <option value="팀장/부서장급">👔 팀장/부서장급</option>
+                  <option value="영업소">🚌 영업소</option>
+                  <option value="정비사">🔧 정비사</option>
                 </select>
               </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-300 mb-1">적용 부서 타깃 🏢</label>
+                <select id="q-dept-in" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-cyan-300 font-bold">
+                  <option value="전체">🏢 전체 부서 공통</option>
+                  <option value="인사총무">인사총무부</option>
+                  <option value="경리">경리부</option>
+                  <option value="안전관리">안전관리부</option>
+                  <option value="사업">사업부</option>
+                  <option value="차량">차량부</option>
+                  <option value="정비">정비부</option>
+                  <option value="영업소">영업소 현장</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-300 mb-1">질문 유형</label>
+                <select id="q-type-in" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-white">
+                  <option value="5지선다형">5지선다형 (1~5점)</option>
+                  <option value="서술형">서술형 코멘트</option>
+                </select>
+              </div>
+
               <div>
                 <label class="block text-xs font-bold text-slate-300 mb-1">가중치 (%)</label>
-                <input type="number" id="q-weight-in" value="10.0" step="0.1" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white">
-              </div>
-              <div>
-                <label class="block text-xs font-bold text-slate-300 mb-1">최대 점수 설정</label>
-                <input type="number" id="q-maxscore-in" value="5" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white">
+                <input type="number" id="q-weight-in" value="10.0" step="0.1" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-white">
               </div>
             </div>
 
             <div>
               <label class="block text-xs font-bold text-slate-300 mb-1">동료평가 질문 내용 (자기평가 제외됨)</label>
-              <input type="text" id="q-text-in" placeholder="질문 내용을 입력하세요 (예: 이번 평가 기간 중 이 동료의 성과는 어떠했나요?)" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-white">
+              <input type="text" id="q-text-in" placeholder="질문 내용을 입력하세요 (예: 이 동료의 정산 마감 준수 및 세무 정확도는 우수한가요?)" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-white">
             </div>
 
-            <div class="flex items-center gap-6 pt-1">
-              <label class="flex items-center gap-2 cursor-pointer text-xs text-slate-300 font-bold">
-                <input type="checkbox" id="q-required-check" checked class="accent-brandTeal">
-                <span>필수항목</span>
-              </label>
-              <label class="flex items-center gap-2 cursor-pointer text-xs text-slate-300 font-bold">
-                <input type="checkbox" id="q-default-check" checked class="accent-brandTeal">
-                <span>기본질문 (모든 피평가자에게 적용)</span>
-              </label>
-            </div>
+            <div class="flex items-center justify-between pt-1">
+              <div class="flex items-center gap-6">
+                <label class="flex items-center gap-2 cursor-pointer text-xs text-slate-300 font-bold">
+                  <input type="checkbox" id="q-required-check" checked class="accent-brandTeal">
+                  <span>필수항목</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer text-xs text-slate-300 font-bold">
+                  <input type="checkbox" id="q-default-check" checked class="accent-brandTeal">
+                  <span>기본질문 (해당 카테고리 전원 적용)</span>
+                </label>
+              </div>
 
-            <button type="submit" class="w-full bg-brandTeal hover:bg-teal-600 text-white font-bold py-2.5 rounded-xl text-xs transition">
-              질문 추가하기
-            </button>
+              <button type="submit" class="bg-brandTeal hover:bg-teal-600 text-white font-bold px-6 py-2.5 rounded-xl text-xs transition shadow-lg shadow-teal-900/30 flex items-center gap-2">
+                <i class="fa-solid fa-plus"></i>
+                <span>질문 추가하기</span>
+              </button>
+            </div>
           </form>
         </div>
 
-        <!-- Questions List -->
-        <div class="glass-card rounded-2xl p-6 border border-slate-800 space-y-3">
-          <h3 class="text-base font-bold text-white">등록된 질문 목록</h3>
+        <!-- Questions Filter Tabs & List Container -->
+        <div class="glass-card rounded-2xl p-6 border border-slate-800 space-y-4">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-800 pb-3">
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-list-ol text-brandGold"></i>
+              <span>등록된 평가 질문 목록</span>
+            </h3>
+
+            <!-- 5-Track Filter Category Tabs -->
+            <div class="flex items-center gap-1.5 overflow-x-auto max-w-full text-xs font-bold">
+              <button onclick="filterQuestionTrack('전체')" id="q-track-tab-전체" class="px-3 py-1.5 rounded-lg bg-brandTeal text-white transition">
+                🌐 전체
+              </button>
+              <button onclick="filterQuestionTrack('기본 필수질문')" id="q-track-tab-기본 필수질문" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white transition">
+                📌 기본 필수질문
+              </button>
+              <button onclick="filterQuestionTrack('본사 팀원급')" id="q-track-tab-본사 팀원급" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white transition">
+                🏢 본사 팀원급
+              </button>
+              <button onclick="filterQuestionTrack('팀장/부서장급')" id="q-track-tab-팀장/부서장급" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white transition">
+                👔 팀장/부서장급
+              </button>
+              <button onclick="filterQuestionTrack('영업소')" id="q-track-tab-영업소" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white transition">
+                🚌 영업소
+              </button>
+              <button onclick="filterQuestionTrack('정비사')" id="q-track-tab-정비사" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white transition">
+                🔧 정비사
+              </button>
+            </div>
+          </div>
+
           <div class="space-y-3" id="questions-list-container">
-            <!-- Dynamically Rendered -->
+            <!-- Dynamically Rendered Questions with Edit & Delete Controls -->
           </div>
         </div>
       </div>
@@ -1904,6 +1978,95 @@
     </div>
   </div>
 
+  <!-- MODAL: EDIT QUESTION DIALOG -->
+  <div id="modal-edit-question" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center z-50 p-4">
+    <div class="glass-card max-w-xl w-full rounded-3xl p-6 border border-brandTeal/40 shadow-2xl space-y-4 bg-slate-900 relative">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-pen-to-square text-brandTeal"></i>
+          <span>평가 질문 수정</span>
+        </h3>
+        <button onclick="closeEditQuestionModal()" class="text-slate-400 hover:text-white text-lg p-1 rounded-xl transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form onsubmit="handleSaveEditedQuestionSubmit(event)" class="space-y-3">
+        <input type="hidden" id="edit-q-id">
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1">카테고리</label>
+            <select id="edit-q-category" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white">
+              <option value="성과">성과</option>
+              <option value="협업">협업</option>
+              <option value="성장">성장</option>
+              <option value="조화">조화</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1">적용 대상 직군 🎯</label>
+            <select id="edit-q-track" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-amber-300 font-bold">
+              <option value="기본 필수질문">📌 기본 필수질문</option>
+              <option value="본사 팀원급">🏢 본사 팀원급</option>
+              <option value="팀장/부서장급">👔 팀장/부서장급</option>
+              <option value="영업소">🚌 영업소</option>
+              <option value="정비사">🔧 정비사</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1">적용 부서 타깃 🏢</label>
+            <select id="edit-q-dept" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-cyan-300 font-bold">
+              <option value="전체">🏢 전체 부서 공통</option>
+              <option value="인사총무">인사총무부</option>
+              <option value="경리">경리부</option>
+              <option value="안전관리">안전관리부</option>
+              <option value="사업">사업부</option>
+              <option value="차량">차량부</option>
+              <option value="정비">정비부</option>
+              <option value="영업소">영업소 현장</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1">질문 유형</label>
+            <select id="edit-q-type" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white">
+              <option value="5지선다형">5지선다형 (1~5점)</option>
+              <option value="서술형">서술형 코멘트</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">질문 내용</label>
+          <textarea id="edit-q-text" rows="3" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white leading-relaxed"></textarea>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1">가중치 (%)</label>
+            <input type="number" id="edit-q-weight" step="0.1" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1">최대 점수</label>
+            <input type="number" id="edit-q-maxscore" value="5" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white">
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-3 border-t border-slate-800">
+          <button type="button" onclick="closeEditQuestionModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition">
+            취소
+          </button>
+          <button type="submit" class="px-5 py-2 bg-brandTeal hover:bg-teal-600 text-white rounded-xl text-xs font-bold transition shadow-lg">
+            수정 내용 저장
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- STATE & APPLICATION SCRIPTS -->
   <script>
     // Default Seed Databases (For Initial Setup & Reset)
@@ -1922,9 +2085,9 @@
     ];
 
     const DEFAULT_QUESTIONS_DB = [
-      { id: 1, category: "성과", type: "5지선다형", weight: 33.3, max_score: 5, text: "이번 평가 기간 중 이 동료가 담당한 업무에서 가장 의미 있었던 성과나 완수한 목표는 무엇이라고 생각하시나요?", required: true, is_default: true },
-      { id: 2, category: "협업", type: "5지선다형", weight: 33.3, max_score: 5, text: "이 동료가 업무를 진행하면서 문제를 해결했거나, 협업을 통해 긍정적인 결과를 만들었던 사례가 있다면 작성해 주세요.", required: true, is_default: true },
-      { id: 3, category: "성장", type: "5지선다형", weight: 33.4, max_score: 5, text: "이 동료가 앞으로 더 성장하기 위해 개선하면 좋을 점이나, 발전 가능성이 높다고 생각되는 부분이 있다면 작성해 주세요.", required: true, is_default: true }
+      { id: 1, category: "성과", targetTrack: "기본 필수질문", targetDept: "전체", type: "5지선다형", weight: 33.3, max_score: 5, text: "이번 평가 기간 중 이 동료가 담당한 업무에서 가장 의미 있었던 성과나 완수한 목표는 무엇이라고 생각하시나요?", required: true, is_default: true },
+      { id: 2, category: "협업", targetTrack: "기본 필수질문", targetDept: "전체", type: "5지선다형", weight: 33.3, max_score: 5, text: "이 동료가 업무를 진행하면서 문제를 해결했거나, 협업을 통해 긍정적인 결과를 만들었던 사례가 있다면 작성해 주세요.", required: true, is_default: true },
+      { id: 3, category: "성장", targetTrack: "기본 필수질문", targetDept: "전체", type: "5지선다형", weight: 33.4, max_score: 5, text: "이 동료가 앞으로 더 성장하기 위해 개선하면 좋을 점이나, 발전 가능성이 높다고 생각되는 부분이 있다면 작성해 주세요.", required: true, is_default: true }
     ];
 
     const DEFAULT_HISTORY_DB = [
@@ -3691,6 +3854,26 @@
       alert(`4대 카테고리 가중치가 저장되었습니다!\n\n- 성과: ${p.toFixed(1)}%\n- 협업: ${c.toFixed(1)}%\n- 성장: ${g.toFixed(1)}%\n- 조화: ${h.toFixed(1)}%`);
     }
 
+    // 5-Track Question Filter State
+    let currentSelectedQuestionTrack = '전체';
+
+    function filterQuestionTrack(trackName) {
+      currentSelectedQuestionTrack = trackName;
+
+      ['전체', '기본 필수질문', '본사 팀원급', '팀장/부서장급', '영업소', '정비사'].forEach(t => {
+        const btn = document.getElementById(`q-track-tab-${t}`);
+        if (btn) {
+          if (t === trackName) {
+            btn.className = "px-3 py-1.5 rounded-lg bg-brandTeal text-white font-bold transition shadow";
+          } else {
+            btn.className = "px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white transition font-bold";
+          }
+        }
+      });
+
+      renderQuestionsList();
+    }
+
     function renderQuestionsList() {
       const container = document.getElementById('questions-list-container');
       if (!container) return;
@@ -3699,28 +3882,54 @@
       const questionSelect = document.getElementById('question-cycle-select');
       const selectedCycleId = questionSelect && questionSelect.value ? parseInt(questionSelect.value) : null;
 
-      const filteredQuestions = selectedCycleId
+      let filteredQuestions = selectedCycleId
         ? customQuestionsDb.filter(q => !q.cycleId || String(q.cycleId) === String(selectedCycleId))
         : customQuestionsDb;
 
+      if (currentSelectedQuestionTrack !== '전체') {
+        filteredQuestions = filteredQuestions.filter(q => (q.targetTrack || '기본 필수질문') === currentSelectedQuestionTrack);
+      }
+
       if (filteredQuestions.length === 0) {
-        container.innerHTML = `<div class="bg-slate-900/60 p-6 rounded-xl border border-slate-800 text-center text-slate-400 text-xs">선택된 평가 주기에 등록된 커스텀 질문이 없습니다. 위 양식에서 질문을 추가해 주세요.</div>`;
+        container.innerHTML = `<div class="bg-slate-900/60 p-6 rounded-xl border border-slate-800 text-center text-slate-400 text-xs">등록된 질문이 없습니다. [새 질문 추가] 또는 [📤 CSV 질문 일괄 업로드]로 질문을 채워주세요.</div>`;
         return;
       }
 
       filteredQuestions.forEach((q, idx) => {
+        const targetTrack = q.targetTrack || '기본 필수질문';
+        const targetDept = q.targetDept || '전체';
+
+        let trackBadgeStyle = "bg-slate-800 text-slate-300 border border-slate-700";
+        if (targetTrack.includes('본사')) trackBadgeStyle = "bg-blue-500/20 text-blue-300 border border-blue-500/30";
+        else if (targetTrack.includes('팀장')) trackBadgeStyle = "bg-amber-500/20 text-amber-300 border border-amber-500/30";
+        else if (targetTrack.includes('영업소')) trackBadgeStyle = "bg-orange-500/20 text-orange-300 border border-orange-500/30";
+        else if (targetTrack.includes('정비사')) trackBadgeStyle = "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
+        else if (targetTrack.includes('기본')) trackBadgeStyle = "bg-purple-500/20 text-purple-300 border border-purple-500/30";
+
         const div = document.createElement('div');
-        div.className = 'bg-slate-900/80 p-4 rounded-xl border border-slate-800 flex justify-between items-center';
+        div.className = 'bg-slate-900/80 p-4 rounded-xl border border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 hover:border-slate-700 transition';
         div.innerHTML = `
-          <div>
-            <div class="flex items-center gap-2 mb-1">
-              <span class="bg-teal-500/20 text-brandTeal text-[10px] font-bold px-2 py-0.5 rounded">${q.category}</span>
-              <span class="bg-blue-500/20 text-blue-300 text-[10px] font-bold px-2 py-0.5 rounded">${q.type}</span>
+          <div class="space-y-1">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span class="bg-brandTeal/20 text-brandTeal text-[10px] font-bold px-2 py-0.5 rounded border border-brandTeal/30">${q.category}</span>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded ${trackBadgeStyle}">🎯 ${targetTrack}</span>
+              <span class="bg-cyan-500/20 text-cyan-300 text-[10px] font-bold px-2 py-0.5 rounded border border-cyan-500/30">🏢 ${targetDept === '전체' ? '전체 부서 공통' : targetDept + '부'}</span>
+              <span class="bg-slate-800 text-slate-300 text-[10px] font-bold px-2 py-0.5 rounded">${q.type}</span>
               ${q.required ? '<span class="bg-rose-500/20 text-rose-300 text-[10px] font-bold px-1.5 py-0.5 rounded">필수</span>' : ''}
               ${q.is_default ? '<span class="bg-amber-500/20 text-amber-300 text-[10px] font-bold px-1.5 py-0.5 rounded">기본질문</span>' : ''}
             </div>
-            <h4 class="text-xs font-bold text-white">Q${idx + 1}. (동료평가) ${q.text}</h4>
-            <p class="text-[10px] text-slate-400 mt-1">가중치: ${q.weight}% | 최대점수: ${q.max_score}점</p>
+            <h4 class="text-xs font-bold text-white pt-0.5">Q${idx + 1}. ${q.text}</h4>
+            <p class="text-[10px] text-slate-400">가중치 반영: <strong class="text-brandGold">${q.weight}%</strong> | 척도: <strong class="text-slate-200">${q.max_score || 5}점 만점</strong></p>
+          </div>
+
+          <!-- Edit & Delete Action Buttons -->
+          <div class="flex items-center gap-2 flex-shrink-0 self-end md:self-auto">
+            <button onclick="openEditQuestionModal(${q.id})" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-3 py-1.5 rounded-lg text-[11px] border border-slate-700 transition flex items-center gap-1">
+              <i class="fa-solid fa-pen-to-square text-amber-400"></i> 수정
+            </button>
+            <button onclick="deleteQuestion(${q.id})" class="bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 font-bold px-3 py-1.5 rounded-lg text-[11px] border border-rose-500/30 transition flex items-center gap-1">
+              <i class="fa-solid fa-trash-can text-rose-400"></i> 삭제
+            </button>
           </div>
         `;
         container.appendChild(div);
@@ -3732,32 +3941,174 @@
       const questionSelect = document.getElementById('question-cycle-select');
       const cycleId = questionSelect ? parseInt(questionSelect.value) : 1;
       const category = document.getElementById('q-category-in').value;
+      const targetTrack = document.getElementById('q-track-in').value;
+      const targetDept = document.getElementById('q-dept-in').value;
       const type = document.getElementById('q-type-in').value;
       const weight = parseFloat(document.getElementById('q-weight-in').value) || 0;
-      const max_score = parseInt(document.getElementById('q-maxscore-in').value) || 5;
       const text = document.getElementById('q-text-in').value.trim();
       const required = document.getElementById('q-required-check').checked;
       const is_default = document.getElementById('q-default-check').checked;
 
       customQuestionsDb.push({
-        id: customQuestionsDb.length + 1,
+        id: Date.now() + Math.floor(Math.random() * 1000),
         cycleId: cycleId,
         category,
+        targetTrack,
+        targetDept,
         type,
         weight,
-        max_score,
+        max_score: 5,
         text,
         required,
         is_default
       });
 
-      const targetCycle = cyclesDb.find(c => String(c.id) === String(cycleId));
-      const cycleName = targetCycle ? targetCycle.name : '선택된 평가주기';
-
-      alert(`[${cycleName}] 평가 주기에 [${category}] 커스텀 동료평가 질문이 성공적으로 추가되었습니다!`);
+      alert(`[${targetTrack}] 적용 인사평가 질문이 성공적으로 추가되었습니다!`);
       document.getElementById('q-text-in').value = '';
       saveToLocalStorage();
       renderQuestionsList();
+    }
+
+    // Question Edit Modal Controls
+    let currentEditingQuestionId = null;
+
+    function openEditQuestionModal(qId) {
+      const q = customQuestionsDb.find(item => item.id === qId);
+      if (!q) return;
+
+      currentEditingQuestionId = qId;
+      document.getElementById('edit-q-id').value = q.id;
+      document.getElementById('edit-q-category').value = q.category || '성과';
+      document.getElementById('edit-q-track').value = q.targetTrack || '기본 필수질문';
+      document.getElementById('edit-q-dept').value = q.targetDept || '전체';
+      document.getElementById('edit-q-type').value = q.type || '5지선다형';
+      document.getElementById('edit-q-text').value = q.text || '';
+      document.getElementById('edit-q-weight').value = q.weight !== undefined ? q.weight : 10.0;
+      document.getElementById('edit-q-maxscore').value = q.max_score || 5;
+
+      const modal = document.getElementById('modal-edit-question');
+      if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      }
+    }
+
+    function closeEditQuestionModal() {
+      const modal = document.getElementById('modal-edit-question');
+      if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+    }
+
+    function handleSaveEditedQuestionSubmit(e) {
+      e.preventDefault();
+      const q = customQuestionsDb.find(item => item.id === currentEditingQuestionId);
+      if (!q) return;
+
+      q.category = document.getElementById('edit-q-category').value;
+      q.targetTrack = document.getElementById('edit-q-track').value;
+      q.targetDept = document.getElementById('edit-q-dept').value;
+      q.type = document.getElementById('edit-q-type').value;
+      q.text = document.getElementById('edit-q-text').value.trim();
+      q.weight = parseFloat(document.getElementById('edit-q-weight').value) || 0;
+      q.max_score = parseInt(document.getElementById('edit-q-maxscore').value) || 5;
+
+      alert(`질문 Q${q.id} 정보가 성공적으로 수정 저장되었습니다!`);
+      closeEditQuestionModal();
+      saveToLocalStorage();
+      renderQuestionsList();
+    }
+
+    function deleteQuestion(qId) {
+      const idx = customQuestionsDb.findIndex(item => item.id === qId);
+      if (idx === -1) return;
+
+      const targetQ = customQuestionsDb[idx];
+      if (confirm(`해당 질문을 삭제하시겠습니까?\n\n- 질문: "${targetQ.text}"\n- 적용 직군: ${targetQ.targetTrack || '기본'}`)) {
+        customQuestionsDb.splice(idx, 1);
+        alert('해당 인사평가 질문이 성공적으로 삭제되었습니다.');
+        saveToLocalStorage();
+        renderQuestionsList();
+      }
+    }
+
+    // CSV Template Download & Upload Handler for Questions
+    function downloadCSVQuestionTemplate() {
+      const csvHeader = "\uFEFF카테고리,적용직군,적용부서,질문유형,가중치(%),질문내용,필수여부,기본질문여부\n";
+      const sampleRows = [
+        "성과,본사 팀원급,경리,5지선다형,33.3,월간 정산 마감 준수 및 결산 정확도가 우수한가요?,Y,Y\n",
+        "협업,본사 팀원급,인사총무,5지선다형,33.3,유관부서 긴급 요청 시 원활하고 친절하게 협업하나요?,Y,Y\n",
+        "성장,팀장/부서장급,전체,5지선다형,33.4,팀원들의 성장을 이끄는 리더십과 피드백 전달력이 탁월한가요?,Y,Y\n",
+        "조화,영업소,전체,5지선다형,10.0,영업소 현장 동료 및 조원들과의 상호 조화와 안전 수칙을 준수하나요?,Y,Y\n",
+        "성과,정비사,정비,5지선다형,40.0,차량 정비 점검 완결성 및 긴급 정비 처리 속도가 우수한가요?,Y,Y\n"
+      ].join("");
+
+      const blob = new Blob([csvHeader + sampleRows], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `CNHY_HR_Questions_Template_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function handleCSVQuestionUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const text = e.target.result;
+          const lines = text.split(/\r\n|\n/);
+          let count = 0;
+
+          for (let i = 1; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (!line) continue;
+
+            const cols = line.split(',').map(c => c.trim().replace(/^"|"$/g, ''));
+            if (cols.length >= 6) {
+              const category = cols[0] || '성과';
+              const targetTrack = cols[1] || '기본 필수질문';
+              const targetDept = cols[2] || '전체';
+              const type = cols[3] || '5지선다형';
+              const weight = parseFloat(cols[4]) || 10.0;
+              const textContent = cols[5];
+              const required = (cols[6] || 'Y').toUpperCase() === 'Y';
+              const is_default = (cols[7] || 'Y').toUpperCase() === 'Y';
+
+              if (textContent) {
+                customQuestionsDb.push({
+                  id: Date.now() + Math.floor(Math.random() * 10000),
+                  cycleId: 1,
+                  category,
+                  targetTrack,
+                  targetDept,
+                  type,
+                  weight,
+                  max_score: 5,
+                  text: textContent,
+                  required,
+                  is_default
+                });
+                count++;
+              }
+            }
+          }
+
+          alert(`🎉 CSV 업로드 완료! 총 ${count}개의 직군/부서별 커스텀 질문이 성공적으로 등록되었습니다.`);
+          saveToLocalStorage();
+          renderQuestionsList();
+        } catch (err) {
+          alert('CSV 파일 파싱 중 오류가 발생했습니다. 파이프 형태나 CSV 형식을 확인해주세요.');
+          console.error(err);
+        }
+      };
+      reader.readAsText(file, 'UTF-8');
+      event.target.value = '';
     }
 
     // ADMIN SUBTAB 4: PERMISSIONS (Evaluator & Evaluatee Dual Controls)
