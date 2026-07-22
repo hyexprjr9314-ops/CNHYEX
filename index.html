@@ -2290,12 +2290,10 @@
         if (m) customManualMatchingsDb = JSON.parse(m);
         if (sessCur) currentLoggedInUser = JSON.parse(sessCur);
 
-        // Ensure default essential accounts (유종열, 이충용) exist in usersDb
-        DEFAULT_USERS_DB.forEach(defUser => {
-          if (!usersDb.some(existing => existing.email.toLowerCase() === defUser.email.toLowerCase())) {
-            usersDb.push(defUser);
-          }
-        });
+        // Ensure ONLY System Master Admin (유종열) exists if database is empty
+        if (usersDb.length === 0) {
+          usersDb = JSON.parse(JSON.stringify(DEFAULT_USERS_DB));
+        }
 
         // Sync with D Drive FastAPI SQLite Database
         fetch('http://localhost:8000/api/users')
@@ -2341,13 +2339,6 @@
     }
 
     function triggerRealtimeCloudSync(userNotice = false) {
-      // Sync default users into usersDb
-      DEFAULT_USERS_DB.forEach(defUser => {
-        if (!usersDb.some(existing => existing.email.toLowerCase() === defUser.email.toLowerCase())) {
-          usersDb.push(defUser);
-        }
-      });
-
       saveToLocalStorage();
       populateCycleSelects();
       if (currentActiveView === 'myresults') renderMyResults();
