@@ -1156,7 +1156,94 @@
 
       <!-- ADMIN SUB-TAB: EVALUATION MATCHING MANAGEMENT (🔀 평가 매칭 관리 서브탭) -->
       <div id="admin-subtab-matching" class="hidden space-y-6">
-        <!-- 1. Global Matching Engine Control Card -->
+        <!-- 1. Global Multi-Stage Evaluation Pipeline Map Card -->
+        <div class="glass-card rounded-2xl p-6 border border-cyan-500/40 bg-cyan-950/20 space-y-4">
+          <div class="flex justify-between items-center border-b border-cyan-500/30 pb-3">
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-[10px] font-bold px-2.5 py-0.5 rounded-full">MULTI-STAGE PIPELINE ENGINE</span>
+                <span class="text-xs text-cyan-300 font-bold">전사 직군별 3~5단계 차별화 평가 파이프라인 가동 중</span>
+              </div>
+              <h3 class="text-xl font-black text-white flex items-center gap-2">
+                <i class="fa-solid fa-layer-group text-cyan-400"></i>
+                <span>직군별 3~5단계 다단계(Multi-Stage) 평가 체계 프로세스</span>
+              </h3>
+              <p class="text-xs text-slate-300 mt-1">본사, 영업소, 팀장급, 정비사 직군별 사칙 및 현장 맞춤형 평가 단계가 자동으로 부여됩니다.</p>
+            </div>
+            <span class="text-xs font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 px-3 py-1 rounded-full flex items-center gap-1.5 shadow-lg">
+              <i class="fa-solid fa-gears text-cyan-400 animate-spin"></i>
+              <span>직군 파이프라인 ACTIVE</span>
+            </span>
+          </div>
+
+          <!-- 4 Job-Track Pipeline Cards -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-slate-200">
+            <!-- Track 1: 本社 (5단계) -->
+            <div class="bg-slate-900/90 p-4 rounded-xl border border-slate-800 space-y-2 relative overflow-hidden group hover:border-brandTeal/40 transition">
+              <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                <span class="font-bold text-brandTeal flex items-center gap-1.5">
+                  <i class="fa-solid fa-building"></i> [본사 스태프] 5단계 전주기 평가
+                </span>
+                <span class="text-[10px] bg-teal-500/20 text-teal-300 px-2 py-0.5 rounded font-mono font-bold">5 Stages</span>
+              </div>
+              <div class="space-y-1 text-[11px] text-slate-300 pt-1">
+                <p><span class="text-teal-400 font-bold">1차:</span> 동일 소속부서 다면평가</p>
+                <p><span class="text-teal-400 font-bold">2차:</span> 소속사 내부부서 협업평가</p>
+                <p><span class="text-teal-400 font-bold">3차:</span> 계열사(충남↔한양) 동일소속부서 협업평가</p>
+                <p><span class="text-teal-400 font-bold">4차:</span> 부서장 성과평가</p>
+                <p><span class="text-brandGold font-bold">5차:</span> 임원 최종 평가 및 2차 조정 종결 🏁</p>
+              </div>
+            </div>
+
+            <!-- Track 2: 營業所 (4단계) -->
+            <div class="bg-slate-900/90 p-4 rounded-xl border border-slate-800 space-y-2 relative overflow-hidden group hover:border-amber-400/40 transition">
+              <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                <span class="font-bold text-amber-400 flex items-center gap-1.5">
+                  <i class="fa-solid fa-bus-simple"></i> [영업소 현장] 4단계 현장밀착 평가
+                </span>
+                <span class="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded font-mono font-bold">4 Stages</span>
+              </div>
+              <div class="space-y-1 text-[11px] text-slate-300 pt-1">
+                <p><span class="text-amber-400 font-bold">1차:</span> 동일 소속사 협업부서 다면평가</p>
+                <p><span class="text-amber-400 font-bold">2차:</span> 동일구역 계열사 직원 간 협업·조화 평가</p>
+                <p><span class="text-amber-400 font-bold">3차:</span> 유관부서 팀장급 정성 평가</p>
+                <p><span class="text-brandGold font-bold">4차:</span> 임원 최종 평가 및 종결 🏁</p>
+              </div>
+            </div>
+
+            <!-- Track 3: 團隊長 (3단계) -->
+            <div class="bg-slate-900/90 p-4 rounded-xl border border-slate-800 space-y-2 relative overflow-hidden group hover:border-blue-400/40 transition">
+              <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                <span class="font-bold text-blue-400 flex items-center gap-1.5">
+                  <i class="fa-solid fa-user-tie"></i> [팀장/부서장급] 3단계 리더십 평가
+                </span>
+                <span class="text-[10px] bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded font-mono font-bold">3 Stages</span>
+              </div>
+              <div class="space-y-1 text-[11px] text-slate-300 pt-1">
+                <p><span class="text-blue-400 font-bold">1차:</span> 소속 부서원들의 상향 리더십 평가</p>
+                <p><span class="text-blue-400 font-bold">2차:</span> 타 부서장 간 협업 태스크 교류 평가</p>
+                <p><span class="text-brandGold font-bold">3차:</span> 임원 최종 평가 및 종결 🏁</p>
+              </div>
+            </div>
+
+            <!-- Track 4: 整備士 (3단계) -->
+            <div class="bg-slate-900/90 p-4 rounded-xl border border-slate-800 space-y-2 relative overflow-hidden group hover:border-emerald-400/40 transition">
+              <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                <span class="font-bold text-emerald-400 flex items-center gap-1.5">
+                  <i class="fa-solid fa-wrench"></i> [정비사 파트] 3단계 정비실무 평가
+                </span>
+                <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded font-mono font-bold">3 Stages</span>
+              </div>
+              <div class="space-y-1 text-[11px] text-slate-300 pt-1">
+                <p><span class="text-emerald-400 font-bold">1차:</span> 차량·안전실 내부 실무 평가</p>
+                <p><span class="text-emerald-400 font-bold">2차:</span> 부서장 평가 (영업소 정비사는 현장 직접 평가)</p>
+                <p><span class="text-brandGold font-bold">3차:</span> 임원 최종 평가 및 종결 🏁</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Global Matching Engine Control Card -->
         <div class="glass-card rounded-2xl p-6 border border-purple-500/40 bg-purple-950/20 space-y-4">
           <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-purple-500/30 pb-4">
             <div>
@@ -2930,7 +3017,18 @@
           card.onclick = () => openEvaluationForm(emp, false);
         }
 
-        card.innerHTML = `
+            let trackStageText = "1차 동료 다면평가 단계";
+            if (emp.dept.includes('정비')) {
+              trackStageText = "정비사 3단계 파이프라인 (1차 내부 / 2차 부서장 / 3차 임원)";
+            } else if (emp.type === '팀장급' || emp.role.includes('팀장')) {
+              trackStageText = "팀장급 3단계 리더십 (1차 상향 / 2차 수평 / 3차 임원)";
+            } else if (emp.workplace.includes('영업소') || emp.dept.includes('영업소')) {
+              trackStageText = "영업소 4단계 파이프라인 (1차 다면 / 2차 동일구역 / 3차 팀장 / 4차 임원)";
+            } else {
+              trackStageText = "본사 5단계 전주기 (1차 다면 / 2차 협업 / 3차 계열사 / 4차 부서장 / 5차 임원)";
+            }
+
+            card.innerHTML = `
           <div>
             <div class="flex justify-between items-center mb-2">
               <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${emp.company.includes('한양') ? 'bg-blue-500/20 text-blue-300' : 'bg-orange-500/20 text-orange-300'}">${emp.company}</span>
@@ -2938,10 +3036,13 @@
             </div>
             <h4 class="text-base font-bold text-white">${emp.name} ${emp.role}</h4>
             <p class="text-xs text-slate-400 mt-1">${emp.dept}부 • ${emp.assigned_task || emp.workplace}</p>
-            <div class="mt-2 flex items-center gap-1.5">
-              <span class="text-[9px] font-bold px-2 py-0.5 rounded ${isCrossHQ ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : 'bg-teal-500/20 text-teal-300 border border-teal-500/30'}">
+            <div class="mt-2 space-y-1">
+              <span class="text-[9px] font-bold px-2 py-0.5 rounded block w-fit ${isCrossHQ ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : 'bg-teal-500/20 text-teal-300 border border-teal-500/30'}">
                 <i class="fa-solid ${isCrossHQ ? 'fa-shuffle' : 'fa-building'} mr-1"></i>
                 ${isCrossHQ ? '본사 양사 유관부서 교차 평가 대상' : '본사 동일 소속 유관부서 평가 대상'}
+              </span>
+              <span class="text-[9px] font-bold px-2 py-0.5 rounded block w-fit bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                <i class="fa-solid fa-layer-group mr-1"></i> ${trackStageText}
               </span>
             </div>
           </div>
