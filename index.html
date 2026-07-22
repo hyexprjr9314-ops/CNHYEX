@@ -2154,6 +2154,20 @@
 
   <!-- STATE & APPLICATION SCRIPTS -->
   <script>
+    // Supabase Cloud & Realtime Rest Sync Engine
+    const SUPABASE_URL = "https://your-supabase-project.supabase.co"; // Replace with your Supabase Project URL
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."; // Replace with your Anon API Key
+
+    let supabaseClient = null;
+    if (window.supabase && SUPABASE_URL.includes("supabase.co")) {
+      try {
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        console.log("⚡ Supabase Realtime Cloud Client Initialized");
+      } catch (e) {
+        console.warn("Supabase init fallback:", e);
+      }
+    }
+
     // Default Seed Databases (For Initial Setup & Reset)
     const DEFAULT_USERS_DB = [
       { id: 1, name: '홍길동', email: 'hong@hanyang.com', dept: '경리', workplace: '본사', role: '과장', type: '팀원급', sysRole: '일반사용자', joindate: '2020-03-01', phone: '010-1111-2222', active: true, raw_score: 91.5, final_score: 91.5, is_adjusted: false, final_grade: 'S', completed: 0, total: 6, company: '한양고속' },
