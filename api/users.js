@@ -5,6 +5,7 @@ const REQUIRED = ['name', 'email', 'company', 'dept', 'workplace', 'role', 'type
 const ALLOWED_TYPES = new Set(['팀원급', '팀장급', '부서실장급', '임원급']);
 const ALLOWED_ROLES = new Set(['일반사용자', '관리자', '임원']);
 const ALLOWED_COMPANIES = new Set(['(주)한양고속', '(주)충남고속']);
+const SUPER_ADMIN_EMAIL = 'admin@cnhyex.com';
 
 function send(res, status, payload) {
   res.status(status).json(payload);
@@ -79,9 +80,15 @@ export default async function handler(req, res) {
       const invalid = validate(row);
       if (!id || invalid) return send(res, 400, { error: invalid || '사용자 ID가 필요합니다.' });
       const { temporary_password, ...profile } = row;
-      const { data: existing } = await service.from('users').select('auth_user_id').eq('id', id).single();
+      const { data: existing } = await service.from('users').select('auth_user_id,email').eq('id', id).single();
+      const isSuperAdmin = existing?.email?.toLowerCase() === SUPER_ADMIN_EMAIL;
+      if (isSuperAdmin) {
+        profile.email = SUPER_ADMIN_EMAIL;
+        profile.sys_role = '관리자';
+        profile.active = true;
+      }
       if (existing?.auth_user_id) {
-        const attrs = { email: row.email };
+        const attrs = { email: isSuperAdmin ? SUPER_ADMIN_EMAIL : row.email };
         if (temporary_password) attrs.password = temporary_password;
         const { error: authError } = await service.auth.admin.updateUserById(existing.auth_user_id, attrs);
         if (authError) throw authError;
@@ -90,12 +97,23 @@ export default async function handler(req, res) {
       if (error) throw error;
       return send(res, 200, { user: data });
     }
+    if (req.method === 'PUT') {
+      const id = Number(req.body?.id);
+      const active = req.body?.active;
+      if (!id || typeof active !== 'boolean') return send(res, 400, { error: '사용자 ID와 활성화 상태가 필요합니다.' });
+      const { data: existing, error: findError } = await service.from('users').select('email').eq('id', id).single();
+      if (findError) throw findError;
+      if (existing.email?.toLowerCase() === SUPER_ADMIN_EMAIL && active === false) {
+        return send(res, 400, { error: '최고관리자 계정은 비활성화할 수 없습니다.' });
+      }
+      const { data, error } = await service.from('users').update({ active, updated_at: new Date().toISOString() }).eq('id', id).select().single();
+      if (error) throw error;
+      return send(res, 200, { user: data });
+    }
     if (req.method === 'DELETE') {
       const id = Number(req.body?.id);
       if (!id) return send(res, 400, { error: '사용자 ID가 필요합니다.' });
-      const { data, error } = await service.from('users').update({ active: false, updated_at: new Date().toISOString() }).eq('id', id).select().single();
-      if (error) throw error;
-      return send(res, 200, { user: data });
+      return send(res, 405, { error: '영구 삭제는 지원하지 않습니다. 활성화 상태를 변경해 주세요.' });
     }
     if (req.method !== 'POST') return send(res, 405, { error: '지원하지 않는 요청입니다.' });
 
@@ -128,6 +146,7 @@ export default async function handler(req, res) {
         const { temporary_password, ...profile } = row;
         const { data: existing, error: findError } = await service.from('users').select('id').eq('email', row.email).maybeSingle();
         if (findError) throw findError;
+        if (row.email === SUPER_ADMIN_EMAIL) profile.sys_role = '관리자';
         const payload = { ...profile, auth_user_id: authUser.id, active: true, updated_at: new Date().toISOString() };
         const write = existing
           ? await service.from('users').update(payload).eq('id', existing.id)
