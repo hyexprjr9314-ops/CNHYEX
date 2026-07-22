@@ -2302,12 +2302,26 @@
             console.log('Realtime auto-broadcast:', broadcastErr);
           }
         }
+
+        // Push Master State to Supabase Central Cloud Table
+        if (!isReceivingBroadcast && supabaseClient) {
+          supabaseClient
+            .from('cnhy_system_state')
+            .upsert({
+              id: 'master_state',
+              state_data: { usersDb, customManualMatchingsDb, updatedAt: new Date().toISOString() }
+            })
+            .then(({ error }) => {
+              if (error) console.log('Supabase Cloud State upsert warning:', error);
+              else console.log('☁️ Successfully Saved Master State to Supabase Central Cloud DB!');
+            });
+        }
       } catch (e) {
         console.error('LocalStorage write failed:', e);
       }
     }
 
-    function loadFromLocalStorage() {
+    async function loadFromLocalStorage() {
       try {
         const u = localStorage.getItem('cnhy_users_db');
         const c = localStorage.getItem('cnhy_cycles_db');
@@ -2324,6 +2338,32 @@
         cycleScoresDb = cs ? JSON.parse(cs) : JSON.parse(JSON.stringify(DEFAULT_CYCLE_SCORES_DB));
         if (m) customManualMatchingsDb = JSON.parse(m);
         if (sessCur) currentLoggedInUser = JSON.parse(sessCur);
+
+        // Fetch Central Master State from Supabase Cloud Table
+        if (supabaseClient) {
+          try {
+            const { data, error } = await supabaseClient
+              .from('cnhy_system_state')
+              .select('state_data')
+              .eq('id', 'master_state')
+              .maybeSingle();
+
+            if (data && data.state_data) {
+              console.log("☁️ Successfully Connected & Loaded Master State from Supabase Central Cloud DB!");
+              if (data.state_data.usersDb && Array.isArray(data.state_data.usersDb)) {
+                usersDb = data.state_data.usersDb;
+              }
+              if (data.state_data.customManualMatchingsDb && Array.isArray(data.state_data.customManualMatchingsDb)) {
+                customManualMatchingsDb = data.state_data.customManualMatchingsDb;
+              }
+              // Save locally after cloud fetch
+              localStorage.setItem('cnhy_users_db', JSON.stringify(usersDb));
+              localStorage.setItem('cnhy_manual_matchings_db', JSON.stringify(customManualMatchingsDb));
+            }
+          } catch (cloudFetchErr) {
+            console.log('Supabase Cloud State fetch fallback:', cloudFetchErr);
+          }
+        }
 
         // MANDATORY SECURITY AUTO-GUARD: System Master Admin (유종열) MUST ALWAYS EXIST
         const masterAdminSeed = DEFAULT_USERS_DB.find(u => u.email.toLowerCase() === 'jongyeol@hanyang.com');
