@@ -229,12 +229,13 @@
       </div>
     </div>
 
-    <!-- Right Header User Info & Guide Button -->
+    <!-- Right Header User Info & Live Auto Sync Badge -->
     <div class="flex items-center gap-2.5 hidden" id="header-user-info">
-      <button onclick="triggerRealtimeCloudSync(true)" title="클라우드 DB 실시간 동기화" class="text-xs bg-gradient-to-r from-blue-600/30 to-teal-600/30 hover:from-blue-600/50 hover:to-teal-600/50 text-cyan-300 border border-cyan-500/40 px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shadow-lg shadow-cyan-950/40">
-        <i class="fa-solid fa-cloud-arrow-down text-cyan-400 animate-bounce"></i>
-        <span>🔄 실시간 DB 동기화</span>
-      </button>
+      <!-- 24H Live Auto Sync Badge -->
+      <div title="24시간 실시간 무자각 자동 클라우드 동기화 활성화됨" class="text-xs bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 shadow-lg shadow-emerald-950/20">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+        <span>🟢 실시간 자동동기화 ON</span>
+      </div>
 
       <button onclick="openGuideModal(false)" class="text-xs bg-gradient-to-r from-teal-500/20 to-teal-600/20 hover:from-teal-500/30 hover:to-teal-600/30 text-teal-300 border border-teal-500/40 px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shadow-lg shadow-teal-900/20">
         <i class="fa-solid fa-book-open text-brandTeal"></i>
@@ -2159,18 +2160,18 @@
     const SUPABASE_ANON_KEY = "sb_publishable_KgmJfj59fmywdVwzhLQ-4Q_C8rP-Dcb";
 
     let supabaseClient = null;
-    let isReceivingBroadcast = false;
+    let syncDebounceTimer = null;
 
     if (window.supabase && SUPABASE_URL.includes("supabase.co")) {
       try {
         supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         console.log("⚡ Supabase Realtime Cloud Client Successfully Connected:", SUPABASE_URL);
 
-        // Listen for Realtime Broadcasts from other devices
+        // Smart Scoped Realtime Listener
         realtimeChannel = supabaseClient.channel('cnhy-hr-live-sync');
         realtimeChannel
           .on('broadcast', { event: 'sync_data' }, (payload) => {
-            console.log("📡 Received Realtime Broadcast Data from another device:", payload);
+            console.log("📡 Received Smart Scoped Realtime Broadcast Data:", payload);
             if (payload && payload.payload) {
               isReceivingBroadcast = true;
               if (payload.payload.usersDb && Array.isArray(payload.payload.usersDb)) {
@@ -2180,11 +2181,23 @@
                 customManualMatchingsDb = payload.payload.customManualMatchingsDb;
               }
               saveToLocalStorage();
-              populateCycleSelects();
-              if (currentActiveView === 'myresults') renderMyResults();
-              if (currentActiveView === 'admin') renderUsersTable();
-              if (currentActiveView === 'list') renderEmployeeGrid();
-              isReceivingBroadcast = false;
+
+              // Smart Scoped Safety Fence: Skip DOM re-rendering if user is currently writing an evaluation in 'eval' view!
+              if (currentActiveView === 'eval') {
+                console.log("🔒 Smart Scoped Sync: User is actively writing evaluation form. Postponed UI re-rendering to protect input.");
+                isReceivingBroadcast = false;
+                return;
+              }
+
+              // Debounced UI Refresh (300ms) to prevent screen flickering & render collisions
+              clearTimeout(syncDebounceTimer);
+              syncDebounceTimer = setTimeout(() => {
+                populateCycleSelects();
+                if (currentActiveView === 'myresults') renderMyResults();
+                if (currentActiveView === 'admin') renderUsersTable();
+                if (currentActiveView === 'list') renderEmployeeGrid();
+                isReceivingBroadcast = false;
+              }, 300);
             }
           })
           .subscribe();
