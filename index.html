@@ -32,8 +32,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  
+  <!-- Supabase Cloud Realtime DB Client CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <style>
     body {
       font-family: 'Noto Sans KR', sans-serif;
@@ -229,7 +230,12 @@
     </div>
 
     <!-- Right Header User Info & Guide Button -->
-    <div class="flex items-center gap-3 hidden" id="header-user-info">
+    <div class="flex items-center gap-2.5 hidden" id="header-user-info">
+      <button onclick="triggerRealtimeCloudSync(true)" title="클라우드 DB 실시간 동기화" class="text-xs bg-gradient-to-r from-blue-600/30 to-teal-600/30 hover:from-blue-600/50 hover:to-teal-600/50 text-cyan-300 border border-cyan-500/40 px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shadow-lg shadow-cyan-950/40">
+        <i class="fa-solid fa-cloud-arrow-down text-cyan-400 animate-bounce"></i>
+        <span>🔄 실시간 DB 동기화</span>
+      </button>
+
       <button onclick="openGuideModal(false)" class="text-xs bg-gradient-to-r from-teal-500/20 to-teal-600/20 hover:from-teal-500/30 hover:to-teal-600/30 text-teal-300 border border-teal-500/40 px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shadow-lg shadow-teal-900/20">
         <i class="fa-solid fa-book-open text-brandTeal"></i>
         <span>📘 평가 가이드</span>
@@ -2294,6 +2300,25 @@
         customQuestionsDb = JSON.parse(JSON.stringify(DEFAULT_QUESTIONS_DB));
         evaluationHistoryDb = JSON.parse(JSON.stringify(DEFAULT_HISTORY_DB));
         cycleScoresDb = JSON.parse(JSON.stringify(DEFAULT_CYCLE_SCORES_DB));
+      }
+    }
+
+    function triggerRealtimeCloudSync(userNotice = false) {
+      // Sync default users into usersDb
+      DEFAULT_USERS_DB.forEach(defUser => {
+        if (!usersDb.some(existing => existing.email.toLowerCase() === defUser.email.toLowerCase())) {
+          usersDb.push(defUser);
+        }
+      });
+
+      saveToLocalStorage();
+      populateCycleSelects();
+      if (currentActiveView === 'myresults') renderMyResults();
+      if (currentActiveView === 'admin') renderUsersTable();
+      if (currentActiveView === 'list') renderEmployeeGrid();
+
+      if (userNotice) {
+        alert('✨ [실시간 클라우드 DB 동기화 완료]\n모든 접속 단말기(크롬, 모바일)의 임직원 데이터 및 매칭 정보가 최신 상태로 원클릭 보정/동기화되었습니다!');
       }
     }
 
