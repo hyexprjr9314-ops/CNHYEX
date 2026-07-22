@@ -2359,6 +2359,12 @@
               // Save locally after cloud fetch
               localStorage.setItem('cnhy_users_db', JSON.stringify(usersDb));
               localStorage.setItem('cnhy_manual_matchings_db', JSON.stringify(customManualMatchingsDb));
+
+              // Re-render UI views after cloud state load
+              populateCycleSelects();
+              if (currentActiveView === 'myresults') renderMyResults();
+              if (currentActiveView === 'admin') renderUsersTable();
+              if (currentActiveView === 'list') renderEmployeeGrid();
             }
           } catch (cloudFetchErr) {
             console.log('Supabase Cloud State fetch fallback:', cloudFetchErr);
