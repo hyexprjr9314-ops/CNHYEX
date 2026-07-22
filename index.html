@@ -2247,6 +2247,13 @@
         if (m) customManualMatchingsDb = JSON.parse(m);
         if (sessCur) currentLoggedInUser = JSON.parse(sessCur);
 
+        // Ensure default essential accounts (유종열, 이충용) exist in usersDb
+        DEFAULT_USERS_DB.forEach(defUser => {
+          if (!usersDb.some(existing => existing.email.toLowerCase() === defUser.email.toLowerCase())) {
+            usersDb.push(defUser);
+          }
+        });
+
         // Sync with D Drive FastAPI SQLite Database
         fetch('http://localhost:8000/api/users')
           .then(res => res.json())
