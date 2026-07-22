@@ -2317,8 +2317,9 @@
           }
         }
 
-        // Push Master State to Supabase Central Cloud Table
+        // Push Master State to Supabase PostgreSQL Database Tables
         if (!isReceivingBroadcast && supabaseClient) {
+          // 1. Save master state JSON snapshot
           supabaseClient
             .from('cnhy_system_state')
             .upsert({
@@ -2329,6 +2330,32 @@
               if (error) console.log('Supabase Cloud State upsert warning:', error);
               else console.log('☁️ Successfully Saved Master State to Supabase Central Cloud DB!');
             });
+
+          // 2. Direct Upsert to public.users PostgreSQL Table
+          if (usersDb && usersDb.length > 0) {
+            const pgUsers = usersDb.map(u => ({
+              id: u.id,
+              name: u.name,
+              email: u.email,
+              dept: u.dept,
+              workplace: u.workplace,
+              role: u.role,
+              type: u.type,
+              sys_role: u.sysRole || '일반사용자',
+              company: u.company,
+              joindate: u.joindate || new Date().toISOString().split('T')[0],
+              phone: u.phone || '010-0000-0000',
+              active: true
+            }));
+
+            supabaseClient
+              .from('users')
+              .upsert(pgUsers, { onConflict: 'id' })
+              .then(({ error }) => {
+                if (error) console.log('Supabase PostgreSQL users upsert warning:', error);
+                else console.log('🐘 Successfully Synced', pgUsers.length, 'Users to PostgreSQL public.users Table!');
+              });
+          }
         }
       } catch (e) {
         console.error('LocalStorage write failed:', e);
@@ -2340,33 +2367,54 @@
         const sessCur = sessionStorage.getItem('cnhy_session_user');
         if (sessCur) currentLoggedInUser = JSON.parse(sessCur);
 
-        // 100% Cloud-First Architecture: Read directly from Supabase Cloud Table FIRST
-        let loadedFromCloud = false;
+        // 100% Supabase PostgreSQL Direct Queries (Pure Server Central DB Architecture)
         if (supabaseClient) {
           try {
-            const { data, error } = await supabaseClient
-              .from('cnhy_system_state')
-              .select('state_data')
-              .eq('id', 'master_state')
-              .maybeSingle();
+            // 1. Fetch Users from public.users table
+            const { data: dbUsers, error: usersErr } = await supabaseClient
+              .from('users')
+              .select('*')
+              .order('id', { ascending: true });
 
-            if (data && data.state_data && data.state_data.usersDb) {
-              console.log("☁️ Supabase Cloud DB Direct Connected: Loaded Pure Master Cloud State!");
-              usersDb = data.state_data.usersDb;
-              loadedFromCloud = true;
-              if (data.state_data.customManualMatchingsDb && Array.isArray(data.state_data.customManualMatchingsDb)) {
-                customManualMatchingsDb = data.state_data.customManualMatchingsDb;
-              }
+            if (dbUsers && dbUsers.length > 0) {
+              console.log("🐘 Supabase PostgreSQL DB Direct Connected: Fetched", dbUsers.length, "users!");
+              usersDb = dbUsers.map(u => ({
+                id: u.id,
+                name: u.name,
+                email: u.email,
+                dept: u.dept,
+                workplace: u.workplace,
+                role: u.role,
+                type: u.type,
+                sysRole: u.sys_role,
+                company: u.company,
+                joindate: u.joindate,
+                phone: u.phone,
+                active: u.active,
+                raw_score: 85.0,
+                final_score: 85.0,
+                is_adjusted: false,
+                final_grade: 'A',
+                completed: 6,
+                total: 6
+              }));
             }
 
-            // Ensure Master Admin account exists in usersDb without triggering broadcast recursion
-            const adminAccount = DEFAULT_USERS_DB.find(u => u.email === 'admin@hanyang.com');
-            if (adminAccount && !usersDb.some(u => u.email === 'admin@hanyang.com')) {
-              usersDb.push(adminAccount);
-              localStorage.setItem('cnhy_users_db', JSON.stringify(usersDb));
+            // 2. Fetch Matchings from public.matchings table
+            const { data: dbMatchings, error: matchErr } = await supabaseClient
+              .from('matchings')
+              .select('*');
+
+            if (dbMatchings && Array.isArray(dbMatchings)) {
+              customManualMatchingsDb = dbMatchings.map(m => ({
+                id: m.id,
+                evaluatorId: m.evaluator_id,
+                targetId: m.target_id,
+                type: m.type
+              }));
             }
           } catch (cloudFetchErr) {
-            console.log('Supabase Cloud State fetch fallback:', cloudFetchErr);
+            console.log('Supabase PostgreSQL fetch fallback:', cloudFetchErr);
           }
         }
 
@@ -3843,10 +3891,31 @@
           else currentTargetEmp.final_grade = 'D';
         }
 
+        const commentVal = document.getElementById('eval-comment-input').value;
         const subKey = `${currentLoggedInUser.id}_${currentTargetEmp.id}`;
         const mySubmissions = JSON.parse(localStorage.getItem('cnhy_user_submissions') || '{}');
         mySubmissions[subKey] = true;
         localStorage.setItem('cnhy_user_submissions', JSON.stringify(mySubmissions));
+
+        // Direct Insert/Upsert to Supabase PostgreSQL public.evaluations Table
+        if (supabaseClient) {
+          supabaseClient
+            .from('evaluations')
+            .upsert({
+              cycle_id: 1,
+              evaluator_id: currentLoggedInUser.id,
+              target_id: currentTargetEmp.id,
+              perf_score: perfVal,
+              collab_score: collabVal,
+              growth_score: growthVal,
+              harmony_score: harmonyVal,
+              qualitative_comment: commentVal
+            }, { onConflict: 'cycle_id,evaluator_id,target_id' })
+            .then(({ error }) => {
+              if (error) console.log('Supabase PostgreSQL evaluation insert error:', error);
+              else console.log('🐘 Successfully Saved Evaluation to PostgreSQL public.evaluations Table!');
+            });
+        }
 
         // Save detailed submission values for future editing/prefilling
         const savedDetails = JSON.parse(localStorage.getItem('cnhy_user_submission_details') || '{}');
@@ -3855,7 +3924,7 @@
           collab: collabVal,
           growth: growthVal,
           harmony: harmonyVal,
-          comment: document.getElementById('eval-comment-input').value,
+          comment: commentVal,
           updatedAt: new Date().toISOString()
         };
         localStorage.setItem('cnhy_user_submission_details', JSON.stringify(savedDetails));
