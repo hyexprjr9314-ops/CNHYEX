@@ -1156,89 +1156,104 @@
 
       <!-- ADMIN SUB-TAB: EVALUATION MATCHING MANAGEMENT (🔀 평가 매칭 관리 서브탭) -->
       <div id="admin-subtab-matching" class="hidden space-y-6">
-        <!-- 1. Global Isolation Rule Card -->
-        <div class="glass-card rounded-2xl p-6 border border-purple-500/30 bg-purple-950/10 space-y-4">
-          <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <!-- 1. Global Matching Engine Control Card -->
+        <div class="glass-card rounded-2xl p-6 border border-purple-500/40 bg-purple-950/20 space-y-4">
+          <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-purple-500/30 pb-4">
             <div>
-              <h3 class="text-base font-bold text-white flex items-center gap-2">
-                <i class="fa-solid fa-shield-halved text-purple-400"></i>
-                <span>🔒 현장 영업소 동일 소속사 자동 격리 매칭 알고리즘 규칙</span>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="bg-purple-500/20 text-purple-300 border border-purple-500/40 text-[10px] font-bold px-2.5 py-0.5 rounded-full">MATCHING ENGINE CONFIG</span>
+                <span class="text-xs text-purple-300 font-bold" id="matching-mode-status-text">⚡ 현재 모드: 자동 격리 매칭 모드 (알고리즘 가동 중)</span>
+              </div>
+              <h3 class="text-xl font-black text-white flex items-center gap-2">
+                <i class="fa-solid fa-wand-magic-sparkles text-purple-400"></i>
+                <span>전사 동료평가 매칭 알고리즘 제어 센터</span>
               </h3>
-              <p class="text-xs text-slate-400 mt-1">현장 영업소(강남/천안/대전 등) 직원은 담합 차단을 위해 동일 소속사(한양-한양, 충남-충남) 풀에서만 자동 매칭됩니다.</p>
+              <p class="text-xs text-slate-300 mt-1">자동 격리 알고리즘을 끄고 관리자가 100% 수동 지정 매칭으로 전환할 수 있습니다.</p>
             </div>
-            <span class="text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-3 py-1 rounded-full flex items-center gap-1.5">
-              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span>자동 격리 알고리즘 ON</span>
-            </span>
+            <button onclick="toggleAutoMatchingMode()" id="toggle-matching-mode-btn" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold px-4 py-2.5 rounded-xl text-xs shadow-lg transition flex items-center gap-2 border border-purple-400/40">
+              <i class="fa-solid fa-toggle-on text-base"></i>
+              <span>자동 매칭 삭제 및 100% 수동 모드 전환</span>
+            </button>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-slate-300">
             <div class="bg-slate-900/90 p-4 rounded-xl border border-slate-800 space-y-1.5">
               <p class="font-bold text-brandTeal flex items-center gap-1.5">
-                <i class="fa-solid fa-building"></i> 1) 본사 스태프 라인 매칭 규칙
+                <i class="fa-solid fa-robot"></i> 1) 자동 격리 매칭 모드
               </p>
               <p class="text-slate-400 text-[11px] leading-relaxed">
-                인사총무, 경리, 사업 등 교류가 활발한 본사 부서는 <strong class="text-brandTeal">양사 간 자유로운 교차 다면평가</strong> 매칭이 허용됩니다.
+                영업소 지점 직원은 동일 소속사(한양-한양, 충남-충남)끼리만 자동 배치되며, 본사 스태프는 양사 간 자유 교차 매칭됩니다.
               </p>
             </div>
             <div class="bg-slate-900/90 p-4 rounded-xl border border-slate-800 space-y-1.5">
               <p class="font-bold text-amber-400 flex items-center gap-1.5">
-                <i class="fa-solid fa-bus-simple"></i> 2) 현장 영업소 라인 격리 규칙
+                <i class="fa-solid fa-hand-pointer"></i> 2) 100% 관리자 수동 매칭 모드 (알고리즘 OFF)
               </p>
               <p class="text-slate-400 text-[11px] leading-relaxed">
-                실질 교류가 적은 지점 영업소 직원은 <strong class="text-amber-300">동일 소속사(한양 ↔ 한양, 충남 ↔ 충남)</strong>로만 매칭이 제한 통제됩니다.
+                자동 규칙이 완전히 비활성화되며, 아래 <strong>인터랙티브 태그 연결 판넬에서 관리자가 직접 1-Click 지정한 관계</strong>로만 평가가 실시됩니다.
               </p>
             </div>
           </div>
         </div>
 
-        <!-- 2. Manual 1:1 Custom Matching Assignment Panel -->
+        <!-- 2. Interactive 2-Split 1-Click Tag Connection Matching Visual Studio -->
         <div class="glass-card rounded-2xl p-6 border border-slate-800 space-y-4">
-          <div class="flex justify-between items-center">
-            <h3 class="text-base font-bold text-white flex items-center gap-2">
-              <i class="fa-solid fa-link text-brandGold"></i>
-              <span>🖐️ 관리자 예외 1:1 수동 평가 매칭 지정 (Override)</span>
-            </h3>
-            <span class="text-xs text-slate-400">특수 파견 및 TF팀 수동 연결 지원</span>
+          <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+            <div>
+              <h3 class="text-base font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-diagram-project text-brandTeal"></i>
+                <span>🎯 인터랙티브 1-Click 수동 평가 매칭 비주얼 스튜디오</span>
+              </h3>
+              <p class="text-xs text-slate-400 mt-0.5">왼쪽에서 평가자를 클릭하면, 해당 평가자가 누구를 평가하는지 오른쪽 피평가자 태그가 실시간 하이라이트됩니다.</p>
+            </div>
+            <span class="text-xs text-slate-400">등록된 매칭 연결: <strong id="interactive-matching-count" class="text-brandTeal font-bold">0</strong>건</span>
           </div>
 
-          <form onsubmit="handleManualMatchingSubmit(event)" class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-900/90 p-4 rounded-xl border border-slate-800">
-            <div>
-              <label class="block text-xs font-bold text-slate-300 mb-1">📤 평가자 (평가 작성인)</label>
-              <select id="manual-evaluator-select" required class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-xs text-white font-bold">
-                <!-- Dynamically Populated -->
-              </select>
+          <!-- 2-Column Split Workspace -->
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+            <!-- Left Panel: Evaluator Selector List (4 cols) -->
+            <div class="md:col-span-4 bg-slate-900/90 p-4 rounded-2xl border border-slate-800 space-y-3">
+              <h4 class="text-xs font-bold text-white flex items-center justify-between border-b border-slate-800 pb-2">
+                <span class="flex items-center gap-1.5">
+                  <i class="fa-solid fa-user-pen text-brandTeal"></i>
+                  <span>1. 평가자 선택 (작성인)</span>
+                </span>
+                <span class="text-[10px] text-slate-500">클릭 시 매칭 조회</span>
+              </h4>
+              <div class="space-y-2 max-h-[500px] overflow-y-auto custom-scrollbar pr-1" id="interactive-evaluator-list">
+                <!-- Dynamically Rendered Evaluator Cards -->
+              </div>
             </div>
-            <div>
-              <label class="block text-xs font-bold text-slate-300 mb-1">📥 피평가자 (평가 대상인)</label>
-              <select id="manual-target-select" required class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-xs text-white font-bold">
-                <!-- Dynamically Populated -->
-              </select>
-            </div>
-            <div class="flex items-end">
-              <button type="submit" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-lg shadow-purple-900/30">
-                <i class="fa-solid fa-plus"></i>
-                <span>수동 1:1 매칭 연결 추가</span>
-              </button>
-            </div>
-          </form>
 
-          <!-- Current Custom Matching List Table -->
-          <div class="overflow-x-auto pt-2">
-            <table class="w-full text-left text-xs text-slate-300 border-collapse">
-              <thead>
-                <tr class="border-b border-slate-800 text-slate-400 uppercase font-bold">
-                  <th class="py-2.5 px-3">평가자 (작성인)</th>
-                  <th class="py-2.5 px-3">피평가자 (대상인)</th>
-                  <th class="py-2.5 px-3">매칭 유형</th>
-                  <th class="py-2.5 px-3">격리 규정 상태</th>
-                  <th class="py-2.5 px-3 text-center">관리</th>
-                </tr>
-              </thead>
-              <tbody id="manual-matching-table-body" class="divide-y divide-slate-800/60">
-                <!-- Dynamically Rendered -->
-              </tbody>
-            </table>
+            <!-- Right Panel: Evaluatee Tag Selection Grid (8 cols) -->
+            <div class="md:col-span-8 bg-slate-900/90 p-4 rounded-2xl border border-slate-800 space-y-4 flex flex-col justify-between">
+              <div>
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-800 pb-3">
+                  <div>
+                    <h4 class="text-xs font-bold text-white flex items-center gap-2" id="interactive-target-header">
+                      <i class="fa-solid fa-bullseye text-brandGold"></i>
+                      <span>2. 피평가 대상자 지정 (1-Click 매칭 온/오프)</span>
+                    </h4>
+                    <p class="text-[11px] text-slate-400 mt-0.5" id="interactive-selected-evaluator-info">선택된 평가자: 왼쪽에서 평가자를 클릭하세요.</p>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <button onclick="selectAllTargetsForSelectedEvaluator()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold px-2.5 py-1 rounded-lg border border-slate-700 transition">전체 선택</button>
+                    <button onclick="clearAllTargetsForSelectedEvaluator()" class="bg-slate-800 hover:bg-slate-700 text-rose-300 text-[11px] font-bold px-2.5 py-1 rounded-lg border border-slate-700 transition">전체 해제</button>
+                  </div>
+                </div>
+
+                <!-- Evaluatee Interactive Tags Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-3 max-h-[440px] overflow-y-auto custom-scrollbar pr-1" id="interactive-target-tags-grid">
+                  <!-- Dynamically Rendered Tags -->
+                </div>
+              </div>
+
+              <!-- Quick Status Footer -->
+              <div class="bg-slate-950/80 p-3 rounded-xl border border-slate-800/80 flex justify-between items-center text-xs mt-3">
+                <span class="text-slate-400">선택된 평가자의 매칭 수: <strong id="selected-evaluator-match-count" class="text-brandGold font-bold">0명</strong></span>
+                <span class="text-[11px] text-slate-500">※ 태그를 클릭하면 즉시 1:1 수동 매칭이 추가/삭제됩니다.</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1870,6 +1885,7 @@
         localStorage.setItem('cnhy_questions_db', JSON.stringify(customQuestionsDb));
         localStorage.setItem('cnhy_history_db', JSON.stringify(evaluationHistoryDb));
         localStorage.setItem('cnhy_cycle_scores_db', JSON.stringify(cycleScoresDb));
+        localStorage.setItem('cnhy_manual_matchings_db', JSON.stringify(customManualMatchingsDb));
         if (currentLoggedInUser) {
           sessionStorage.setItem('cnhy_session_user', JSON.stringify(currentLoggedInUser));
           sessionStorage.setItem('cnhy_session_view', currentActiveView);
@@ -1890,6 +1906,7 @@
         const q = localStorage.getItem('cnhy_questions_db');
         const h = localStorage.getItem('cnhy_history_db');
         const cs = localStorage.getItem('cnhy_cycle_scores_db');
+        const m = localStorage.getItem('cnhy_manual_matchings_db');
         const sessCur = sessionStorage.getItem('cnhy_session_user');
 
         usersDb = u ? JSON.parse(u) : JSON.parse(JSON.stringify(DEFAULT_USERS_DB));
@@ -1897,6 +1914,7 @@
         customQuestionsDb = q ? JSON.parse(q) : JSON.parse(JSON.stringify(DEFAULT_QUESTIONS_DB));
         evaluationHistoryDb = h ? JSON.parse(h) : JSON.parse(JSON.stringify(DEFAULT_HISTORY_DB));
         cycleScoresDb = cs ? JSON.parse(cs) : JSON.parse(JSON.stringify(DEFAULT_CYCLE_SCORES_DB));
+        if (m) customManualMatchingsDb = JSON.parse(m);
         if (sessCur) currentLoggedInUser = JSON.parse(sessCur);
 
         // Sync with D Drive FastAPI SQLite Database
@@ -2508,92 +2526,202 @@
     }
 
     // Manual Matching Management State & Logic
+    let isAutoMatchingEnabled = true;
+    let selectedEvaluatorForMatching = null;
     let customManualMatchingsDb = [
-      { id: 1, evaluatorId: 4, targetId: 5, type: '수동 지정 매칭 (예외 파견)' }
+      { id: 1, evaluatorId: 4, targetId: 5, type: '수동 지정 매칭' }
     ];
 
-    function renderManualMatchingTable() {
-      // Populate dropdown selects
-      const evalSelect = document.getElementById('manual-evaluator-select');
-      const targetSelect = document.getElementById('manual-target-select');
+    function toggleAutoMatchingMode() {
+      isAutoMatchingEnabled = !isAutoMatchingEnabled;
+      localStorage.setItem('cnhy_auto_matching_enabled', JSON.stringify(isAutoMatchingEnabled));
 
-      if (evalSelect && targetSelect) {
-        evalSelect.innerHTML = usersDb.map(u => `<option value="${u.id}">${u.company} ${u.dept}부 ${u.name} ${u.role}</option>`).join('');
-        targetSelect.innerHTML = usersDb.map(u => `<option value="${u.id}">${u.company} ${u.dept}부 ${u.name} ${u.role}</option>`).join('');
+      alert(`[매칭 모드 변경] 전사 동료평가 매칭 알고리즘이 ${isAutoMatchingEnabled ? '🟢 [자동 격리 매칭 모드 ON]' : '⚡ [100% 관리자 수동 지정 모드 ON (알고리즘 OFF)]'} 로 변경되었습니다!`);
+
+      renderManualMatchingTable();
+      renderEmployeeGrid();
+    }
+
+    function renderManualMatchingTable() {
+      // 1. Sync matching mode state from storage
+      const storedAuto = localStorage.getItem('cnhy_auto_matching_enabled');
+      if (storedAuto !== null) {
+        isAutoMatchingEnabled = JSON.parse(storedAuto);
       }
 
-      const tbody = document.getElementById('manual-matching-table-body');
-      if (!tbody) return;
+      const statusText = document.getElementById('matching-mode-status-text');
+      const toggleBtn = document.getElementById('toggle-matching-mode-btn');
 
-      tbody.innerHTML = '';
-      if (customManualMatchingsDb.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">등록된 수동 1:1 예외 매칭 내역이 없습니다. (자동 난수 격리 알고리즘 기본 동작 중)</td></tr>`;
+      if (statusText) {
+        statusText.innerText = isAutoMatchingEnabled
+          ? '🟢 현재 모드: 자동 격리 매칭 모드 (알고리즘 가동 중)'
+          : '⚡ 현재 모드: 100% 관리자 수동 지정 모드 (알고리즘 OFF)';
+        statusText.className = isAutoMatchingEnabled ? 'text-xs text-emerald-300 font-bold' : 'text-xs text-amber-300 font-bold';
+      }
+
+      if (toggleBtn) {
+        toggleBtn.innerHTML = isAutoMatchingEnabled
+          ? `<i class="fa-solid fa-toggle-on text-base text-emerald-300"></i> <span>자동 매칭 삭제 및 100% 수동 모드 전환</span>`
+          : `<i class="fa-solid fa-toggle-off text-base text-amber-300"></i> <span>자동 격리 매칭 모드 복구 (ON)</span>`;
+      }
+
+      // Update total matching count indicator
+      const totalCountEl = document.getElementById('interactive-matching-count');
+      if (totalCountEl) totalCountEl.innerText = `${customManualMatchingsDb.length}건`;
+
+      // 2. Render Left Evaluator List Cards
+      const evalListContainer = document.getElementById('interactive-evaluator-list');
+      if (!evalListContainer) return;
+
+      evalListContainer.innerHTML = '';
+
+      if (!selectedEvaluatorForMatching && usersDb.length > 0) {
+        selectedEvaluatorForMatching = usersDb[0].id;
+      }
+
+      usersDb.forEach(u => {
+        const matchesCount = customManualMatchingsDb.filter(m => m.evaluatorId === u.id).length;
+        const isSelected = selectedEvaluatorForMatching === u.id;
+
+        const card = document.createElement('div');
+        card.onclick = () => selectEvaluatorForInteractiveMatching(u.id);
+        card.className = `p-3 rounded-xl border transition cursor-pointer flex justify-between items-center ${
+          isSelected
+            ? 'bg-brandTeal/20 border-brandTeal text-white shadow-lg ring-1 ring-brandTeal'
+            : 'bg-slate-950/70 border-slate-800 text-slate-300 hover:border-slate-700'
+        }`;
+
+        card.innerHTML = `
+          <div>
+            <div class="flex items-center gap-1.5">
+              <span class="text-[10px] font-bold px-1.5 py-0.5 rounded ${u.company.includes('한양') ? 'bg-blue-500/20 text-blue-300' : 'bg-orange-500/20 text-orange-300'}">${u.company}</span>
+              <strong class="text-xs font-bold ${isSelected ? 'text-white' : 'text-slate-200'}">${u.name} ${u.role}</strong>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-0.5">${u.dept}부 • ${u.workplace}</p>
+          </div>
+          <span class="text-[11px] font-bold px-2 py-0.5 rounded-full ${matchesCount > 0 ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' : 'bg-slate-800 text-slate-500'}">
+            ${matchesCount}명 매칭
+          </span>
+        `;
+        evalListContainer.appendChild(card);
+      });
+
+      // 3. Render Right Target Interactive Tags Grid
+      renderInteractiveTargetTags();
+    }
+
+    function selectEvaluatorForInteractiveMatching(evaluatorId) {
+      selectedEvaluatorForMatching = evaluatorId;
+      renderManualMatchingTable();
+    }
+
+    function renderInteractiveTargetTags() {
+      const tagsGrid = document.getElementById('interactive-target-tags-grid');
+      const headerInfo = document.getElementById('interactive-selected-evaluator-info');
+      const matchCountEl = document.getElementById('selected-evaluator-match-count');
+
+      if (!tagsGrid) return;
+      tagsGrid.innerHTML = '';
+
+      const evaluator = usersDb.find(u => u.id === selectedEvaluatorForMatching);
+      if (!evaluator) {
+        if (headerInfo) headerInfo.innerText = '선택된 평가자: 왼쪽에서 평가자를 선택하세요.';
         return;
       }
 
-      customManualMatchingsDb.forEach(m => {
-        const ev = usersDb.find(u => u.id === m.evaluatorId) || { name: '미지정', company: '', dept: '' };
-        const tg = usersDb.find(u => u.id === m.targetId) || { name: '미지정', company: '', dept: '' };
+      if (headerInfo) {
+        headerInfo.innerHTML = `선택된 평가자: <strong class="text-white">${evaluator.company} ${evaluator.dept}부 ${evaluator.name} ${evaluator.role}</strong>`;
+      }
 
-        const isEvBranch = ev.workplace && ev.workplace.includes('영업소');
-        const isTgBranch = tg.workplace && tg.workplace.includes('영업소');
-        const isSameCompany = ev.company === tg.company;
+      const activeTargetIds = customManualMatchingsDb
+        .filter(m => m.evaluatorId === selectedEvaluatorForMatching)
+        .map(m => m.targetId);
 
-        let isolationBadge = `<span class="bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded text-[10px] font-bold border border-emerald-500/30">🟢 규정 준수</span>`;
-        if ((isEvBranch || isTgBranch) && !isSameCompany) {
-          isolationBadge = `<span class="bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded text-[10px] font-bold border border-amber-500/30">⚠️ 수동 예외 교차 허용</span>`;
-        }
+      if (matchCountEl) matchCountEl.innerText = `${activeTargetIds.length}명`;
 
-        const tr = document.createElement('tr');
-        tr.className = "hover:bg-slate-800/40 transition";
-        tr.innerHTML = `
-          <td class="py-2.5 px-3 font-bold text-white">${ev.company} ${ev.dept}부 ${ev.name} ${ev.role || ''}</td>
-          <td class="py-2.5 px-3 font-bold text-white">${tg.company} ${tg.dept}부 ${tg.name} ${tg.role || ''}</td>
-          <td class="py-2.5 px-3 text-purple-300 font-medium">${m.type}</td>
-          <td class="py-2.5 px-3">${isolationBadge}</td>
-          <td class="py-2.5 px-3 text-center">
-            <button onclick="deleteManualMatching(${m.id})" class="text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 px-2 py-1 rounded text-[11px] font-bold border border-rose-500/30 transition">
-              <i class="fa-solid fa-trash-can mr-1"></i> 삭제
-            </button>
-          </td>
+      usersDb.forEach(target => {
+        if (target.id === selectedEvaluatorForMatching) return; // Exclude self (자기 자신 제외)
+
+        const isMatched = activeTargetIds.includes(target.id);
+        const tag = document.createElement('div');
+        tag.onclick = () => toggleInteractiveMatching(selectedEvaluatorForMatching, target.id);
+
+        tag.className = `p-3 rounded-xl border transition cursor-pointer flex justify-between items-center space-x-2 ${
+          isMatched
+            ? 'bg-gradient-to-r from-teal-500/20 to-emerald-500/20 border-teal-400 text-white shadow-lg shadow-teal-950/40 ring-1 ring-teal-400/50'
+            : 'bg-slate-950/50 border-slate-800/80 text-slate-400 hover:border-slate-700 hover:text-slate-200'
+        }`;
+
+        tag.innerHTML = `
+          <div class="overflow-hidden">
+            <div class="flex items-center gap-1.5">
+              <span class="text-[9px] font-bold px-1.5 py-0.2 rounded ${target.company.includes('한양') ? 'bg-blue-500/20 text-blue-300' : 'bg-orange-500/20 text-orange-300'}">${target.company}</span>
+              <strong class="text-xs font-bold ${isMatched ? 'text-teal-200' : 'text-slate-300'} truncate">${target.name} ${target.role}</strong>
+            </div>
+            <p class="text-[10px] text-slate-400 mt-0.5 truncate">${target.dept}부 • ${target.workplace}</p>
+          </div>
+          <div class="flex-shrink-0">
+            ${
+              isMatched
+                ? `<span class="bg-teal-500 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1"><i class="fa-solid fa-check"></i> 매칭ON</span>`
+                : `<span class="bg-slate-800 text-slate-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-slate-700">+ 연결</span>`
+            }
+          </div>
         `;
-        tbody.appendChild(tr);
+        tagsGrid.appendChild(tag);
       });
     }
 
-    function handleManualMatchingSubmit(e) {
-      e.preventDefault();
-      const evId = parseInt(document.getElementById('manual-evaluator-select').value);
-      const tgId = parseInt(document.getElementById('manual-target-select').value);
+    function toggleInteractiveMatching(evaluatorId, targetId) {
+      const idx = customManualMatchingsDb.findIndex(m => m.evaluatorId === evaluatorId && m.targetId === targetId);
 
-      if (evId === tgId) {
-        alert('자기 자신을 평가 매칭 상대로 지정할 수 없습니다.');
-        return;
+      if (idx !== -1) {
+        // Remove matching connection
+        customManualMatchingsDb.splice(idx, 1);
+      } else {
+        // Add matching connection
+        customManualMatchingsDb.push({
+          id: Date.now(),
+          evaluatorId: evaluatorId,
+          targetId: targetId,
+          type: '1-Click 수동 지정'
+        });
       }
 
-      const exists = customManualMatchingsDb.some(m => m.evaluatorId === evId && m.targetId === tgId);
-      if (exists) {
-        alert('이미 등록된 수동 매칭 연결입니다.');
-        return;
-      }
-
-      const newMatch = {
-        id: Date.now(),
-        evaluatorId: evId,
-        targetId: tgId,
-        type: '수동 지정 매칭 (예외 연결)'
-      };
-
-      customManualMatchingsDb.push(newMatch);
+      saveToLocalStorage();
       renderManualMatchingTable();
-      alert('수동 1:1 평가 매칭 연결이 성공적으로 등록되었습니다!');
+      renderEmployeeGrid();
     }
 
-    function deleteManualMatching(id) {
-      if (confirm('해당 수동 매칭 연결을 삭제하시겠습니까?')) {
-        customManualMatchingsDb = customManualMatchingsDb.filter(m => m.id !== id);
-        renderManualMatchingTable();
-      }
+    function selectAllTargetsForSelectedEvaluator() {
+      if (!selectedEvaluatorForMatching) return;
+
+      usersDb.forEach(target => {
+        if (target.id === selectedEvaluatorForMatching) return;
+        const exists = customManualMatchingsDb.some(m => m.evaluatorId === selectedEvaluatorForMatching && m.targetId === target.id);
+        if (!exists) {
+          customManualMatchingsDb.push({
+            id: Date.now() + Math.random(),
+            evaluatorId: selectedEvaluatorForMatching,
+            targetId: target.id,
+            type: '1-Click 전체 선택 지정'
+          });
+        }
+      });
+
+      saveToLocalStorage();
+      renderManualMatchingTable();
+      renderEmployeeGrid();
+    }
+
+    function clearAllTargetsForSelectedEvaluator() {
+      if (!selectedEvaluatorForMatching) return;
+
+      customManualMatchingsDb = customManualMatchingsDb.filter(m => m.evaluatorId !== selectedEvaluatorForMatching);
+
+      saveToLocalStorage();
+      renderManualMatchingTable();
+      renderEmployeeGrid();
     }
 
     function checkUserRole(user) {
@@ -2752,13 +2880,19 @@
       const loggedInWorkplace = loggedInUserObj ? (loggedInUserObj.workplace || '본사') : '본사';
       const isLoggedInHQ = !loggedInWorkplace.includes('영업소') && !(loggedInUserObj.dept && loggedInUserObj.dept.includes('영업소'));
 
-      // Simple & Clear Branch Matching Rule: Branch Office -> Same Company Only + Custom Manual Match Overrides
+      // Simple & Clear Branch Matching Rule: obeys 100% Manual Mode when Auto-Matching is disabled
       const targetEmployees = usersDb.filter(emp => {
         if (emp.email.toLowerCase() === loggedInEmail) return false; // Exclude self (자기평가 제외)
         if (emp.is_evaluatee === false) return false; // Exclude Evaluator Only role (⭐ 평가 전담 인원 피평가 제외)
 
         // Check if there is a custom manual 1:1 matching assigned by Admin
         const isManuallyMatched = customManualMatchingsDb.some(m => m.evaluatorId === (loggedInUserObj.id || currentLoggedInUser.id) && m.targetId === emp.id);
+
+        if (!isAutoMatchingEnabled) {
+          // 100% Manual Matching Mode (Automatic algorithm disabled completely)
+          return isManuallyMatched;
+        }
+
         if (isManuallyMatched) return true; // Always allow manually matched targets!
 
         const isEmpBranch = emp.workplace.includes('영업소') || emp.dept.includes('영업소');
