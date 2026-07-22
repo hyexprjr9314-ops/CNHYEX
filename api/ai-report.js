@@ -1,7 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 
 const PRIVILEGED_ROLES = new Set(['관리자', '임원']);
-const CATEGORY_WEIGHTS = { performance: 0.4, collaboration: 0.3, growth: 0.2, harmony: 0.1 };
 
 const send = (res, status, payload) => res.status(status).json(payload);
 
@@ -27,23 +26,40 @@ async function authenticate(req, service) {
 }
 
 async function aggregateTarget(service, cycleId, targetId) {
-  const [cycleResult, matchingsResult, evaluationsResult, adjustmentResult] = await Promise.all([
+  const [cycleResult, matchingsResult, evaluationsResult, adjustmentResult, settingsResult, usersResult] = await Promise.all([
     service.from('evaluation_cycles')
       .select('id,name,status,results_published').eq('id', cycleId).maybeSingle(),
-    service.from('matchings').select('id').eq('cycle_id', cycleId).eq('target_id', targetId),
+    service.from('matchings').select('id,evaluator_id,target_id').eq('cycle_id', cycleId).eq('target_id', targetId),
     service.from('evaluations')
       .select('matching_id,perf_score,collab_score,growth_score,harmony_score,qualitative_comment')
       .eq('cycle_id', cycleId).eq('target_id', targetId),
     service.from('evaluation_result_adjustments')
       .select('id,raw_score,final_score,final_grade,reason,adjusted_by,adjusted_at,updated_at')
-      .eq('cycle_id', cycleId).eq('target_id', targetId).maybeSingle()
+      .eq('cycle_id', cycleId).eq('target_id', targetId).maybeSingle(),
+    service.from('evaluation_settings')
+      .select('performance_weight,collaboration_weight,growth_weight,harmony_weight').eq('id', 1).single(),
+    service.from('users').select('id,active,can_evaluate,is_evaluatee')
   ]);
   if (cycleResult.error || !cycleResult.data) throw Object.assign(new Error('평가 주기를 찾을 수 없습니다.'), { status: 404 });
   if (matchingsResult.error) throw matchingsResult.error;
   if (evaluationsResult.error) throw evaluationsResult.error;
   if (adjustmentResult.error) throw adjustmentResult.error;
+  if (settingsResult.error) throw settingsResult.error;
+  if (usersResult.error) throw usersResult.error;
+  const weights = {
+    performance: Number(settingsResult.data.performance_weight) / 100,
+    collaboration: Number(settingsResult.data.collaboration_weight) / 100,
+    growth: Number(settingsResult.data.growth_weight) / 100,
+    harmony: Number(settingsResult.data.harmony_weight) / 100
+  };
 
-  const assigned = matchingsResult.data || [];
+  const userMap = new Map((usersResult.data || []).map(user => [Number(user.id), user]));
+  const assigned = (matchingsResult.data || []).filter(row => {
+    const evaluator = userMap.get(Number(row.evaluator_id));
+    const target = userMap.get(Number(row.target_id));
+    return evaluator?.active === true && evaluator.can_evaluate !== false
+      && target?.active === true && target.is_evaluatee !== false;
+  });
   const evaluations = evaluationsResult.data || [];
   const assignedIds = new Set(assigned.map(row => String(row.id)));
   const valid = evaluations.filter(row => assignedIds.has(String(row.matching_id)));
@@ -55,7 +71,8 @@ async function aggregateTarget(service, cycleId, targetId) {
       complete: false,
       assigned_count: assigned.length,
       submitted_count: valid.length,
-      adjustment: adjustmentResult.data || null
+      adjustment: adjustmentResult.data || null,
+      weights
     };
   }
 
@@ -67,10 +84,10 @@ async function aggregateTarget(service, cycleId, targetId) {
     harmony: average('harmony_score')
   };
   scores.total = Number((
-    scores.performance * CATEGORY_WEIGHTS.performance
-    + scores.collaboration * CATEGORY_WEIGHTS.collaboration
-    + scores.growth * CATEGORY_WEIGHTS.growth
-    + scores.harmony * CATEGORY_WEIGHTS.harmony
+    scores.performance * weights.performance
+    + scores.collaboration * weights.collaboration
+    + scores.growth * weights.growth
+    + scores.harmony * weights.harmony
   ).toFixed(2));
 
   return {
@@ -80,7 +97,8 @@ async function aggregateTarget(service, cycleId, targetId) {
     submitted_count: valid.length,
     scores,
     comments: valid.map(row => String(row.qualitative_comment || '').trim()).filter(Boolean),
-    adjustment: adjustmentResult.data || null
+    adjustment: adjustmentResult.data || null,
+    weights
   };
 }
 
@@ -134,7 +152,7 @@ async function generateReport(aggregate) {
     department: '비식별 처리됨',
     analysis_mode: qualitativeOnly ? 'qualitative_only' : 'scored',
     scores: qualitativeOnly ? undefined : aggregate.scores,
-    category_weights: qualitativeOnly ? undefined : CATEGORY_WEIGHTS,
+    category_weights: qualitativeOnly ? undefined : aggregate.weights,
     anonymous_comments: aggregate.comments
   };
   const response = await fetch('https://api.openai.com/v1/responses', {
@@ -204,6 +222,7 @@ export default async function handler(req, res) {
         complete: aggregate.complete,
         assigned_count: aggregate.assigned_count,
         submitted_count: aggregate.submitted_count,
+        weights: aggregate.weights,
         scores: aggregate.complete && (privileged || (!adjusted && aggregate.cycle.results_published)) ? aggregate.scores : null,
         adjusted,
         adjustment: privileged ? aggregate.adjustment : (adjusted ? { adjusted: true } : null),

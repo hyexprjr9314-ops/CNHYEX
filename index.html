@@ -534,18 +534,7 @@
 
         <div class="md:col-span-2 glass-card rounded-2xl p-6 border border-slate-800 space-y-4">
           <h3 class="text-base font-bold text-white">📌 내 목표 및 승인 현황</h3>
-          <div class="space-y-3" id="goals-list-container">
-            <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 flex justify-between items-center">
-              <div>
-                <div class="flex items-center gap-2 mb-1">
-                  <span class="bg-teal-500/20 text-brandTeal text-[10px] font-bold px-2 py-0.5 rounded">성과</span>
-                  <span class="text-xs text-emerald-400 font-bold">승인완료</span>
-                </div>
-                <h4 class="text-sm font-bold text-white">부서 간 업무 프로세스 전자화 및 자동화 툴 도입</h4>
-                <p class="text-xs text-slate-400 mt-1">💬 피드백: 관리자 승인이 완료되었습니다.</p>
-              </div>
-            </div>
-          </div>
+          <div class="space-y-3" id="goals-list-container"></div>
         </div>
       </div>
     </section>
@@ -2172,6 +2161,16 @@
     const SUPABASE_URL = "https://cjtjfbqhyeljwwkjevxj.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_KgmJfj59fmywdVwzhLQ-4Q_C8rP-Dcb";
 
+    // Remove business-data caches left by older builds. Authentication and
+    // navigation state are tab-scoped below; all business records live in Supabase.
+    [
+      'cnhy_users_db','cnhy_cycles_db','cnhy_questions_db','cnhy_history_db',
+      'cnhy_cycle_scores_db','cnhy_manual_matchings_db','cnhy_result_published',
+      'cnhy_auto_matching_enabled','cnhy_category_weights','cnhy_user_submissions',
+      'cnhy_user_submission_details','cnhy_current_user','cnhy_last_subtab','cnhy_last_view',
+      'sb-cjtjfbqhyeljwwkjevxj-auth-token'
+    ].forEach(key => localStorage.removeItem(key));
+
     let supabaseClient = null;
     if (window.supabase && SUPABASE_URL.includes("supabase.co")) {
       try {
@@ -2179,7 +2178,8 @@
           auth: {
             persistSession: true,
             autoRefreshToken: true,
-            detectSessionInUrl: true
+            detectSessionInUrl: true,
+            storage: window.sessionStorage
           }
         });
       } catch (e) {
@@ -2187,77 +2187,44 @@
       }
     }
 
-    // Default Seed Databases (For Initial Setup & Reset)
+    // Business data is always loaded from Supabase.
     const DEFAULT_USERS_DB = [];
-
-    const DEFAULT_CYCLES_DB = [
-      { id: 1, name: "'26년 상반기 인사평가", desc: "2026년 상반기 전사 360° 동료 다면평가 주간", start: "2026-01-01", end: "2026-06-30", deadline: "2026-07-31", status: "진행 중" }
-    ];
-
-    const DEFAULT_QUESTIONS_DB = [
-      { id: 1, category: "성과", targetTrack: "기본 필수질문", targetDept: "전체", type: "5지선다형", weight: 33.3, max_score: 5, text: "이번 평가 기간 중 이 동료가 담당한 업무에서 가장 의미 있었던 성과나 완수한 목표는 무엇이라고 생각하시나요?", required: true, is_default: true },
-      { id: 2, category: "협업", targetTrack: "기본 필수질문", targetDept: "전체", type: "5지선다형", weight: 33.3, max_score: 5, text: "이 동료가 업무를 진행하면서 문제를 해결했거나, 협업을 통해 긍정적인 결과를 만들었던 사례가 있다면 작성해 주세요.", required: true, is_default: true },
-      { id: 3, category: "성장", targetTrack: "기본 필수질문", targetDept: "전체", type: "5지선다형", weight: 33.4, max_score: 5, text: "이 동료가 앞으로 더 성장하기 위해 개선하면 좋을 점이나, 발전 가능성이 높다고 생각되는 부분이 있다면 작성해 주세요.", required: true, is_default: true }
-    ];
-
-    const DEFAULT_HISTORY_DB = [
-      {
-        cycleId: 101,
-        cycleName: "'25년 하반기 인사평가",
-        closedAt: "2025-12-31",
-        closedBy: "대표이사 / 인사관리자",
-        snapshot: [
-          { name: '홍길동', company: '한양고속', dept: '경리', role: '과장', score: 91.5, grade: 'S' },
-          { name: '이순신', company: '충남고속', dept: '안전관리', role: '차장', score: 88.0, grade: 'A' },
-          { name: '강감찬', company: '한양고속', dept: '사업', role: '부장', score: 100.0, grade: 'EX' },
-          { name: '유종열', company: '한양고속', dept: '인사총무', role: '대리', score: 95.0, grade: 'S' },
-          { name: '김유신', company: '충남고속', dept: '차량', role: '팀장', score: 82.4, grade: 'B' }
-        ]
-      }
-    ];
-
-    const DEFAULT_CYCLE_SCORES_DB = {
-      1: {
-        1: { raw: 91.5, final: 91.5, is_adjusted: false, grade: 'S' },
-        2: { raw: 88.0, final: 88.0, is_adjusted: false, grade: 'A' },
-        3: { raw: 100.0, final: 100.0, is_adjusted: true, grade: 'EX' },
-        4: { raw: 95.0, final: 95.0, is_adjusted: false, grade: 'S' },
-        5: { raw: 82.4, final: 82.4, is_adjusted: false, grade: 'B' },
-        6: { raw: 78.5, final: 78.5, is_adjusted: false, grade: 'B' },
-        7: { raw: 86.0, final: 86.0, is_adjusted: false, grade: 'A' }
-      }
-    };
+    const DEFAULT_CYCLES_DB = [];
+    const DEFAULT_QUESTIONS_DB = [];
+    const DEFAULT_HISTORY_DB = [];
+    const DEFAULT_CYCLE_SCORES_DB = {};
 
     let usersDb = [];
+    let evaluationTargetsDb = [];
     let cyclesDb = [];
     let customQuestionsDb = [];
     let evaluationHistoryDb = [];
     let cycleScoresDb = {};
+    let goalsDb = [];
+    let allGoalsDb = [];
     let isResultPublished = true;
 
-    function toggleResultPublishStatus() {
-      isResultPublished = !isResultPublished;
-      localStorage.setItem('cnhy_result_published', JSON.stringify(isResultPublished));
-      alert(`[결과 공개 상태 변경] 인사평가 결과가 ${isResultPublished ? '🟢 [전사 사원 공개 상태]' : '🔒 [비공개 차단 상태]'} 로 전환되었습니다.`);
-      if (currentActiveView === 'myresults') renderMyResults();
-      if (currentActiveView === 'admin') renderAdminSummaryTable();
-    }
-
-    // LocalStorage Helper Functions
+    // The browser keeps navigation preferences only. All HR data lives in Supabase.
     let currentActiveView = 'list';
     let currentActiveSubtab = 'users';
 
-    function saveToLocalStorage() {
+    function saveUiPreferences() {
       try {
         // Sensitive HR data stays in Supabase. The browser stores UI state only.
         sessionStorage.setItem('cnhy_session_view', currentActiveView);
-        localStorage.setItem('cnhy_last_subtab', currentActiveSubtab);
+        sessionStorage.setItem('cnhy_last_subtab', currentActiveSubtab);
       } catch (e) {
         console.error('UI preference write failed:', e);
       }
     }
 
-    async function loadFromLocalStorage() {
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, char => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[char]));
+    }
+
+    async function loadFromServer() {
       try {
         if (!supabaseClient) throw new Error('Supabase client is unavailable.');
 
@@ -2266,6 +2233,7 @@
         if (!sessionData.session) {
           currentLoggedInUser = null;
           usersDb = [];
+          evaluationTargetsDb = [];
           customManualMatchingsDb = [];
           return false;
         }
@@ -2290,39 +2258,48 @@
         };
 
         const roleInfo = checkUserRole(currentLoggedInUser);
-        const peopleResult = roleInfo.isPrivileged
-          ? await supabaseClient.rpc('admin_list_users')
-          : await supabaseClient.rpc('my_assigned_targets');
-        if (peopleResult.error) throw peopleResult.error;
+        const [assignedResult, peopleResult] = await Promise.all([
+          supabaseClient.rpc('my_assigned_targets'),
+          roleInfo.isPrivileged ? supabaseClient.rpc('admin_list_users') : Promise.resolve(null)
+        ]);
+        if (assignedResult.error) throw assignedResult.error;
+        if (peopleResult?.error) throw peopleResult.error;
+        evaluationTargetsDb = (assignedResult.data || []).map(target => ({
+          id: target.target_id,
+          matchingId: target.matching_id,
+          cycleId: target.cycle_id,
+          name: target.name,
+          dept: target.dept,
+          workplace: target.workplace,
+          role: target.role,
+          type: target.employee_type,
+          company: target.company,
+          active: true,
+          completed: target.submitted ? 1 : 0,
+          total: 1
+        }));
         usersDb = roleInfo.isPrivileged
-          ? (peopleResult.data || []).map(u => ({
+          ? (peopleResult?.data || []).map(u => ({
               ...u, sysRole: u.sys_role, completed: 0, total: 0
             }))
-          : (peopleResult.data || []).map(target => ({
-              id: target.target_id,
-              matchingId: target.matching_id,
-              cycleId: target.cycle_id,
-              name: target.name,
-              dept: target.dept,
-              workplace: target.workplace,
-              role: target.role,
-              type: target.employee_type,
-              company: target.company,
-              active: true,
-              completed: target.submitted ? 1 : 0,
-              total: 1
-            }));
-        customManualMatchingsDb = usersDb.map(target => ({
+          : evaluationTargetsDb;
+        customManualMatchingsDb = evaluationTargetsDb.map(target => ({
           id: target.matchingId,
+          cycleId: target.cycleId,
           evaluatorId: currentLoggedInUser.id,
           targetId: target.id,
           type: '서버 배정'
         }));
         cyclesDb = cyclesResult.error ? [] : (cyclesResult.data || []).map(cycle => ({
           ...cycle,
+          desc: cycle.description || '',
           start: cycle.start_date,
-          end: cycle.end_date
+          end: cycle.end_date,
+          deadline: cycle.deadline || cycle.end_date,
+          status: cycle.status === '진행중' ? '진행 중' : cycle.status
         }));
+        const selectedCycle = cyclesDb.find(cycle => Number(cycle.id) === Number(currentSelectedSummaryCycleId)) || cyclesDb[0];
+        isResultPublished = selectedCycle?.results_published === true;
         customQuestionsDb = questionsResult.error ? [] : (questionsResult.data || []).map(q => ({
           ...q,
           cycleId: q.cycle_id,
@@ -2330,133 +2307,21 @@
           targetDept: q.target_dept,
           is_default: q.is_default
         }));
+        await loadCentralState();
         return true;
-
-        /* Legacy local-state loader retained temporarily below for migration
-           reference. It is unreachable because secure loading returns above. */
-        const sessCur = sessionStorage.getItem('cnhy_session_user');
-        if (sessCur) currentLoggedInUser = JSON.parse(sessCur);
-
-        // 100% Supabase PostgreSQL Direct Queries (Pure Server Central DB Architecture)
-        if (supabaseClient) {
-          try {
-            // 1. Fetch Users from public.users table
-            const { data: dbUsers, error: usersErr } = await supabaseClient
-              .from('users')
-              .select('*')
-              .order('id', { ascending: true });
-
-            if (dbUsers && dbUsers.length > 0) {
-              console.log("🐘 Supabase PostgreSQL DB Direct Connected: Fetched", dbUsers.length, "users!");
-              usersDb = dbUsers.map(u => ({
-                id: u.id,
-                name: u.name,
-                email: u.email,
-                dept: u.dept,
-                workplace: u.workplace,
-                role: u.role,
-                type: u.type,
-                sysRole: u.sys_role,
-                company: u.company,
-                joindate: u.joindate,
-                phone: u.phone,
-                active: u.active,
-                raw_score: 85.0,
-                final_score: 85.0,
-                is_adjusted: false,
-                final_grade: 'A',
-                completed: 6,
-                total: 6
-              }));
-            }
-
-            // 2. Fetch Matchings from public.matchings table
-            const { data: dbMatchings, error: matchErr } = await supabaseClient
-              .from('matchings')
-              .select('*');
-
-            if (dbMatchings && Array.isArray(dbMatchings)) {
-              customManualMatchingsDb = dbMatchings.map(m => ({
-                id: m.id,
-                evaluatorId: m.evaluator_id,
-                targetId: m.target_id,
-                type: m.type
-              }));
-            }
-          } catch (cloudFetchErr) {
-            console.log('Supabase PostgreSQL fetch fallback:', cloudFetchErr);
-          }
-        }
-
-        // Fallback to local storage ONLY if cloud connection fails completely
-        if (!loadedFromCloud) {
-          const u = localStorage.getItem('cnhy_users_db');
-          const c = localStorage.getItem('cnhy_cycles_db');
-          const q = localStorage.getItem('cnhy_questions_db');
-          const h = localStorage.getItem('cnhy_history_db');
-          const cs = localStorage.getItem('cnhy_cycle_scores_db');
-          const m = localStorage.getItem('cnhy_manual_matchings_db');
-
-          usersDb = u ? JSON.parse(u) : JSON.parse(JSON.stringify(DEFAULT_USERS_DB));
-          cyclesDb = c ? JSON.parse(c) : JSON.parse(JSON.stringify(DEFAULT_CYCLES_DB));
-          customQuestionsDb = q ? JSON.parse(q) : JSON.parse(JSON.stringify(DEFAULT_QUESTIONS_DB));
-          evaluationHistoryDb = h ? JSON.parse(h) : JSON.parse(JSON.stringify(DEFAULT_HISTORY_DB));
-          cycleScoresDb = cs ? JSON.parse(cs) : JSON.parse(JSON.stringify(DEFAULT_CYCLE_SCORES_DB));
-          if (m) customManualMatchingsDb = JSON.parse(m);
-        }
-
-        // Re-render UI views immediately with pure Cloud State
-        populateCycleSelects();
-        if (currentActiveView === 'myresults') renderMyResults();
-        if (currentActiveView === 'admin') renderUsersTable();
-        if (currentActiveView === 'list') renderEmployeeGrid();
-
-        // Sync with D Drive FastAPI SQLite Database (Only when running on local machine)
-        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-          fetch('http://localhost:8000/api/users')
-            .then(res => res.json())
-            .then(dbUsers => {
-              if (dbUsers && dbUsers.length > 0) {
-                usersDb = dbUsers.map(u => ({
-                  id: u.id,
-                  name: u.name,
-                  email: u.email,
-                  dept: u.dept,
-                  workplace: u.workplace,
-                  role: u.role,
-                  type: u.type,
-                  sysRole: u.sysRole,
-                  joindate: u.joindate || '2021-01-01',
-                  phone: u.phone || '010-0000-0000',
-                  active: true,
-                  raw_score: u.raw_score || 85.0,
-                  final_score: u.final_score || 85.0,
-                  is_adjusted: Boolean(u.is_adjusted),
-                  final_grade: u.final_grade || 'A',
-                  completed: 6,
-                  total: 6,
-                  company: u.company || '한양고속'
-                }));
-                saveToLocalStorage();
-                populateCycleSelects();
-                if (currentActiveView === 'myresults') renderMyResults();
-                if (currentActiveView === 'admin') renderUsersTable();
-                if (currentActiveView === 'list') renderEmployeeGrid();
-              }
-            })
-            .catch(err => console.log('Local D-Drive DB Sync (Standalone mode active)'));
-        }
       } catch (e) {
         console.error('Secure cloud load failed:', e);
         currentLoggedInUser = null;
         usersDb = [];
+        evaluationTargetsDb = [];
         customManualMatchingsDb = [];
         return false;
       }
     }
 
     function triggerRealtimeCloudSync(userNotice = false) {
-      saveToLocalStorage();
+      saveUiPreferences();
+      announceCentralChange();
       populateCycleSelects();
       if (currentActiveView === 'myresults') renderMyResults();
       if (currentActiveView === 'admin') renderUsersTable();
@@ -2467,17 +2332,13 @@
       }
     }
 
-    function resetToDefaultData() {
-      if (confirm('모든 데이터를 초기 샘플 데모 데이터로 리셋하시겠습니까?\n(추가된 사용자, 마감 이력, 변경된 점수 등이 모두 초기화됩니다.)')) {
-        localStorage.clear();
-        usersDb = JSON.parse(JSON.stringify(DEFAULT_USERS_DB));
-        cyclesDb = JSON.parse(JSON.stringify(DEFAULT_CYCLES_DB));
-        customQuestionsDb = JSON.parse(JSON.stringify(DEFAULT_QUESTIONS_DB));
-        evaluationHistoryDb = JSON.parse(JSON.stringify(DEFAULT_HISTORY_DB));
-        cycleScoresDb = JSON.parse(JSON.stringify(DEFAULT_CYCLE_SCORES_DB));
-        saveToLocalStorage();
-        alert('모든 데이터가 초기 샘플 데이터로 복구되었습니다!');
-        location.reload();
+    async function resetToDefaultData() {
+      try {
+        await loadFromServer();
+        renderCurrentCentralViews();
+        alert('브라우저 임시값을 사용하지 않고 Supabase의 최신 상태를 다시 불러왔습니다.');
+      } catch (error) {
+        alert(`서버 새로고침 실패: ${error.message}`);
       }
     }
 
@@ -2508,7 +2369,7 @@
       if (historyCloseSelect) historyCloseSelect.innerHTML = optionsHtml;
     }
 
-    function handleCloseCycleSubmit() {
+    async function handleCloseCycleSubmit() {
       if (!currentLoggedInUser.isAdmin && !currentLoggedInUser.isExecutive) {
         alert('평가 마감 권한이 없습니다. (임원 및 관리자 전용)');
         return;
@@ -2537,35 +2398,18 @@
         return;
       }
 
-      targetCycle.status = '마감/보관됨';
-
-      const snapshot = usersDb.map(u => ({
-        name: u.name,
-        company: u.company,
-        dept: u.dept,
-        role: u.role,
-        score: u.final_score,
-        grade: u.final_grade,
-        is_adjusted: u.is_adjusted
-      }));
-
-      evaluationHistoryDb.unshift({
-        cycleId: targetCycle.id,
-        cycleName: targetCycle.name,
-        closedAt: new Date().toISOString().split('T')[0],
-        closedBy: `${currentLoggedInUser.name} (${currentLoggedInUser.role || '관리자'})`,
-        snapshot: snapshot
-      });
-
-      alert(`평가 주기 [${targetCycle.name}] 이(가) 성공적으로 마감되었습니다!\n과거 평가 이력 보관소에서 조회하실 수 있습니다.`);
-
-      saveToLocalStorage();
-      populateCycleSelects();
-      renderCyclesList();
-      renderHistoryTable();
+      try {
+        await callAdminStateApi({ action: 'cycle_close', cycle_id: cycleId });
+        announceCentralChange();
+        await loadFromServer();
+        renderCurrentCentralViews();
+        alert(`평가 주기 [${targetCycle.name}]이 서버에서 마감되고 영구 스냅샷으로 보관되었습니다.`);
+      } catch (error) {
+        alert(`평가 마감 실패: ${error.message}`);
+      }
     }
 
-    function deleteArchivedHistory(cycleId) {
+    async function deleteArchivedHistory(cycleId) {
       if (!currentLoggedInUser.isAdmin && !currentLoggedInUser.isExecutive) {
         alert('보관된 평가 이력 삭제 권한이 없습니다. (임원 및 관리자 전용)');
         return;
@@ -2577,11 +2421,15 @@
       const targetHistory = evaluationHistoryDb[idx];
 
       if (confirm(`정말로 보관된 과거 평가 이력 [${targetHistory.cycleName}] 항목을 삭제하시겠습니까?\n삭제 후에는 영구 보관된 성적 스냅샷이 완전히 제거됩니다.`)) {
-        evaluationHistoryDb.splice(idx, 1);
-        alert(`보관된 과거 평가 이력 [${targetHistory.cycleName}] 항목이 성공적으로 삭제되었습니다.`);
-
-        saveToLocalStorage();
-        renderHistoryTable();
+        try {
+          await callAdminStateApi({ action: 'archive_delete', cycle_id: cycleId });
+          announceCentralChange();
+          await loadCentralState();
+          renderHistoryTable();
+          alert(`보관된 과거 평가 이력 [${targetHistory.cycleName}] 항목이 서버에서 삭제되었습니다.`);
+        } catch (error) {
+          alert(`보관 이력 삭제 실패: ${error.message}`);
+        }
       }
     }
 
@@ -2665,7 +2513,7 @@
         const histId = parseInt(selectedVal.replace('history_', ''));
         const histArchive = evaluationHistoryDb.find(h => h.cycleId === histId);
         if (histArchive) {
-          const snap = histArchive.snapshot.find(s => s.name === (currentLoggedInUser ? currentLoggedInUser.name : '유종열'));
+          const snap = histArchive.snapshot.find(s => Number(s.id) === Number(currentLoggedInUser?.id));
           if (snap) {
             empScoreData = {
               raw: snap.score,
@@ -2677,15 +2525,15 @@
           }
         }
       } else {
-        const cycleId = selectedVal ? parseInt(selectedVal) : (typeof currentSelectedSummaryCycleId !== 'undefined' ? currentSelectedSummaryCycleId : 1);
-        const cycleScores = cycleScoresDb[cycleId] || {};
-        empScoreData = currentLoggedInUser ? cycleScores[currentLoggedInUser.id] : null;
-        if (empScoreData) {
-          isAdjusted = empScoreData.is_adjusted;
-        }
+        // Current-cycle scores are intentionally not read from the administrator cache.
+        // The authenticated AI report API releases them only after completion, approval and publication.
+        empScoreData = null;
       }
 
-      const isPublished = (typeof isResultPublished !== 'undefined') ? isResultPublished : true;
+      const selectedCycle = selectedVal && !selectedVal.startsWith('history_')
+        ? cyclesDb.find(cycle => Number(cycle.id) === Number(selectedVal))
+        : null;
+      const isPublished = selectedVal?.startsWith('history_') ? true : selectedCycle?.results_published === true;
       const hasActualEvaluations = empScoreData && (empScoreData.raw > 0 || empScoreData.final > 0);
 
       const cardEl = document.getElementById('my-grade-card');
@@ -2775,77 +2623,19 @@
           if (chartCard) chartCard.classList.add('hidden');
           if (adjustedNotice) adjustedNotice.classList.remove('hidden');
         } else {
-          // SHOW category chart graph when normal
-          if (chartCard) chartCard.classList.remove('hidden');
+          // Actual category scores and coaching text are populated only by the server API.
+          if (chartCard) chartCard.classList.add('hidden');
           if (adjustedNotice) adjustedNotice.classList.add('hidden');
-
-          const finalScore = empScoreData.final;
-          const pVal = Math.min(100, Math.max(60, (finalScore - 2.5).toFixed(1)));
-          const cVal = Math.min(100, Math.max(60, (finalScore).toFixed(1)));
-          const gVal = Math.min(100, Math.max(60, (finalScore - 7.0).toFixed(1)));
-          const hVal = Math.min(100, Math.max(60, (finalScore - 1.0).toFixed(1)));
-
-          if (perfValEl) perfValEl.innerText = `${pVal}점`;
-          if (collabValEl) collabValEl.innerText = `${cVal}점`;
-          if (growthValEl) growthValEl.innerText = `${gVal}점`;
-          if (harmonyValEl) harmonyValEl.innerText = `${hVal}점`;
-
+          if (perfValEl) perfValEl.innerText = '-';
+          if (collabValEl) collabValEl.innerText = '-';
+          if (growthValEl) growthValEl.innerText = '-';
+          if (harmonyValEl) harmonyValEl.innerText = '-';
           if (pBar) pBar.style.width = '0%';
           if (cBar) cBar.style.width = '0%';
           if (gBar) gBar.style.width = '0%';
           if (hBar) hBar.style.width = '0%';
-
-          setTimeout(() => {
-            if (pBar) pBar.style.width = `${pVal}%`;
-            if (cBar) cBar.style.width = `${cVal}%`;
-            if (gBar) gBar.style.width = `${gVal}%`;
-            if (hBar) hBar.style.width = `${hVal}%`;
-          }, 100);
-
-          // Update AI Neural 4-Category Badges and Pattern Advice Dynamically
-          const w = categoryWeights || { perf: 40.0, collab: 30.0, growth: 20.0, harmony: 10.0 };
-          const pBadge = document.getElementById('ai-perf-score-badge');
-          const cBadge = document.getElementById('ai-collab-score-badge');
-          const gBadge = document.getElementById('ai-growth-score-badge');
-          const hBadge = document.getElementById('ai-harmony-score-badge');
-
-          if (pBadge) pBadge.innerText = `가중치 ${w.perf.toFixed(1)}% | ${pVal}점`;
-          if (cBadge) cBadge.innerText = `가중치 ${w.collab.toFixed(1)}% | ${cVal}점`;
-          if (gBadge) gBadge.innerText = `가중치 ${w.growth.toFixed(1)}% | ${gVal}점`;
-          if (hBadge) hBadge.innerText = `가중치 ${w.harmony.toFixed(1)}% | ${hVal}점`;
-
-          const userDept = currentLoggedInUser ? currentLoggedInUser.dept : '인사총무';
-          const userName = currentLoggedInUser ? currentLoggedInUser.name : '유종열';
-
-          const pPat = document.getElementById('ai-perf-pattern');
-          const pAdv = document.getElementById('ai-perf-advice');
-          if (pPat) pPat.innerText = `${userDept}부 고유 사칙 과업 완결성 및 전산 마감 수치가 전사 상위 ${pVal >= 90 ? '3%' : '10%'} 수준입니다.`;
-          if (pAdv) pAdv.innerText = `"현재의 높은 직무 완결성을 본사-영업소 간 표준 매뉴얼로 문서화하면 차기 평가 EX Grade 달성이 유력합니다."`;
-
-          const cPat = document.getElementById('ai-collab-pattern');
-          const cAdv = document.getElementById('ai-collab-advice');
-          if (cPat) cPat.innerText = `양사 유관부서 간 긴급 요청 사안 피드백 속도 및 협업 만족도가 매우 높게 지표화되었습니다 (${cVal}점).`;
-          if (cAdv) cAdv.innerText = `"타 부서와 교차 프로젝트 수행 시 과업 우선순위 현황을 실시간 공유하면 조력자로서의 위상이 더욱 극대화됩니다."`;
-
-          const gPat = document.getElementById('ai-growth-pattern');
-          const gAdv = document.getElementById('ai-growth-advice');
-          if (gPat) gPat.innerText = `신기술 툴 활용 및 실무 프로세스 개선(자동화) 혁신 태도가 안정적으로 성장 곡선을 그리고 있습니다.`;
-          if (gAdv) gAdv.innerText = `"팀 내 전산 노하우 공유 세미나나 1:1 실무 가이드를 주도하여 전문적 영향력을 전사로 확충하십시오."`;
-
-          const hPat = document.getElementById('ai-harmony-pattern');
-          const hAdv = document.getElementById('ai-harmony-advice');
-          if (hPat) hPat.innerText = `예의 바르고 성숙한 소통 어투로 부서 내 긍정적이고 화목한 분위기를 조율하는 능력이 우수합니다.`;
-          if (hAdv) hAdv.innerText = `"신규 입사자 멘토링 프로그램의 멘토 역할을 맡아 조직 내 긍정적 일터 문화를 전파해 보시길 추천합니다."`;
-
-          // NLP Text Analysis Mentoring Update
-          const textSummaryEl = document.getElementById('ai-peer-text-summary');
-          const mentorSolEl = document.getElementById('ai-peer-mentor-solution');
-          if (textSummaryEl) {
-            textSummaryEl.innerText = `"월간 결산 마감 준수율이 매우 높고 문제 발생 시 대처 능력이 탁월함. 동료들과의 소통도 원활하여 깊은 신뢰를 형성함."`;
-          }
-          if (mentorSolEl) {
-            mentorSolEl.innerHTML = `동료들은 <strong>${userName}</strong> 님의 <strong>'책임감 있는 업무 마무리'</strong>와 <strong>'원활한 융합 소통'</strong>을 가장 독보적인 장점으로 평가하고 있습니다. 이 장점을 사내 가이드북으로 기획 및 표준화하면, 단순 '일 잘하는 동료'를 넘어 <strong>'조직의 핵심 리더'</strong>로 빠르게 도약할 수 있습니다!`;
-          }
+          if (aiStrengthEl) aiStrengthEl.innerText = '⏳ 서버에서 평가 완료 여부와 AI 분석 상태를 확인하고 있습니다.';
+          if (aiGuideEl) aiGuideEl.innerText = '⏳ 승인·공개된 서버 리포트가 확인되면 실제 분석 결과가 표시됩니다.';
         }
       }
 
@@ -3024,7 +2814,7 @@
       if (targetBtn) targetBtn.className = "px-4 py-2 rounded-xl transition bg-brandTeal text-white shadow-lg flex items-center gap-2 font-bold";
 
       currentActiveSubtab = subtab;
-      saveToLocalStorage();
+      saveUiPreferences();
 
       populateCycleSelects();
 
@@ -3040,27 +2830,30 @@
     // Manual Matching Management State & Logic
     let isAutoMatchingEnabled = true;
     let selectedEvaluatorForMatching = null;
-    let customManualMatchingsDb = [
-      { id: 1, evaluatorId: 4, targetId: 5, type: '수동 지정 매칭' }
-    ];
+    let customManualMatchingsDb = [];
 
-    function toggleAutoMatchingMode() {
-      isAutoMatchingEnabled = !isAutoMatchingEnabled;
-      localStorage.setItem('cnhy_auto_matching_enabled', JSON.stringify(isAutoMatchingEnabled));
-
-      alert(`[매칭 모드 변경] 전사 동료평가 매칭 알고리즘이 ${isAutoMatchingEnabled ? '🟢 [자동 격리 매칭 모드 ON]' : '⚡ [100% 관리자 수동 지정 모드 ON (알고리즘 OFF)]'} 로 변경되었습니다!`);
-
-      renderManualMatchingTable();
-      renderEmployeeGrid();
+    async function toggleAutoMatchingMode() {
+      const nextValue = !isAutoMatchingEnabled;
+      try {
+        await callAdminStateApi({ action: 'settings_update', weights: categoryWeights, auto_matching_enabled: nextValue });
+        if (nextValue) {
+          const cycleId = Number(document.getElementById('perm-cycle-select')?.value || currentSelectedSummaryCycleId || cyclesDb[0]?.id);
+          await callAdminStateApi({ action: 'auto_generate', cycle_id: cycleId });
+        }
+        isAutoMatchingEnabled = nextValue;
+        announceCentralChange();
+        await loadCentralState();
+        renderManualMatchingTable();
+        renderEmployeeGrid();
+        alert(`[매칭 모드 변경] 중앙 서버의 매칭 모드가 ${isAutoMatchingEnabled ? '자동' : '수동'}으로 변경되었습니다.`);
+      } catch (error) {
+        alert(`매칭 모드 변경 실패: ${error.message}`);
+      }
     }
 
     function renderManualMatchingTable() {
-      // 1. Sync matching mode state from storage
-      const storedAuto = localStorage.getItem('cnhy_auto_matching_enabled');
-      if (storedAuto !== null) {
-        isAutoMatchingEnabled = JSON.parse(storedAuto);
-      }
-
+      const matchingCycleId = Number(document.getElementById('perm-cycle-select')?.value || currentSelectedSummaryCycleId || cyclesDb[0]?.id);
+      const cycleMatchings = customManualMatchingsDb.filter(m => Number(m.cycleId) === matchingCycleId);
       const statusText = document.getElementById('matching-mode-status-text');
       const toggleBtn = document.getElementById('toggle-matching-mode-btn');
 
@@ -3079,7 +2872,7 @@
 
       // Update total matching count indicator
       const totalCountEl = document.getElementById('interactive-matching-count');
-      if (totalCountEl) totalCountEl.innerText = `${customManualMatchingsDb.length}건`;
+      if (totalCountEl) totalCountEl.innerText = `${cycleMatchings.length}건`;
 
       // 2. Render Left Evaluator List Cards
       const evalListContainer = document.getElementById('interactive-evaluator-list');
@@ -3092,7 +2885,7 @@
       }
 
       usersDb.forEach(u => {
-        const matchesCount = customManualMatchingsDb.filter(m => m.evaluatorId === u.id).length;
+        const matchesCount = cycleMatchings.filter(m => m.evaluatorId === u.id).length;
         const isSelected = selectedEvaluatorForMatching === u.id;
 
         const card = document.createElement('div');
@@ -3145,8 +2938,9 @@
         headerInfo.innerHTML = `선택된 평가자: <strong class="text-white">${evaluator.company} ${evaluator.dept}부 ${evaluator.name} ${evaluator.role}</strong>`;
       }
 
+      const matchingCycleId = Number(document.getElementById('perm-cycle-select')?.value || currentSelectedSummaryCycleId || cyclesDb[0]?.id);
       const activeTargetIds = customManualMatchingsDb
-        .filter(m => m.evaluatorId === selectedEvaluatorForMatching)
+        .filter(m => m.evaluatorId === selectedEvaluatorForMatching && Number(m.cycleId) === matchingCycleId)
         .map(m => m.targetId);
 
       if (matchCountEl) matchCountEl.innerText = `${activeTargetIds.length}명`;
@@ -3184,56 +2978,49 @@
       });
     }
 
-    function toggleInteractiveMatching(evaluatorId, targetId) {
-      const idx = customManualMatchingsDb.findIndex(m => m.evaluatorId === evaluatorId && m.targetId === targetId);
-
-      if (idx !== -1) {
-        // Remove matching connection
-        customManualMatchingsDb.splice(idx, 1);
-      } else {
-        // Add matching connection
-        customManualMatchingsDb.push({
-          id: Date.now(),
-          evaluatorId: evaluatorId,
-          targetId: targetId,
-          type: '1-Click 수동 지정'
-        });
+    async function toggleInteractiveMatching(evaluatorId, targetId) {
+      const cycleId = Number(document.getElementById('perm-cycle-select')?.value || currentSelectedSummaryCycleId || cyclesDb[0]?.id);
+      try {
+        await callAdminStateApi({ action: 'matching_toggle', cycle_id: cycleId, evaluator_id: evaluatorId, target_id: targetId });
+        announceCentralChange();
+        await loadCentralState();
+        renderManualMatchingTable();
+        renderEmployeeGrid();
+      } catch (error) {
+        alert(`평가 배정 변경 실패: ${error.message}`);
       }
-
-      saveToLocalStorage();
-      renderManualMatchingTable();
-      renderEmployeeGrid();
     }
 
-    function selectAllTargetsForSelectedEvaluator() {
+    async function selectAllTargetsForSelectedEvaluator() {
       if (!selectedEvaluatorForMatching) return;
-
-      usersDb.forEach(target => {
-        if (target.id === selectedEvaluatorForMatching) return;
-        const exists = customManualMatchingsDb.some(m => m.evaluatorId === selectedEvaluatorForMatching && m.targetId === target.id);
-        if (!exists) {
-          customManualMatchingsDb.push({
-            id: Date.now() + Math.random(),
-            evaluatorId: selectedEvaluatorForMatching,
-            targetId: target.id,
-            type: '1-Click 전체 선택 지정'
-          });
-        }
-      });
-
-      saveToLocalStorage();
-      renderManualMatchingTable();
-      renderEmployeeGrid();
+      const cycleId = Number(document.getElementById('perm-cycle-select')?.value || currentSelectedSummaryCycleId || cyclesDb[0]?.id);
+      try {
+        await callAdminStateApi({
+          action: 'matching_replace', cycle_id: cycleId, evaluator_id: selectedEvaluatorForMatching,
+          target_ids: usersDb.filter(user => user.id !== selectedEvaluatorForMatching && user.is_evaluatee !== false).map(user => user.id)
+        });
+        announceCentralChange();
+        await loadCentralState();
+        renderManualMatchingTable();
+        renderEmployeeGrid();
+      } catch (error) {
+        alert(`전체 배정 실패: ${error.message}`);
+      }
     }
 
-    function clearAllTargetsForSelectedEvaluator() {
+    async function clearAllTargetsForSelectedEvaluator() {
       if (!selectedEvaluatorForMatching) return;
-
-      customManualMatchingsDb = customManualMatchingsDb.filter(m => m.evaluatorId !== selectedEvaluatorForMatching);
-
-      saveToLocalStorage();
-      renderManualMatchingTable();
-      renderEmployeeGrid();
+      const cycleId = Number(document.getElementById('perm-cycle-select')?.value || currentSelectedSummaryCycleId || cyclesDb[0]?.id);
+      try {
+        const payload = await callAdminStateApi({ action: 'matching_replace', cycle_id: cycleId, evaluator_id: selectedEvaluatorForMatching, target_ids: [] });
+        announceCentralChange();
+        await loadCentralState();
+        renderManualMatchingTable();
+        renderEmployeeGrid();
+        if (payload.data?.protected_target_ids?.length) alert('이미 제출된 평가 배정은 감사 무결성을 위해 유지했습니다.');
+      } catch (error) {
+        alert(`배정 해제 실패: ${error.message}`);
+      }
     }
 
     function checkUserRole(user) {
@@ -3283,7 +3070,7 @@
         return;
       }
 
-      const loaded = await loadFromLocalStorage();
+      const loaded = await loadFromServer();
       if (!loaded || !currentLoggedInUser) {
         await supabaseClient.auth.signOut();
         alert('로그인 계정과 연결된 직원 프로필이 없습니다. 관리자에게 문의해 주세요.');
@@ -3315,7 +3102,119 @@
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || '사용자 처리 요청에 실패했습니다.');
+      if (method !== 'GET') announceCentralChange();
       return payload;
+    }
+
+    let centralRealtimeChannel = null;
+    let centralBroadcastChannel = null;
+    let centralReloadTimer = null;
+
+    async function callAdminStateApi(body, method = 'POST') {
+      if (!supabaseClient) throw new Error('Supabase 연결이 없습니다.');
+      const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
+      if (sessionError || !sessionData.session) throw new Error('로그인이 필요합니다.');
+      const response = await fetch('/api/admin-state', {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionData.session.access_token}`
+        },
+        body: method === 'GET' ? undefined : JSON.stringify(body || {})
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.error || '중앙 서버 상태 처리에 실패했습니다.');
+      return payload;
+    }
+
+    function applyCentralState(payload) {
+      const settings = payload.settings;
+      if (settings) {
+        categoryWeights = {
+          perf: Number(settings.performance_weight), collab: Number(settings.collaboration_weight),
+          growth: Number(settings.growth_weight), harmony: Number(settings.harmony_weight)
+        };
+        isAutoMatchingEnabled = settings.auto_matching_enabled !== false;
+        [['weight-perf-in', categoryWeights.perf], ['weight-collab-in', categoryWeights.collab],
+         ['weight-growth-in', categoryWeights.growth], ['weight-harmony-in', categoryWeights.harmony]]
+          .forEach(([id, value]) => { const input = document.getElementById(id); if (input) input.value = value; });
+      }
+      if (Array.isArray(payload.matchings)) {
+        customManualMatchingsDb = payload.matchings.map(row => ({
+          id: row.id, cycleId: row.cycle_id, evaluatorId: row.evaluator_id,
+          targetId: row.target_id, type: row.type
+        }));
+      }
+      if (Array.isArray(payload.archives)) {
+        evaluationHistoryDb = payload.archives.map(row => ({
+          id: row.id, cycleId: row.cycle_id, cycleName: row.cycle_name,
+          closedAt: String(row.closed_at || '').slice(0, 10), closedBy: row.closed_by_name,
+          snapshot: Array.isArray(row.snapshot) ? row.snapshot : []
+        }));
+      }
+      if (payload.cycle_scores && typeof payload.cycle_scores === 'object') {
+        cycleScoresDb = payload.cycle_scores;
+      }
+      if (Array.isArray(payload.goals)) goalsDb = payload.goals;
+      if (Array.isArray(payload.all_goals)) allGoalsDb = payload.all_goals;
+    }
+
+    async function loadCentralState() {
+      const payload = await callAdminStateApi(undefined, 'GET');
+      applyCentralState(payload);
+      return payload;
+    }
+
+    function renderCurrentCentralViews() {
+      populateCycleSelects();
+      if (currentActiveView === 'list') renderEmployeeGrid();
+      if (currentActiveView === 'goals') renderGoalsList();
+      if (currentActiveView === 'myresults') renderMyResults();
+      if (currentActiveView === 'admin' || currentActiveView === 'evalmanage') {
+        if (currentActiveSubtab === 'users') renderUsersTable();
+        if (currentActiveSubtab === 'cycles') renderCyclesList();
+        if (currentActiveSubtab === 'questions') renderQuestionsList();
+        if (currentActiveSubtab === 'permissions') renderPermissionsTable();
+        if (currentActiveSubtab === 'matching') renderManualMatchingTable();
+        if (currentActiveSubtab === 'summary') renderAdminSummaryTable();
+        if (currentActiveSubtab === 'history') renderHistoryTable();
+      }
+    }
+
+    function scheduleCentralReload() {
+      clearTimeout(centralReloadTimer);
+      centralReloadTimer = setTimeout(async () => {
+        if (!currentLoggedInUser) return;
+        try {
+          await loadFromServer();
+          renderCurrentCentralViews();
+        } catch (error) {
+          console.error('Central state reload failed:', error);
+        }
+      }, 250);
+    }
+
+    function announceCentralChange() {
+      if (centralBroadcastChannel) centralBroadcastChannel.postMessage({ type: 'server-state-changed', at: Date.now() });
+    }
+
+    function setupCentralStateSync() {
+      if (!supabaseClient || centralRealtimeChannel) return;
+      if ('BroadcastChannel' in window) {
+        centralBroadcastChannel = new BroadcastChannel('cnhy-server-state-v1');
+        centralBroadcastChannel.onmessage = event => {
+          if (event.data?.type === 'server-state-changed') scheduleCentralReload();
+        };
+      }
+      centralRealtimeChannel = supabaseClient.channel('cnhy-central-state');
+      [
+        'users','evaluation_cycles','evaluation_questions','matchings','evaluations',
+        'evaluation_result_adjustments','ai_evaluation_reports','evaluation_settings','evaluation_archives','employee_goals','evaluation_answers'
+      ].forEach(table => {
+        centralRealtimeChannel.on('postgres_changes', { event: '*', schema: 'public', table }, scheduleCentralReload);
+      });
+      centralRealtimeChannel.subscribe();
+      window.addEventListener('focus', scheduleCentralReload);
     }
 
     async function callAiReportApi(method, params = {}) {
@@ -3357,19 +3256,26 @@
       }
     }
 
-    function updateAiCategory(prefix, score, data, qualitativeOnly = false) {
+    function updateAiCategory(prefix, score, data, qualitativeOnly = false, weight = null) {
       const badge = document.getElementById(`ai-${prefix}-score-badge`);
       const pattern = document.getElementById(`ai-${prefix}-pattern`);
       const advice = document.getElementById(`ai-${prefix}-advice`);
       const weights = { perf: 40, collab: 30, growth: 20, harmony: 10 };
+      const requestedWeight = weight === null || weight === undefined ? NaN : Number(weight);
+      const fallbackWeight = Number(categoryWeights?.[prefix] ?? weights[prefix]);
+      const appliedWeight = Number.isFinite(requestedWeight) ? requestedWeight : fallbackWeight;
       if (badge) badge.textContent = qualitativeOnly
         ? '점수 비공개 · 정성 피드백'
-        : `가중치 ${weights[prefix].toFixed(1)}% | ${Number(score).toFixed(1)}점`;
+        : `가중치 ${appliedWeight.toFixed(1)}% | ${Number(score).toFixed(1)}점`;
       if (pattern) pattern.textContent = data?.pattern || '분석 정보가 없습니다.';
       if (advice) advice.textContent = data?.advice || '코칭 정보가 없습니다.';
     }
 
     function applyPublishedScores(scores) {
+      const chartCard = document.getElementById('my-chart-card');
+      const adjustedNotice = document.getElementById('my-adjusted-notice');
+      if (chartCard) chartCard.classList.remove('hidden');
+      if (adjustedNotice) adjustedNotice.classList.add('hidden');
       const mapping = [
         ['perf', scores.performance], ['collab', scores.collaboration],
         ['growth', scores.growth], ['harmony', scores.harmony]
@@ -3448,10 +3354,10 @@
           updateAiCategory('harmony', null, report.categories?.harmony, true);
         } else {
           applyPublishedScores(scores);
-          updateAiCategory('perf', scores.performance, report.categories?.performance);
-          updateAiCategory('collab', scores.collaboration, report.categories?.collaboration);
-          updateAiCategory('growth', scores.growth, report.categories?.growth);
-          updateAiCategory('harmony', scores.harmony, report.categories?.harmony);
+          updateAiCategory('perf', scores.performance, report.categories?.performance, false, Number(payload.weights?.performance) * 100);
+          updateAiCategory('collab', scores.collaboration, report.categories?.collaboration, false, Number(payload.weights?.collaboration) * 100);
+          updateAiCategory('growth', scores.growth, report.categories?.growth, false, Number(payload.weights?.growth) * 100);
+          updateAiCategory('harmony', scores.harmony, report.categories?.harmony, false, Number(payload.weights?.harmony) * 100);
         }
         const peerSummary = document.getElementById('ai-peer-text-summary');
         const mentorSolution = document.getElementById('ai-peer-mentor-solution');
@@ -3532,6 +3438,7 @@
       if (adminNavTab) adminNavTab.classList.toggle('hidden', !roleInfo.isAdmin);
 
       populateCycleSelects();
+      setupCentralStateSync();
       navigateTo('list');
       renderEmployeeGrid();
     }
@@ -3628,14 +3535,10 @@
       if (!container) return;
       container.innerHTML = '';
 
-      const loggedInEmail = currentLoggedInUser ? currentLoggedInUser.email.toLowerCase() : '';
-      const loggedInUserObj = usersDb.find(u => u.email.toLowerCase() === loggedInEmail) || currentLoggedInUser;
-      const loggedInCompany = loggedInUserObj ? loggedInUserObj.company : '한양고속';
-      const loggedInWorkplace = loggedInUserObj ? (loggedInUserObj.workplace || '본사') : '본사';
-      const isLoggedInHQ = !loggedInWorkplace.includes('영업소') && !(loggedInUserObj.dept && loggedInUserObj.dept.includes('영업소'));
+      const loggedInUserObj = currentLoggedInUser;
 
       // Check if logged in user is Admin or Executive (To show Track Subtabs)
-      const isAdminOrExecutive = (loggedInUserObj.sysRole === '관리자') || (loggedInUserObj.type === '임원급') || (loggedInUserObj.role && (loggedInUserObj.role.includes('임원') || loggedInUserObj.role.includes('이사') || loggedInUserObj.role.includes('대표')));
+      const isAdminOrExecutive = Boolean(loggedInUserObj) && ((loggedInUserObj.sysRole === '관리자') || (loggedInUserObj.type === '임원급') || (loggedInUserObj.role && (loggedInUserObj.role.includes('임원') || loggedInUserObj.role.includes('이사') || loggedInUserObj.role.includes('대표'))));
       const adminTrackContainer = document.getElementById('admin-track-filter-container');
       if (adminTrackContainer) {
         if (isAdminOrExecutive) {
@@ -3647,27 +3550,10 @@
         }
       }
 
-      // Filter Target Employees
-      let targetEmployees = usersDb.filter(emp => {
-        if (emp.email.toLowerCase() === loggedInEmail) return false; // Exclude self (자기평가 제외)
-        if (emp.is_evaluatee === false) return false; // Exclude Evaluator Only role
-
-        const isManuallyMatched = customManualMatchingsDb.some(m => m.evaluatorId === (loggedInUserObj.id || currentLoggedInUser.id) && m.targetId === emp.id);
-
-        if (!isAutoMatchingEnabled) {
-          return isManuallyMatched;
-        }
-
-        if (isManuallyMatched) return true;
-
-        const isEmpBranch = emp.workplace.includes('영업소') || emp.dept.includes('영업소');
-
-        if (isLoggedInHQ) {
-          return !isEmpBranch;
-        } else {
-          return emp.company.includes(loggedInCompany.replace('(주)', '').trim());
-        }
-      });
+      // The server RPC is the sole authority for assignment visibility.
+      let targetEmployees = evaluationTargetsDb.filter(emp =>
+        Number(emp.id) !== Number(currentLoggedInUser?.id) && emp.active !== false
+      );
 
       // Filter by Track Subtab if Admin selected a track
       if (isAdminOrExecutive && currentSelectedEmpTrackFilter !== '전체') {
@@ -3684,7 +3570,6 @@
         });
       }
 
-      const mySubmissions = JSON.parse(localStorage.getItem('cnhy_user_submissions') || '{}');
       let doneCount = 0;
 
       if (targetEmployees.length === 0) {
@@ -3693,12 +3578,10 @@
       }
 
       targetEmployees.forEach(emp => {
-        const subKey = `${loggedInUserObj.id || currentLoggedInUser.id}_${emp.id}`;
-        const isDone = mySubmissions[subKey] === true;
+        const isDone = Number(emp.completed || 0) > 0;
         if (isDone) doneCount++;
 
-        const isCrossHQ = emp.company !== loggedInCompany;
-        const activeCycle = cyclesDb.find(c => String(c.id) === String(currentSelectedSummaryCycleId || 1));
+        const activeCycle = cyclesDb.find(c => String(c.id) === String(emp.cycleId));
         const isCycleClosed = activeCycle && activeCycle.status === '마감/보관됨';
 
         // Resolve Pipeline Track Info & Sequential Stage Unlocking
@@ -3776,7 +3659,7 @@
               isCycleClosed ? `
                 <span class="text-slate-400 font-bold"><i class="fa-solid fa-lock text-amber-400 mr-1"></i>🔒 마감됨 (수정불가)</span>
               ` : `
-                <button onclick="event.stopPropagation(); openEvaluationForm(usersDb.find(u=>u.id===${emp.id}), true)" class="bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-white px-2.5 py-1 rounded-lg text-[11px] font-bold border border-amber-500/40 transition flex items-center gap-1">
+                <button onclick="event.stopPropagation(); openEvaluationForm(evaluationTargetsDb.find(u=>u.matchingId===${emp.matchingId}), true)" class="bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-white px-2.5 py-1 rounded-lg text-[11px] font-bold border border-amber-500/40 transition flex items-center gap-1">
                   <i class="fa-solid fa-pen-to-square"></i> ✏️ 제출 내용 수정
                 </button>
               `
@@ -3803,7 +3686,7 @@
 
     let isCurrentFormEditMode = false;
 
-    function openEvaluationForm(emp, isEdit = false) {
+    async function openEvaluationForm(emp, isEdit = false) {
       currentTargetEmp = emp;
       isCurrentFormEditMode = isEdit;
 
@@ -3815,10 +3698,30 @@
         // Direct open without pledge modal when editing
         renderPeerQuestions();
         
-        // Prefill previous submission values if stored
-        const savedSubmissions = JSON.parse(localStorage.getItem('cnhy_user_submission_details') || '{}');
-        const subKey = `${currentLoggedInUser.id}_${emp.id}`;
-        const prevData = savedSubmissions[subKey];
+        // Prefill the evaluator's existing submission directly from Supabase.
+        let prevData = null;
+        if (supabaseClient && emp.matchingId) {
+          const existing = await supabaseClient.from('evaluations')
+            .select('id,perf_score,collab_score,growth_score,harmony_score,qualitative_comment')
+            .eq('matching_id', emp.matchingId).maybeSingle();
+          if (existing.error) {
+            alert(`기존 평가를 불러오지 못했습니다: ${existing.error.message}`);
+            return;
+          }
+          if (existing.data) {
+            const answers = await supabaseClient.from('evaluation_answers')
+              .select('question_id,score').eq('evaluation_id', existing.data.id);
+            if (answers.error) {
+              alert(`기존 문항 응답을 불러오지 못했습니다: ${answers.error.message}`);
+              return;
+            }
+            prevData = {
+              perf: existing.data.perf_score, collab: existing.data.collab_score,
+              growth: existing.data.growth_score, harmony: existing.data.harmony_score,
+              comment: existing.data.qualitative_comment, answers: answers.data || []
+            };
+          }
+        }
 
         if (prevData) {
           if (prevData.perf) document.getElementById('slider-perf').value = prevData.perf;
@@ -3826,6 +3729,10 @@
           if (prevData.growth) document.getElementById('slider-growth').value = prevData.growth;
           if (prevData.harmony) document.getElementById('slider-harmony').value = prevData.harmony;
           if (prevData.comment) document.getElementById('eval-comment-input').value = prevData.comment;
+          (prevData.answers || []).forEach(answer => {
+            const radio = document.querySelector(`input[name="pq_dynamic_${answer.question_id}"][value="${Number(answer.score)}"]`);
+            if (radio) radio.checked = true;
+          });
 
           // Trigger slider label updates
           const w = categoryWeights || { perf: 40, collab: 30, growth: 20, harmony: 10 };
@@ -3869,8 +3776,7 @@
       else if (isBranch) targetTrackName = "영업소";
 
       // Dynamically query matching questions from customQuestionsDb
-      const questionSelect = document.getElementById('question-cycle-select');
-      const selectedCycleId = questionSelect && questionSelect.value ? parseInt(questionSelect.value) : 1;
+      const selectedCycleId = Number(emp.cycleId);
 
       const matchedQuestions = customQuestionsDb.filter(q => {
         // Cycle check
@@ -3985,8 +3891,8 @@
     }
 
     function updateCompletedCounts() {
-      const total = usersDb.length;
-      const done = usersDb.filter(u => u.completed === u.total).length;
+      const total = evaluationTargetsDb.length;
+      const done = evaluationTargetsDb.filter(u => u.completed === u.total).length;
       const totEl = document.getElementById('count-total-assignments');
       const compEl = document.getElementById('count-completed-assignments');
       if (totEl) totEl.innerText = `${total} 건`;
@@ -3997,58 +3903,32 @@
       closePreviewModal();
       if (currentTargetEmp) {
 
-        // Dynamic Custom Questions Score Calculation (1~5 scaled to 100)
-        let qSum = 0;
-        let qCount = 0;
         const dynamicRadios = document.querySelectorAll(`input[name^="pq_dynamic_"]:checked`);
-        dynamicRadios.forEach(radio => {
-          qSum += (parseInt(radio.value) * 20);
-          qCount++;
-        });
+        const centralAnswers = [...dynamicRadios].map(radio => ({
+          question_id: Number(String(radio.name).replace('pq_dynamic_', '')),
+          score: Number(radio.value)
+        })).filter(answer => answer.question_id && answer.score >= 1 && answer.score <= 5);
 
         const perfVal = parseFloat(document.getElementById('slider-perf').value) || 85;
         const collabVal = parseFloat(document.getElementById('slider-collab').value) || 90;
         const growthVal = parseFloat(document.getElementById('slider-growth').value) || 80;
         const harmonyVal = parseFloat(document.getElementById('slider-harmony').value) || 85;
 
-        const w = categoryWeights || { perf: 40.0, collab: 30.0, growth: 20.0, harmony: 10.0 };
-        const qAvg = qCount > 0 ? (qSum / qCount) : 85;
-
-        // Weighted Average Calculation based on Admin Category Weights
-        const sliderAvg = (
-          (perfVal * (w.perf / 100)) +
-          (collabVal * (w.collab / 100)) +
-          (growthVal * (w.growth / 100)) +
-          (harmonyVal * (w.harmony / 100))
-        );
-
-        const computedRaw = Math.round(((qAvg * 0.6) + (sliderAvg * 0.4)) * 10) / 10;
-
-        if (!currentTargetEmp.is_adjusted) {
-          currentTargetEmp.raw_score = computedRaw;
-          currentTargetEmp.final_score = computedRaw;
-          if (computedRaw >= 90) currentTargetEmp.final_grade = 'S';
-          else if (computedRaw >= 80) currentTargetEmp.final_grade = 'A';
-          else if (computedRaw >= 70) currentTargetEmp.final_grade = 'B';
-          else if (computedRaw >= 60) currentTargetEmp.final_grade = 'C';
-          else currentTargetEmp.final_grade = 'D';
-        }
-
         const commentVal = document.getElementById('eval-comment-input').value;
-        const subKey = `${currentLoggedInUser.id}_${currentTargetEmp.id}`;
 
         if (!supabaseClient || !currentTargetEmp.matchingId) {
           alert('유효한 서버 평가 배정을 찾지 못했습니다. 새로고침 후 다시 시도해 주세요.');
           return;
         }
 
-        const { error: submitError } = await supabaseClient.rpc('submit_evaluation', {
+        const { error: submitError } = await supabaseClient.rpc('submit_evaluation_central', {
           p_matching_id: currentTargetEmp.matchingId,
           p_perf_score: perfVal,
           p_collab_score: collabVal,
           p_growth_score: growthVal,
           p_harmony_score: harmonyVal,
-          p_comment: commentVal
+          p_comment: commentVal,
+          p_answers: centralAnswers
         });
         if (submitError) {
           console.error('Secure evaluation submission failed:', submitError);
@@ -4056,12 +3936,9 @@
           return;
         }
 
-        currentTargetEmp.completed = currentTargetEmp.total;
-
-        // Evaluation answers remain in Supabase and are never cached in localStorage.
+        await loadFromServer();
       }
 
-      saveToLocalStorage();
       triggerRealtimeCloudSync(false); // Cloud broadcast evaluation submission to all devices
       renderEmployeeGrid();
       renderAdminSummaryTable();
@@ -4364,42 +4241,54 @@
       document.getElementById('modal-edit-cycle').classList.add('hidden');
     }
 
-    function handleEditCycleSubmit(e) {
+    async function handleEditCycleSubmit(e) {
       e.preventDefault();
       const cycle = cyclesDb.find(c => c.id === currentEditingCycleId);
       if (!cycle) return;
 
-      cycle.name = document.getElementById('edit-cycle-name').value.trim();
-      cycle.desc = document.getElementById('edit-cycle-desc').value.trim();
-      cycle.start = document.getElementById('edit-cycle-start').value;
-      cycle.end = document.getElementById('edit-cycle-end').value;
-      cycle.deadline = document.getElementById('edit-cycle-deadline').value;
-      cycle.status = document.getElementById('edit-cycle-status').value;
-
-      alert(`평가 주기 [${cycle.name}] 정보가 성공적으로 수정되었습니다.`);
-      closeEditCycleModal();
-      saveToLocalStorage();
-      populateCycleSelects();
-      renderCyclesList();
+      const payload = {
+        action: 'cycle_update', id: cycle.id,
+        name: document.getElementById('edit-cycle-name').value.trim(),
+        description: document.getElementById('edit-cycle-desc').value.trim(),
+        start_date: document.getElementById('edit-cycle-start').value,
+        end_date: document.getElementById('edit-cycle-end').value,
+        deadline: document.getElementById('edit-cycle-deadline').value,
+        status: document.getElementById('edit-cycle-status').value
+      };
+      try {
+        await callAdminStateApi(payload);
+        announceCentralChange();
+        await loadFromServer();
+        closeEditCycleModal();
+        populateCycleSelects();
+        renderCyclesList();
+        alert(`평가 주기 [${payload.name}] 정보가 서버에 저장되었습니다.`);
+      } catch (error) {
+        alert(`평가 주기 수정 실패: ${error.message}`);
+      }
     }
 
-    function deleteEvaluationCycle(id) {
+    async function deleteEvaluationCycle(id) {
       const idx = cyclesDb.findIndex(c => c.id === id);
       if (idx === -1) return;
       const name = cyclesDb[idx].name;
 
       if (confirm(`평가 주기 [${name}] 항목을 정말 삭제하시겠습니까?\n삭제 후에는 해당 평가 주기가 리스트에서 완전 제거됩니다.`)) {
-        cyclesDb.splice(idx, 1);
-        delete cycleScoresDb[id];
-        alert(`평가 주기 [${name}] 항목이 성공적으로 삭제되었습니다.`);
-        saveToLocalStorage();
-        populateCycleSelects();
-        renderCyclesList();
-        renderAdminSummaryTable();
+        try {
+          await callAdminStateApi({ action: 'cycle_delete', id });
+          announceCentralChange();
+          await loadFromServer();
+          populateCycleSelects();
+          renderCyclesList();
+          renderAdminSummaryTable();
+          alert(`평가 주기 [${name}] 항목이 서버에서 삭제되었습니다.`);
+        } catch (error) {
+          alert(`평가 주기 삭제 실패: ${error.message}`);
+        }
       }
     }
 
-    function handleCreateCycleSubmit(e) {
+    async function handleCreateCycleSubmit(e) {
       e.preventDefault();
       const name = document.getElementById('cycle-name-in').value.trim();
       const desc = document.getElementById('cycle-desc-in').value.trim();
@@ -4408,32 +4297,20 @@
       const deadline = document.getElementById('cycle-deadline-in').value;
       const status = document.getElementById('cycle-status-in').value;
 
-      const newId = Date.now();
-      const newCycle = {
-        id: newId,
-        name,
-        desc,
-        start,
-        end,
-        deadline,
-        status
-      };
-
-      cyclesDb.push(newCycle);
-      cycleScoresDb[newId] = {}; // Clean, empty score database for the new cycle
-
-      saveToLocalStorage();
-      populateCycleSelects();
-      renderCyclesList();
-
-      // Automatically select the new cycle in the summary dropdown
-      const summarySelect = document.getElementById('summary-cycle-select');
-      if (summarySelect) {
-        summarySelect.value = newId;
+      try {
+        const response = await callAdminStateApi({ action: 'cycle_create', name, description: desc, start_date: start, end_date: end, deadline, status });
+        announceCentralChange();
+        await loadFromServer();
+        populateCycleSelects();
+        renderCyclesList();
+        const newId = response.data?.id;
+        const summarySelect = document.getElementById('summary-cycle-select');
+        if (summarySelect && newId) summarySelect.value = String(newId);
+        renderAdminSummaryTable();
+        alert(`새 평가 주기 [${name}]가 서버에 등록되었습니다.`);
+      } catch (error) {
+        alert(`평가 주기 생성 실패: ${error.message}`);
       }
-      renderAdminSummaryTable();
-
-      alert(`✨ 새 평가 주기 [${name}]가 성공적으로 등록되었습니다!\n\n[점수 집계 & 2차 조정] 탭에서 해당 주기가 자동 선택되었으며, 아직 평가가 실시되지 않아 전체 인원이 '⏳ 미평가 (-)' 상태로 표시됩니다.`);
     }
 
     // ADMIN SUBTAB 3: QUESTIONS & WEIGHTS
@@ -4456,7 +4333,7 @@
       }
     }
 
-    function saveCategoryWeights() {
+    async function saveCategoryWeights() {
       const p = parseFloat(document.getElementById('weight-perf-in').value) || 0;
       const c = parseFloat(document.getElementById('weight-collab-in').value) || 0;
       const g = parseFloat(document.getElementById('weight-growth-in').value) || 0;
@@ -4467,8 +4344,17 @@
         return;
       }
 
-      categoryWeights = { perf: p, collab: c, growth: g, harmony: h };
-      localStorage.setItem('cnhy_category_weights', JSON.stringify(categoryWeights));
+      try {
+        await callAdminStateApi({
+          action: 'settings_update', weights: { perf: p, collab: c, growth: g, harmony: h },
+          auto_matching_enabled: isAutoMatchingEnabled
+        });
+        categoryWeights = { perf: p, collab: c, growth: g, harmony: h };
+        announceCentralChange();
+      } catch (error) {
+        alert(`가중치 저장 실패: ${error.message}`);
+        return;
+      }
 
       // Update evaluation form UI sliders labels dynamically
       const perfLabel = document.getElementById('slider-val-perf');
@@ -4481,7 +4367,7 @@
       if (growthLabel) growthLabel.innerText = `${g.toFixed(1)}% (${document.getElementById('slider-growth').value}점)`;
       if (harmonyLabel) harmonyLabel.innerText = `${h.toFixed(1)}% (${document.getElementById('slider-harmony').value}점)`;
 
-      alert(`4대 카테고리 가중치가 저장되었습니다!\n\n- 성과: ${p.toFixed(1)}%\n- 협업: ${c.toFixed(1)}%\n- 성장: ${g.toFixed(1)}%\n- 조화: ${h.toFixed(1)}%`);
+      alert(`4대 카테고리 가중치가 중앙 서버에 저장되었습니다!\n\n- 성과: ${p.toFixed(1)}%\n- 협업: ${c.toFixed(1)}%\n- 성장: ${g.toFixed(1)}%\n- 조화: ${h.toFixed(1)}%`);
     }
 
     // 5-Track Question Filter State
@@ -4566,7 +4452,7 @@
       });
     }
 
-    function handleAddQuestionSubmit(e) {
+    async function handleAddQuestionSubmit(e) {
       e.preventDefault();
       const questionSelect = document.getElementById('question-cycle-select');
       const cycleId = questionSelect ? parseInt(questionSelect.value) : 1;
@@ -4579,24 +4465,19 @@
       const required = document.getElementById('q-required-check').checked;
       const is_default = document.getElementById('q-default-check').checked;
 
-      customQuestionsDb.push({
-        id: Date.now() + Math.floor(Math.random() * 1000),
-        cycleId: cycleId,
-        category,
-        targetTrack,
-        targetDept,
-        type,
-        weight,
-        max_score: 5,
-        text,
-        required,
-        is_default
-      });
-
-      alert(`[${targetTrack}] 적용 인사평가 질문이 성공적으로 추가되었습니다!`);
-      document.getElementById('q-text-in').value = '';
-      saveToLocalStorage();
-      renderQuestionsList();
+      try {
+        await callAdminStateApi({
+          action: 'question_create', cycle_id: cycleId, category, target_track: targetTrack,
+          target_dept: targetDept, type, weight, max_score: 5, text, required, is_default
+        });
+        announceCentralChange();
+        await loadFromServer();
+        document.getElementById('q-text-in').value = '';
+        renderQuestionsList();
+        alert(`[${targetTrack}] 적용 질문이 서버에 추가되었습니다.`);
+      } catch (error) {
+        alert(`질문 추가 실패: ${error.message}`);
+      }
     }
 
     // Question Edit Modal Controls
@@ -4631,35 +4512,49 @@
       }
     }
 
-    function handleSaveEditedQuestionSubmit(e) {
+    async function handleSaveEditedQuestionSubmit(e) {
       e.preventDefault();
       const q = customQuestionsDb.find(item => item.id === currentEditingQuestionId);
       if (!q) return;
 
-      q.category = document.getElementById('edit-q-category').value;
-      q.targetTrack = document.getElementById('edit-q-track').value;
-      q.targetDept = document.getElementById('edit-q-dept').value;
-      q.type = document.getElementById('edit-q-type').value;
-      q.text = document.getElementById('edit-q-text').value.trim();
-      q.weight = parseFloat(document.getElementById('edit-q-weight').value) || 0;
-      q.max_score = parseInt(document.getElementById('edit-q-maxscore').value) || 5;
-
-      alert(`질문 Q${q.id} 정보가 성공적으로 수정 저장되었습니다!`);
-      closeEditQuestionModal();
-      saveToLocalStorage();
-      renderQuestionsList();
+      const payload = {
+        action: 'question_update', id: q.id, cycle_id: q.cycleId || q.cycle_id,
+        category: document.getElementById('edit-q-category').value,
+        target_track: document.getElementById('edit-q-track').value,
+        target_dept: document.getElementById('edit-q-dept').value,
+        type: document.getElementById('edit-q-type').value,
+        text: document.getElementById('edit-q-text').value.trim(),
+        weight: parseFloat(document.getElementById('edit-q-weight').value) || 0,
+        max_score: parseInt(document.getElementById('edit-q-maxscore').value) || 5,
+        required: q.required, is_default: q.is_default
+      };
+      try {
+        await callAdminStateApi(payload);
+        announceCentralChange();
+        await loadFromServer();
+        closeEditQuestionModal();
+        renderQuestionsList();
+        alert(`질문 Q${q.id} 정보가 서버에 저장되었습니다.`);
+      } catch (error) {
+        alert(`질문 수정 실패: ${error.message}`);
+      }
     }
 
-    function deleteQuestion(qId) {
+    async function deleteQuestion(qId) {
       const idx = customQuestionsDb.findIndex(item => item.id === qId);
       if (idx === -1) return;
 
       const targetQ = customQuestionsDb[idx];
       if (confirm(`해당 질문을 삭제하시겠습니까?\n\n- 질문: "${targetQ.text}"\n- 적용 직군: ${targetQ.targetTrack || '기본'}`)) {
-        customQuestionsDb.splice(idx, 1);
-        alert('해당 인사평가 질문이 성공적으로 삭제되었습니다.');
-        saveToLocalStorage();
-        renderQuestionsList();
+        try {
+          await callAdminStateApi({ action: 'question_delete', id: qId });
+          announceCentralChange();
+          await loadFromServer();
+          renderQuestionsList();
+          alert('해당 인사평가 질문이 서버에서 삭제되었습니다.');
+        } catch (error) {
+          alert(`질문 삭제 실패: ${error.message}`);
+        }
       }
     }
 
@@ -4717,6 +4612,7 @@
             ...q, cycleId: q.cycle_id, targetTrack: q.target_track,
             targetDept: q.target_dept, is_default: q.is_default
           }));
+          announceCentralChange();
           renderQuestionsList();
           alert(`CSV 질문 등록 완료: 성공 ${payload.success}개, 실패 ${payload.failed}개`);
         } catch (err) {
@@ -4771,26 +4667,37 @@
       });
     }
 
-    function toggleEvaluatorRole(userId) {
+    async function toggleEvaluatorRole(userId) {
       const user = usersDb.find(u => u.id === userId);
       if (user) {
-        user.can_evaluate = user.can_evaluate !== undefined ? !user.can_evaluate : false;
-        user.active = user.can_evaluate;
-        saveToLocalStorage();
-        renderPermissionsTable();
-        renderEmployeeGrid();
+        const nextValue = !(user.can_evaluate !== false);
+        try {
+          await callAdminStateApi({ action: 'permission_update', user_id: userId, can_evaluate: nextValue });
+          announceCentralChange();
+          await loadFromServer();
+          renderPermissionsTable();
+          renderEmployeeGrid();
+        } catch (error) {
+          alert(`평가자 권한 변경 실패: ${error.message}`);
+        }
       }
     }
 
-    function toggleEvaluateeRole(userId) {
+    async function toggleEvaluateeRole(userId) {
       const user = usersDb.find(u => u.id === userId);
       if (user) {
-        user.is_evaluatee = user.is_evaluatee !== undefined ? !user.is_evaluatee : false;
-        alert(`[${user.name}] 님의 피평가 대상 여부가 ${user.is_evaluatee ? '포함(ON)' : '🚫 제외(OFF - 평가 전담 모드)'} 변경되었습니다.`);
-        saveToLocalStorage();
-        renderPermissionsTable();
-        renderEmployeeGrid();
-        renderAdminSummaryTable();
+        const nextValue = !(user.is_evaluatee !== false);
+        try {
+          await callAdminStateApi({ action: 'permission_update', user_id: userId, is_evaluatee: nextValue });
+          announceCentralChange();
+          await loadFromServer();
+          renderPermissionsTable();
+          renderEmployeeGrid();
+          renderAdminSummaryTable();
+          alert(`[${user.name}] 님의 피평가 대상 여부가 서버에서 ${nextValue ? '포함' : '제외'}로 변경되었습니다.`);
+        } catch (error) {
+          alert(`피평가 권한 변경 실패: ${error.message}`);
+        }
       }
     }
 
@@ -4815,9 +4722,9 @@
 
     // Default Initialization (브라우저 탭 닫기 전까지는 F5 새로고침시 세션 유지, 탭 닫고 다시 올땐 로그인 창)
     window.addEventListener('DOMContentLoaded', async () => {
-      await loadFromLocalStorage();
+      await loadFromServer();
 
-      const lastSubtab = localStorage.getItem('cnhy_last_subtab') || 'users';
+      const lastSubtab = sessionStorage.getItem('cnhy_last_subtab') || 'users';
       const storedUser = currentLoggedInUser ? JSON.stringify(currentLoggedInUser) : null;
       const storedView = sessionStorage.getItem('cnhy_session_view');
 
@@ -4856,6 +4763,7 @@
         }
 
         populateCycleSelects();
+        setupCentralStateSync();
         renderEmployeeGrid();
 
         let targetView = (storedView && storedView !== 'login') ? storedView : 'list';
@@ -4881,6 +4789,8 @@
       } else {
         currentSelectedSummaryCycleId = 1;
       }
+      const selectedCycle = cyclesDb.find(cycle => Number(cycle.id) === Number(currentSelectedSummaryCycleId));
+      isResultPublished = selectedCycle?.results_published === true;
 
       const tbody = document.getElementById('admin-table-body');
       if (!tbody) return;
@@ -4981,7 +4891,7 @@
       });
     }
 
-    function openDetailEvalModal(empId) {
+    async function openDetailEvalModal(empId) {
       if (!currentLoggedInUser || (!currentLoggedInUser.isAdmin && !currentLoggedInUser.isExecutive)) {
         alert('피평가자 상세 360° 평가 내역은 임원 및 관리자 전용 기능입니다.');
         return;
@@ -4992,7 +4902,11 @@
 
       const cycleId = currentSelectedSummaryCycleId || 1;
       const cycleScores = cycleScoresDb[cycleId] || {};
-      const scoreData = cycleScores[emp.id] || { raw: emp.raw_score || 85.0, final: emp.final_score || 85.0, grade: emp.final_grade || 'A' };
+      const scoreData = cycleScores[emp.id];
+      if (!scoreData) {
+        alert('서버에 제출된 평가 결과가 없습니다.');
+        return;
+      }
 
       document.getElementById('detail-modal-emp-name').innerText = `${emp.name} ${emp.role} 상세 360° 평가 리포트`;
       document.getElementById('detail-modal-emp-info').innerText = `${emp.company} • ${emp.dept}부 | ${emp.workplace} 근무`;
@@ -5014,57 +4928,47 @@
         gradeBadgeEl.innerText = `${scoreData.grade} Grade`;
       }
 
-      // Mock / Seed Detailed Evaluations for 360 view
-      const sampleEvaluators = [
-        {
-          name: '이순신 차장',
-          dept: '안전관리부 (충남고속)',
-          type: '1차 동료평가자',
-          scores: { perf: 5, collab: 5, growth: 4, converted: 93.3 },
-          comment: '월간 안전운행 지침 준수율이 매우 높고, 사고 발생 시 대처 능력이 탁월함. 타 부서원들과의 소통도 원활하여 항상 긍정적인 신뢰를 형성함.'
-        },
-        {
-          name: '강감찬 부장',
-          dept: '사업부 (한양고속)',
-          type: '2차 교류 부서장',
-          scores: { perf: 4, collab: 4, growth: 5, converted: 86.7 },
-          comment: '본사-영업소 간 실무 프로세스 매뉴얼 문서화 시도가 인상적임. 적극적인 업무 개선 의지가 있으며 향후 리더십 발휘가 기대됨.'
-        },
-        {
-          name: '유종열 대리',
-          dept: '인사총무부 (한양고속)',
-          type: '동료 협업 평가자',
-          scores: { perf: 5, collab: 5, growth: 5, converted: 100.0 },
-          comment: '전사 전산 결산 지원 및 문제 해결 시 즉각적으로 피드백을 제공함. 360도 평가지표 전 항목에서 훌륭한 모범을 보여줌.'
-        }
-      ];
-
-      document.getElementById('detail-modal-eval-count').innerText = `${sampleEvaluators.length}명 제출 완료`;
+      const evaluationsResult = await supabaseClient.from('evaluations')
+        .select('matching_id,evaluator_id,perf_score,collab_score,growth_score,harmony_score,qualitative_comment')
+        .eq('cycle_id', cycleId).eq('target_id', empId).order('id');
+      if (evaluationsResult.error) {
+        alert(`상세 평가 조회 실패: ${evaluationsResult.error.message}`);
+        return;
+      }
+      const actualEvaluations = evaluationsResult.data || [];
+      document.getElementById('detail-modal-eval-count').innerText = `${actualEvaluations.length}명 제출 완료`;
 
       const listContainer = document.getElementById('detail-modal-evaluators-list');
-      listContainer.innerHTML = sampleEvaluators.map((ev, idx) => `
+      listContainer.innerHTML = actualEvaluations.map(ev => {
+        const evaluator = usersDb.find(user => Number(user.id) === Number(ev.evaluator_id));
+        const matching = customManualMatchingsDb.find(row => Number(row.id) === Number(ev.matching_id));
+        const converted = Number(ev.perf_score) * categoryWeights.perf / 100
+          + Number(ev.collab_score) * categoryWeights.collab / 100
+          + Number(ev.growth_score) * categoryWeights.growth / 100
+          + Number(ev.harmony_score) * categoryWeights.harmony / 100;
+        return `
         <div class="bg-slate-900/90 p-4 rounded-2xl border border-slate-800 space-y-3 shadow-md">
           <div class="flex justify-between items-center border-b border-slate-800/80 pb-2.5">
             <div class="flex items-center gap-2">
-              <span class="bg-brandTeal/20 text-brandTeal text-[10px] font-bold px-2 py-0.5 rounded-full border border-brandTeal/30">${ev.type}</span>
-              <h4 class="text-xs font-bold text-white">${ev.name}</h4>
-              <span class="text-[11px] text-slate-400">(${ev.dept})</span>
+              <span class="bg-brandTeal/20 text-brandTeal text-[10px] font-bold px-2 py-0.5 rounded-full border border-brandTeal/30">${escapeHtml(matching?.type || '서버 배정 평가')}</span>
+              <h4 class="text-xs font-bold text-white">${escapeHtml(evaluator ? `${evaluator.name} ${evaluator.role}` : `평가자 #${ev.evaluator_id}`)}</h4>
+              <span class="text-[11px] text-slate-400">(${escapeHtml(evaluator ? `${evaluator.dept}부 · ${evaluator.company}` : '')})</span>
             </div>
-            <span class="text-xs font-mono font-bold text-amber-400">평가 환산: ${ev.scores.converted.toFixed(1)}점</span>
+            <span class="text-xs font-mono font-bold text-amber-400">평가 환산: ${converted.toFixed(1)}점</span>
           </div>
 
           <div class="grid grid-cols-3 gap-2 bg-slate-950/60 p-2.5 rounded-xl text-[11px] text-slate-300 text-center">
-            <div>성과: <strong class="text-white">${ev.scores.perf}점</strong> / 5점</div>
-            <div>협업: <strong class="text-white">${ev.scores.collab}점</strong> / 5점</div>
-            <div>성장: <strong class="text-white">${ev.scores.growth}점</strong> / 5점</div>
+            <div>성과: <strong class="text-white">${Number(ev.perf_score).toFixed(1)}점</strong></div>
+            <div>협업: <strong class="text-white">${Number(ev.collab_score).toFixed(1)}점</strong></div>
+            <div>성장: <strong class="text-white">${Number(ev.growth_score).toFixed(1)}점</strong></div>
           </div>
 
           <div class="bg-slate-950/40 p-3 rounded-xl border border-slate-800/60 space-y-1">
             <span class="text-[11px] font-bold text-slate-400 block"><i class="fa-solid fa-comment-dots text-brandTeal mr-1"></i>서술형 피드백 코멘트:</span>
-            <p class="text-xs text-slate-200 leading-relaxed font-normal">"${ev.comment}"</p>
+            <p class="text-xs text-slate-200 leading-relaxed font-normal">"${escapeHtml(ev.qualitative_comment)}"</p>
           </div>
         </div>
-      `).join('');
+      `; }).join('');
 
       document.getElementById('modal-detail-evaluation').classList.remove('hidden');
     }
@@ -5098,28 +5002,16 @@
         return;
       }
 
-      let grade = 'D';
-      if (val >= 100) grade = 'EX';
-      else if (val >= 90) grade = 'S';
-      else if (val >= 80) grade = 'A';
-      else if (val >= 70) grade = 'B';
-      else if (val >= 60) grade = 'C';
-
       const emp = usersDb.find(e => String(e.id) === String(selectedAdjustId));
       try {
-        const payload = await callAiReportApi('POST', {
+        await callAiReportApi('POST', {
           action: 'adjust', cycle_id: Number(currentSelectedSummaryCycleId),
           target_id: Number(selectedAdjustId), final_score: val, reason
         });
-        if (!cycleScoresDb[currentSelectedSummaryCycleId]) cycleScoresDb[currentSelectedSummaryCycleId] = {};
-        const previous = cycleScoresDb[currentSelectedSummaryCycleId][selectedAdjustId] || {};
-        cycleScoresDb[currentSelectedSummaryCycleId][selectedAdjustId] = {
-          ...previous, raw: Number(payload.adjustment.raw_score), final: val,
-          is_adjusted: true, grade, adjustment_reason: reason
-        };
         document.getElementById('modal-score-adjustment').classList.add('hidden');
         document.getElementById('adjust-reason-input').value = '';
-        saveToLocalStorage();
+        announceCentralChange();
+        await loadCentralState();
         renderAdminSummaryTable();
         alert(`[${emp ? emp.name : '피평가자'}] 조정이 서버에 기록되었습니다. 기존 AI 초안은 폐기되었으므로 익명 의견 기반 리포트를 다시 생성해 주세요.`);
       } catch (error) {
@@ -5140,7 +5032,8 @@
         alert(`결과 공개 상태 변경 실패: ${error.message}`);
         return;
       }
-      isResultPublished = nextPublished;
+      announceCentralChange();
+      await loadFromServer();
       const btnText = document.getElementById('admin-publish-status-text');
       const btn = document.getElementById('admin-publish-toggle-btn');
 
@@ -5156,12 +5049,18 @@
     }
 
     function downloadCSVReport() {
-      let csvHeader = "이름,이메일,부서,근무지,직급,구분,최종점수,조정여부,원점수,평균점수(100점 환산),평가횟수,성과,협업,성장\n";
-      let csvRows = usersDb.map(e => {
-        const perf = (e.final_score * 0.35).toFixed(1);
-        const collab = (e.final_score * 0.35).toFixed(1);
-        const growth = (e.final_score * 0.30).toFixed(1);
-        return `${e.name},${e.email},${e.dept},${e.workplace},${e.role},${e.type},${e.final_score.toFixed(1)},${e.is_adjusted ? '조정됨' : '미조정'},${e.raw_score.toFixed(1)},${e.final_score.toFixed(1)},${e.completed},${perf},${collab},${growth}`;
+      const csvHeader = "이름,이메일,부서,근무지,직급,구분,최종점수,조정여부,원점수,평가횟수,성과,협업,성장,조화\n";
+      const scores = cycleScoresDb[currentSelectedSummaryCycleId] || {};
+      const escapeCsv = value => `"${String(value ?? '').replace(/"/g, '""')}"`;
+      const csvRows = usersDb.filter(user => scores[user.id]).map(user => {
+        const score = scores[user.id];
+        return [
+          user.name,user.email,user.dept,user.workplace,user.role,user.type,
+          Number(score.final).toFixed(1),score.is_adjusted ? '조정됨' : '미조정',
+          Number(score.raw).toFixed(1),score.completed,
+          Number(score.performance).toFixed(1),Number(score.collaboration).toFixed(1),
+          Number(score.growth).toFixed(1),Number(score.harmony).toFixed(1)
+        ].map(escapeCsv).join(',');
       }).join("\n");
 
       const csvContent = "\uFEFF" + csvHeader + csvRows;
@@ -5175,7 +5074,58 @@
       document.body.removeChild(link);
     }
 
-    function handleAddGoal() {
+    function renderGoalsList() {
+      const container = document.getElementById('goals-list-container');
+      if (!container) return;
+      container.innerHTML = '';
+      if (!goalsDb.length) {
+        container.innerHTML = '<div class="bg-slate-900/60 p-6 rounded-xl border border-slate-800 text-center text-slate-400 text-xs">서버에 등록된 개인 목표가 없습니다.</div>';
+      }
+      const statusLabel = { pending: '승인대기', approved: '승인완료', rejected: '반려' };
+      const statusClass = { pending: 'text-amber-400', approved: 'text-emerald-400', rejected: 'text-rose-400' };
+      goalsDb.forEach(goal => {
+        const item = document.createElement('div');
+        item.className = 'bg-slate-900/80 p-4 rounded-xl border border-slate-800 flex justify-between items-center';
+        item.innerHTML = `
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <span class="bg-teal-500/20 text-brandTeal text-[10px] font-bold px-2 py-0.5 rounded">${escapeHtml(goal.category)}</span>
+              <span class="text-xs ${statusClass[goal.status] || 'text-slate-400'} font-bold">${escapeHtml(statusLabel[goal.status] || goal.status)}</span>
+            </div>
+            <h4 class="text-sm font-bold text-white">${escapeHtml(goal.title)}</h4>
+            <p class="text-xs text-slate-400 mt-1">💬 피드백: ${escapeHtml(goal.feedback || (goal.status === 'pending' ? '관리자 검토 중입니다.' : '등록된 피드백이 없습니다.'))}</p>
+          </div>`;
+        container.appendChild(item);
+      });
+      if (checkUserRole(currentLoggedInUser).isPrivileged) {
+        const pending = allGoalsDb.filter(goal => goal.status === 'pending');
+        const heading = document.createElement('div');
+        heading.className = 'pt-4 mt-4 border-t border-slate-700 text-sm font-bold text-amber-300';
+        heading.textContent = `관리자 승인 대기 목표 (${pending.length}건)`;
+        container.appendChild(heading);
+        pending.forEach(goal => {
+          const owner = usersDb.find(user => Number(user.id) === Number(goal.user_id));
+          const item = document.createElement('div');
+          item.className = 'bg-amber-950/20 p-4 rounded-xl border border-amber-500/30 flex justify-between items-center gap-3';
+          item.innerHTML = `<div><p class="text-[10px] text-amber-300 font-bold">${escapeHtml(owner ? `${owner.name} · ${owner.dept}부` : `직원 #${goal.user_id}`)}</p><h4 class="text-sm font-bold text-white">${escapeHtml(goal.title)}</h4></div><div class="flex gap-2"><button onclick="reviewGoal(${Number(goal.id)},'approved')" class="bg-emerald-600 px-3 py-1.5 rounded text-xs font-bold text-white">승인</button><button onclick="reviewGoal(${Number(goal.id)},'rejected')" class="bg-rose-600 px-3 py-1.5 rounded text-xs font-bold text-white">반려</button></div>`;
+          container.appendChild(item);
+        });
+      }
+    }
+
+    async function reviewGoal(id, status) {
+      const feedback = prompt(status === 'approved' ? '승인 피드백을 입력해 주세요. (선택)' : '반려 사유를 입력해 주세요. (권장)', '') ?? '';
+      try {
+        await callAdminStateApi({ action: 'goal_status', id, status, feedback });
+        announceCentralChange();
+        await loadCentralState();
+        renderGoalsList();
+      } catch (error) {
+        alert(`목표 처리 실패: ${error.message}`);
+      }
+    }
+
+    async function handleAddGoal() {
       const title = document.getElementById('goal-title-input').value.trim();
       const cat = document.getElementById('goal-category-select').value;
       if (!title) {
@@ -5183,22 +5133,16 @@
         return;
       }
 
-      const container = document.getElementById('goals-list-container');
-      const item = document.createElement('div');
-      item.className = 'bg-slate-900/80 p-4 rounded-xl border border-slate-800 flex justify-between items-center';
-      item.innerHTML = `
-        <div>
-          <div class="flex items-center gap-2 mb-1">
-            <span class="bg-teal-500/20 text-brandTeal text-[10px] font-bold px-2 py-0.5 rounded">${cat}</span>
-            <span class="text-xs text-amber-400 font-bold">승인대기</span>
-          </div>
-          <h4 class="text-sm font-bold text-white">${title}</h4>
-          <p class="text-xs text-slate-400 mt-1">💬 피드백: 관리자 검토 중입니다. 승인 후 확정됩니다.</p>
-        </div>
-      `;
-      container.insertBefore(item, container.firstChild);
-      document.getElementById('goal-title-input').value = '';
-      alert('등록된 목표는 관리자의 승인을 거쳐 확정됩니다.');
+      try {
+        await callAdminStateApi({ action: 'goal_create', title, category: cat, cycle_id: cyclesDb[0]?.id });
+        announceCentralChange();
+        await loadCentralState();
+        renderGoalsList();
+        document.getElementById('goal-title-input').value = '';
+        alert('목표가 서버에 등록되었으며 관리자 승인을 기다립니다.');
+      } catch (error) {
+        alert(`목표 등록 실패: ${error.message}`);
+      }
     }
 
 
@@ -5214,7 +5158,7 @@
       }
 
       currentActiveView = viewId;
-      localStorage.setItem('cnhy_last_view', viewId);
+      sessionStorage.setItem('cnhy_session_view', viewId);
 
       // Hide all main section views
       const views = ['login', 'list', 'eval', 'goals', 'myresults', 'evalmanage', 'admin'];
@@ -5238,6 +5182,7 @@
           activeEl.classList.remove('hidden');
         }
       }
+      if (viewId === 'goals') renderGoalsList();
 
       // Highlight active nav tab if applicable
       const activeTab = document.getElementById(`nav-tab-${viewId}`);
