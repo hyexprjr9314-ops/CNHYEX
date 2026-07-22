@@ -2272,6 +2272,15 @@
     let customQuestionsDb = [];
     let evaluationHistoryDb = [];
     let cycleScoresDb = {};
+    let isResultPublished = true;
+
+    function toggleResultPublishStatus() {
+      isResultPublished = !isResultPublished;
+      localStorage.setItem('cnhy_result_published', JSON.stringify(isResultPublished));
+      alert(`[결과 공개 상태 변경] 인사평가 결과가 ${isResultPublished ? '🟢 [전사 사원 공개 상태]' : '🔒 [비공개 차단 상태]'} 로 전환되었습니다.`);
+      if (currentActiveView === 'myresults') renderMyResults();
+      if (currentActiveView === 'admin') renderAdminSummaryTable();
+    }
 
     // LocalStorage Helper Functions
     let currentActiveView = 'list';
