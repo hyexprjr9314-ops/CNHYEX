@@ -656,17 +656,17 @@
               <i class="fa-solid fa-user-shield"></i>
             </div>
             <div>
-              <h3 class="text-base font-bold text-white">⚙️ 임원 2차 점수 조정 확정 리포트</h3>
-              <p class="text-xs text-amber-300 font-bold">최종 환산 점수 적용됨</p>
+              <h3 class="text-base font-bold text-white">⚙️ 종합평가 방식 적용</h3>
+              <p class="text-xs text-amber-300 font-bold">최종 검토·조정 완료</p>
             </div>
           </div>
           <div class="space-y-3 text-xs text-slate-300">
-            <div class="bg-slate-900/90 p-4 rounded-xl border border-slate-800 flex justify-between items-center">
-              <span class="text-slate-300 font-bold">임원 확정 최종 환산점수:</span>
-              <strong id="my-adjusted-total-score" class="text-xl font-black text-brandGold font-mono">-</strong>
+            <div class="bg-slate-900/90 p-4 rounded-xl border border-slate-800">
+              <strong class="text-sm text-brandGold">점수·항목별 비교 그래프 비공개</strong>
+              <p class="mt-1 text-slate-400 leading-relaxed">평가위원회의 종합 검토에 따라 결과가 조정되어, 최종 피드백과 향후 개선 방향을 중심으로 제공합니다.</p>
             </div>
             <p class="text-slate-400 leading-relaxed bg-slate-900/60 p-3 rounded-lg border border-slate-800/80">
-              ※ 규정에 따라, 당사자의 세부 항목별 그래프는 비공개 처리 되었으며, 최종 확정 점수 및 등급만 제공됩니다.
+              조정 전후 점수와 사유, 조정자 및 처리 시각은 감사 목적으로 서버에 별도 보관되며 직원 화면에는 공개되지 않습니다.
             </p>
           </div>
         </div>
@@ -1626,6 +1626,11 @@
         <div>
           <label class="block text-xs font-bold text-slate-300 mb-1">조정할 점수 (100점 만점 기준)</label>
           <input type="number" step="0.1" min="0" max="100" id="adjust-score-input" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-brandGold" onkeydown="if(event.key==='Enter') saveScoreAdjustment()">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">조정 사유 (필수, 10자 이상)</label>
+          <textarea id="adjust-reason-input" rows="3" maxlength="1000" placeholder="객관적인 조정 근거를 입력해 주세요." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-brandGold"></textarea>
+          <p class="mt-1 text-[10px] text-slate-500">조정 전후 점수, 조정자 및 시각과 함께 감사 이력으로 서버에 보관됩니다.</p>
         </div>
         <button onclick="saveScoreAdjustment()" class="w-full bg-brandGold hover:bg-amber-600 text-white font-bold py-2.5 rounded-xl transition text-sm">
           조정 점수 저장
@@ -3352,12 +3357,14 @@
       }
     }
 
-    function updateAiCategory(prefix, score, data) {
+    function updateAiCategory(prefix, score, data, qualitativeOnly = false) {
       const badge = document.getElementById(`ai-${prefix}-score-badge`);
       const pattern = document.getElementById(`ai-${prefix}-pattern`);
       const advice = document.getElementById(`ai-${prefix}-advice`);
       const weights = { perf: 40, collab: 30, growth: 20, harmony: 10 };
-      if (badge) badge.textContent = `가중치 ${weights[prefix].toFixed(1)}% | ${Number(score).toFixed(1)}점`;
+      if (badge) badge.textContent = qualitativeOnly
+        ? '점수 비공개 · 정성 피드백'
+        : `가중치 ${weights[prefix].toFixed(1)}% | ${Number(score).toFixed(1)}점`;
       if (pattern) pattern.textContent = data?.pattern || '분석 정보가 없습니다.';
       if (advice) advice.textContent = data?.advice || '코칭 정보가 없습니다.';
     }
@@ -3388,12 +3395,29 @@
       });
     }
 
+    function applyAdjustedResultMode() {
+      const chartCard = document.getElementById('my-chart-card');
+      const adjustedNotice = document.getElementById('my-adjusted-notice');
+      const cardEl = document.getElementById('my-grade-card');
+      const titleEl = document.getElementById('my-grade-title');
+      const medalEl = document.getElementById('my-medal-container');
+      if (chartCard) chartCard.classList.add('hidden');
+      if (adjustedNotice) adjustedNotice.classList.remove('hidden');
+      if (cardEl) cardEl.className = 'bg-amber-950/30 border border-amber-500/40 px-6 py-3 rounded-2xl text-center flex items-center gap-4 shadow-xl';
+      if (titleEl) {
+        titleEl.className = 'text-lg font-black text-amber-200';
+        titleEl.textContent = '종합평가 방식 적용';
+      }
+      if (medalEl) medalEl.innerHTML = '<i class="fa-solid fa-scale-balanced text-amber-300 text-3xl"></i>';
+    }
+
     async function loadServerAiReport(cycleId) {
       const requestId = ++latestAiReportRequest;
       setAiReportVisibility(false, '서버에서 평가 완료 여부와 AI 분석 상태를 확인하고 있습니다.');
       try {
         const payload = await callAiReportApi('GET', { cycle_id: cycleId });
         if (requestId !== latestAiReportRequest) return;
+        if (payload.adjusted) applyAdjustedResultMode();
         if (payload.state === 'in_progress') {
           setAiReportVisibility(false, `평가 진행 중입니다. 제출 ${payload.submitted_count}/${payload.assigned_count}건`);
           return;
@@ -3410,18 +3434,25 @@
           setAiReportVisibility(false, 'AI 분석이 승인되었지만 평가 결과가 아직 공개되지 않았습니다.');
           return;
         }
-        if (payload.state !== 'ready' || !payload.report?.report || !payload.scores) {
+        if (payload.state !== 'ready' || !payload.report?.report || (!payload.adjusted && !payload.scores)) {
           setAiReportVisibility(false, '공개 가능한 AI 분석 리포트가 없습니다.', 'rose');
           return;
         }
 
         const report = payload.report.report;
         const scores = payload.scores;
-        applyPublishedScores(scores);
-        updateAiCategory('perf', scores.performance, report.categories?.performance);
-        updateAiCategory('collab', scores.collaboration, report.categories?.collaboration);
-        updateAiCategory('growth', scores.growth, report.categories?.growth);
-        updateAiCategory('harmony', scores.harmony, report.categories?.harmony);
+        if (payload.adjusted) {
+          updateAiCategory('perf', null, report.categories?.performance, true);
+          updateAiCategory('collab', null, report.categories?.collaboration, true);
+          updateAiCategory('growth', null, report.categories?.growth, true);
+          updateAiCategory('harmony', null, report.categories?.harmony, true);
+        } else {
+          applyPublishedScores(scores);
+          updateAiCategory('perf', scores.performance, report.categories?.performance);
+          updateAiCategory('collab', scores.collaboration, report.categories?.collaboration);
+          updateAiCategory('growth', scores.growth, report.categories?.growth);
+          updateAiCategory('harmony', scores.harmony, report.categories?.harmony);
+        }
         const peerSummary = document.getElementById('ai-peer-text-summary');
         const mentorSolution = document.getElementById('ai-peer-mentor-solution');
         if (peerSummary) peerSummary.textContent = report.peer_feedback_summary || '익명 서술형 의견이 없습니다.';
@@ -5055,10 +5086,15 @@
       }, 100);
     }
 
-    function saveScoreAdjustment() {
+    async function saveScoreAdjustment() {
       const val = parseFloat(document.getElementById('adjust-score-input').value);
+      const reason = document.getElementById('adjust-reason-input').value.trim();
       if (isNaN(val) || val < 0 || val > 100) {
         alert('올바른 점수(0~100)를 입력하세요.');
+        return;
+      }
+      if (reason.length < 10) {
+        alert('조정 사유를 10자 이상 입력해 주세요.');
         return;
       }
 
@@ -5069,27 +5105,26 @@
       else if (val >= 70) grade = 'B';
       else if (val >= 60) grade = 'C';
 
-      if (!cycleScoresDb[currentSelectedSummaryCycleId]) {
-        cycleScoresDb[currentSelectedSummaryCycleId] = {};
-      }
-
-      cycleScoresDb[currentSelectedSummaryCycleId][selectedAdjustId] = {
-        raw: val,
-        final: val,
-        is_adjusted: true,
-        grade: grade
-      };
-
       const emp = usersDb.find(e => String(e.id) === String(selectedAdjustId));
-
-      document.getElementById('modal-score-adjustment').classList.add('hidden');
-      
-      saveToLocalStorage();
-
-      // Re-render summary table
-      renderAdminSummaryTable();
-
-      alert(`[${emp ? emp.name : '피평가자'}] 님의 해당 평가 주기 2차 점수가 ${val.toFixed(1)}점(${grade} Grade)으로 등록/조정되었습니다!`);
+      try {
+        const payload = await callAiReportApi('POST', {
+          action: 'adjust', cycle_id: Number(currentSelectedSummaryCycleId),
+          target_id: Number(selectedAdjustId), final_score: val, reason
+        });
+        if (!cycleScoresDb[currentSelectedSummaryCycleId]) cycleScoresDb[currentSelectedSummaryCycleId] = {};
+        const previous = cycleScoresDb[currentSelectedSummaryCycleId][selectedAdjustId] || {};
+        cycleScoresDb[currentSelectedSummaryCycleId][selectedAdjustId] = {
+          ...previous, raw: Number(payload.adjustment.raw_score), final: val,
+          is_adjusted: true, grade, adjustment_reason: reason
+        };
+        document.getElementById('modal-score-adjustment').classList.add('hidden');
+        document.getElementById('adjust-reason-input').value = '';
+        saveToLocalStorage();
+        renderAdminSummaryTable();
+        alert(`[${emp ? emp.name : '피평가자'}] 조정이 서버에 기록되었습니다. 기존 AI 초안은 폐기되었으므로 익명 의견 기반 리포트를 다시 생성해 주세요.`);
+      } catch (error) {
+        alert(`점수 조정 저장 실패: ${error.message}`);
+      }
     }
 
     async function toggleResultPublishing() {

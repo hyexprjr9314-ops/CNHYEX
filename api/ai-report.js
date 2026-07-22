@@ -27,17 +27,21 @@ async function authenticate(req, service) {
 }
 
 async function aggregateTarget(service, cycleId, targetId) {
-  const [cycleResult, matchingsResult, evaluationsResult] = await Promise.all([
+  const [cycleResult, matchingsResult, evaluationsResult, adjustmentResult] = await Promise.all([
     service.from('evaluation_cycles')
       .select('id,name,status,results_published').eq('id', cycleId).maybeSingle(),
     service.from('matchings').select('id').eq('cycle_id', cycleId).eq('target_id', targetId),
     service.from('evaluations')
       .select('matching_id,perf_score,collab_score,growth_score,harmony_score,qualitative_comment')
-      .eq('cycle_id', cycleId).eq('target_id', targetId)
+      .eq('cycle_id', cycleId).eq('target_id', targetId),
+    service.from('evaluation_result_adjustments')
+      .select('id,raw_score,final_score,final_grade,reason,adjusted_by,adjusted_at,updated_at')
+      .eq('cycle_id', cycleId).eq('target_id', targetId).maybeSingle()
   ]);
   if (cycleResult.error || !cycleResult.data) throw Object.assign(new Error('평가 주기를 찾을 수 없습니다.'), { status: 404 });
   if (matchingsResult.error) throw matchingsResult.error;
   if (evaluationsResult.error) throw evaluationsResult.error;
+  if (adjustmentResult.error) throw adjustmentResult.error;
 
   const assigned = matchingsResult.data || [];
   const evaluations = evaluationsResult.data || [];
@@ -50,7 +54,8 @@ async function aggregateTarget(service, cycleId, targetId) {
       cycle: cycleResult.data,
       complete: false,
       assigned_count: assigned.length,
-      submitted_count: valid.length
+      submitted_count: valid.length,
+      adjustment: adjustmentResult.data || null
     };
   }
 
@@ -74,7 +79,8 @@ async function aggregateTarget(service, cycleId, targetId) {
     assigned_count: assigned.length,
     submitted_count: valid.length,
     scores,
-    comments: valid.map(row => String(row.qualitative_comment || '').trim()).filter(Boolean)
+    comments: valid.map(row => String(row.qualitative_comment || '').trim()).filter(Boolean),
+    adjustment: adjustmentResult.data || null
   };
 }
 
@@ -122,11 +128,13 @@ async function generateReport(aggregate) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw Object.assign(new Error('Vercel에 OPENAI_API_KEY가 등록되지 않았습니다.'), { status: 503 });
   const model = process.env.OPENAI_MODEL || 'gpt-5.6-terra';
+  const qualitativeOnly = Boolean(aggregate.adjustment);
   const input = {
     role: '직원',
     department: '비식별 처리됨',
-    scores: aggregate.scores,
-    category_weights: CATEGORY_WEIGHTS,
+    analysis_mode: qualitativeOnly ? 'qualitative_only' : 'scored',
+    scores: qualitativeOnly ? undefined : aggregate.scores,
+    category_weights: qualitativeOnly ? undefined : CATEGORY_WEIGHTS,
     anonymous_comments: aggregate.comments
   };
   const response = await fetch('https://api.openai.com/v1/responses', {
@@ -137,7 +145,9 @@ async function generateReport(aggregate) {
       store: false,
       instructions: [
         '당신은 인사평가 결과를 해석하는 한국어 코칭 리포트 작성자입니다.',
-        '입력된 확정 점수와 익명 의견만 근거로 사용하고 사실을 만들지 마세요.',
+        qualitativeOnly
+          ? '관리자 조정이 적용된 평가입니다. 점수와 등급을 언급하거나 추론하지 말고 익명 의견만 근거로 코칭하세요.'
+          : '입력된 확정 점수와 익명 의견만 근거로 사용하고 사실을 만들지 마세요.',
         '점수, 등급, 승진, 징계 또는 해고 결정을 변경하거나 권고하지 마세요.',
         '평가자 신원을 추정하지 말고 성격, 건강, 정치·종교 등 민감정보를 추론하지 마세요.',
         '문장은 존중하는 어조로 구체적이고 실행 가능하게 작성하세요.'
@@ -155,7 +165,16 @@ async function generateReport(aggregate) {
   });
   const payload = await response.json();
   if (!response.ok) throw new Error(payload.error?.message || 'OpenAI 분석 요청에 실패했습니다.');
-  return { model, report: JSON.parse(responseText(payload)) };
+  return { model, report: JSON.parse(responseText(payload)), analysisMode: qualitativeOnly ? 'qualitative_only' : 'scored' };
+}
+
+function gradeFor(score) {
+  if (score >= 100) return 'EX';
+  if (score >= 90) return 'S';
+  if (score >= 80) return 'A';
+  if (score >= 70) return 'B';
+  if (score >= 60) return 'C';
+  return 'D';
 }
 
 export default async function handler(req, res) {
@@ -172,19 +191,22 @@ export default async function handler(req, res) {
       }
       const aggregate = await aggregateTarget(service, cycleId, targetId);
       const reportResult = await service.from('ai_evaluation_reports')
-        .select('status,report,model,generated_at,approved_at')
+        .select('status,report,model,analysis_mode,generated_at,approved_at')
         .eq('cycle_id', cycleId).eq('target_id', targetId).maybeSingle();
       if (reportResult.error) throw reportResult.error;
       const privileged = PRIVILEGED_ROLES.has(profile.sys_role);
       const visible = reportResult.data && (privileged || (
         aggregate.cycle.results_published === true && reportResult.data.status === 'approved'
       ));
+      const adjusted = Boolean(aggregate.adjustment);
       return send(res, 200, {
         cycle: aggregate.cycle,
         complete: aggregate.complete,
         assigned_count: aggregate.assigned_count,
         submitted_count: aggregate.submitted_count,
-        scores: aggregate.complete && (privileged || aggregate.cycle.results_published) ? aggregate.scores : null,
+        scores: aggregate.complete && (privileged || (!adjusted && aggregate.cycle.results_published)) ? aggregate.scores : null,
+        adjusted,
+        adjustment: privileged ? aggregate.adjustment : (adjusted ? { adjusted: true } : null),
         report: visible ? reportResult.data : null,
         state: !aggregate.complete ? 'in_progress'
           : !reportResult.data ? 'not_generated'
@@ -199,6 +221,30 @@ export default async function handler(req, res) {
     const action = String(req.body?.action || 'generate');
     const targetId = Number(req.body?.target_id);
     if (!targetId) return send(res, 400, { error: '피평가자 ID가 필요합니다.' });
+
+    if (action === 'adjust') {
+      const finalScore = Number(req.body?.final_score);
+      const reason = String(req.body?.reason || '').trim();
+      if (!Number.isFinite(finalScore) || finalScore < 0 || finalScore > 100) {
+        return send(res, 400, { error: '조정 점수는 0~100 사이여야 합니다.' });
+      }
+      if (reason.length < 10) return send(res, 400, { error: '조정 사유를 10자 이상 입력해 주세요.' });
+      const aggregate = await aggregateTarget(service, cycleId, targetId);
+      if (!aggregate.complete) return send(res, 409, { error: '모든 평가가 완료된 뒤 조정할 수 있습니다.' });
+      const now = new Date().toISOString();
+      const record = {
+        cycle_id: cycleId, target_id: targetId, raw_score: aggregate.scores.total,
+        final_score: finalScore, final_grade: gradeFor(finalScore), reason,
+        adjusted_by: authUser.id, adjusted_at: now, updated_at: now
+      };
+      const result = await service.from('evaluation_result_adjustments')
+        .upsert(record, { onConflict: 'cycle_id,target_id' }).select().single();
+      if (result.error) throw result.error;
+      const staleReport = await service.from('ai_evaluation_reports')
+        .delete().eq('cycle_id', cycleId).eq('target_id', targetId);
+      if (staleReport.error) throw staleReport.error;
+      return send(res, 200, { adjustment: result.data, ai_report_invalidated: true });
+    }
 
     if (action === 'approve') {
       const result = await service.from('ai_evaluation_reports').update({
@@ -234,6 +280,7 @@ export default async function handler(req, res) {
       harmony_score: aggregate.scores.harmony,
       total_score: aggregate.scores.total,
       report: generated.report, status: 'draft', model: generated.model,
+      analysis_mode: generated.analysisMode,
       generated_by: authUser.id, generated_at: new Date().toISOString(),
       approved_by: null, approved_at: null, updated_at: new Date().toISOString()
     };
