@@ -17,8 +17,8 @@ end $$;
 alter table public.evaluations alter column matching_id set not null;
 
 alter table public.evaluation_questions
-  add column if not exists target_track text not null default '기본 필수질문',
-  add column if not exists target_dept text not null default '전체',
+  add column if not exists target_track text not null default '湲곕낯 ?꾩닔吏덈Ц',
+  add column if not exists target_dept text not null default '?꾩껜',
   add column if not exists required boolean not null default true,
   add column if not exists is_default boolean not null default true,
   add column if not exists max_score numeric not null default 5;
@@ -65,7 +65,7 @@ create or replace function public.current_user_is_privileged()
 returns boolean language sql stable security definer set search_path = public, pg_temp
 as $$
   select coalesce((
-    select sys_role::text in ('관리자', '임원')
+    select sys_role::text in ('愿由ъ옄', '?꾩썝')
     from public.users
     where auth_user_id = auth.uid() and active is true
     limit 1
@@ -84,6 +84,16 @@ alter table public.matchings enable row level security;
 alter table public.evaluations enable row level security;
 alter table public.score_adjustments enable row level security;
 alter table public.score_adjustment_history enable row level security;
+
+-- Public browser clients must authenticate before they can touch business data.
+-- RLS remains the primary authorization layer; these revokes add defense in depth.
+revoke all privileges on table public.users from anon;
+revoke all privileges on table public.evaluation_cycles from anon;
+revoke all privileges on table public.evaluation_questions from anon;
+revoke all privileges on table public.matchings from anon;
+revoke all privileges on table public.evaluations from anon;
+revoke all privileges on table public.score_adjustments from anon;
+revoke all privileges on table public.score_adjustment_history from anon;
 
 do $$
 declare policy_record record;
@@ -218,3 +228,4 @@ begin
 end $$;
 
 commit;
+
