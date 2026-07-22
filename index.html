@@ -241,11 +241,6 @@
         <span>🟢 실시간 자동동기화 ON</span>
       </div>
 
-      <button onclick="openGuideModal(false)" class="text-xs bg-gradient-to-r from-teal-500/20 to-teal-600/20 hover:from-teal-500/30 hover:to-teal-600/30 text-teal-300 border border-teal-500/40 px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shadow-lg shadow-teal-900/20">
-        <i class="fa-solid fa-book-open text-brandTeal"></i>
-        <span>📘 평가 가이드</span>
-      </button>
-
       <!-- Clickable User Profile Badge to Change Password -->
       <button onclick="openChangePasswordModal()" title="클릭하여 비밀번호 변경" class="hidden md:flex items-center gap-2 bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 hover:border-brandTeal/60 px-3 py-1.5 rounded-xl text-xs transition shadow cursor-pointer group">
         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -271,9 +266,9 @@
         <i class="fa-solid fa-list-check"></i>
         <span>평가 대상자 목록</span>
       </button>
-      <button onclick="navigateTo('goals')" id="nav-tab-goals" class="px-4 py-2 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-2">
-        <i class="fa-solid fa-bullseye"></i>
-        <span>개인 목표 대시보드</span>
+      <button onclick="navigateTo('guide')" id="nav-tab-guide" class="px-4 py-2 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-2">
+        <i class="fa-solid fa-book-open"></i>
+        <span>평가 가이드</span>
       </button>
       <button onclick="navigateTo('myresults')" id="nav-tab-myresults" class="px-4 py-2 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-2">
         <i class="fa-solid fa-chart-user"></i>
@@ -504,37 +499,93 @@
       </div>
     </section>
 
-    <!-- VIEW 4: GOAL DASHBOARD -->
-    <section id="view-goals" class="hidden space-y-6">
-      <div class="glass-card rounded-2xl p-6 border border-slate-800">
-        <h2 class="text-2xl font-black text-white">🎯 개인 목표 대시보드</h2>
-        <p class="text-xs text-slate-400 mt-1">등록된 목표는 관리자의 승인을 거쳐 확정됩니다.</p>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="glass-card rounded-2xl p-6 border border-slate-800 space-y-4">
-          <h3 class="text-base font-bold text-white">➕ 신규 목표 등록</h3>
+    <!-- VIEW 4: EMPLOYEE EVALUATION GUIDE -->
+    <section id="view-guide" class="hidden space-y-6">
+      <div class="glass-card rounded-2xl p-6 md:p-8 border border-brandTeal/30 bg-gradient-to-r from-slate-900 via-slate-900 to-teal-950/40">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
           <div>
-            <label class="block text-xs font-bold text-slate-300 mb-1">목표 명칭</label>
-            <input type="text" id="goal-title-input" placeholder="예: 노선 운행일보 자동 정산 툴 도입" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-brandTeal">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="bg-teal-500/20 text-brandTeal border border-brandTeal/30 px-2.5 py-0.5 rounded-full text-[10px] font-black tracking-wider">360° EVALUATION GUIDE</span>
+              <span class="text-xs text-slate-400">모든 평가자 공통 안내</span>
+            </div>
+            <h2 class="text-2xl md:text-3xl font-black text-white flex items-center gap-3">
+              <i class="fa-solid fa-book-open text-brandTeal"></i>
+              <span>평가 가이드</span>
+            </h2>
+            <p class="text-sm text-slate-300 mt-2 leading-relaxed">평가는 서열을 정하기 위한 절차가 아니라, 관찰한 업무 행동을 바탕으로 강점과 개선 방향을 전달하는 과정입니다.</p>
           </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-300 mb-1">카테고리</label>
-            <select id="goal-category-select" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm text-white">
-              <option value="성과">성과 (Performance)</option>
-              <option value="협업">협업 (Collaboration)</option>
-              <option value="성장">성장 (Growth)</option>
-              <option value="조화">조화 (Harmony)</option>
-            </select>
-          </div>
-          <button onclick="handleAddGoal()" class="w-full bg-brandTeal hover:bg-teal-600 text-white font-bold py-3 rounded-xl transition text-sm">
-            목표 등록 신청
+          <button onclick="navigateTo('list')" class="bg-brandTeal hover:bg-teal-600 text-white font-bold px-5 py-3 rounded-xl transition text-sm flex items-center justify-center gap-2 shadow-lg shadow-teal-950/40 whitespace-nowrap">
+            <i class="fa-solid fa-list-check"></i>
+            <span>평가 대상자 목록으로 이동</span>
           </button>
         </div>
+      </div>
 
-        <div class="md:col-span-2 glass-card rounded-2xl p-6 border border-slate-800 space-y-4">
-          <h3 class="text-base font-bold text-white">📌 내 목표 및 승인 현황</h3>
-          <div class="space-y-3" id="goals-list-container"></div>
+      <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <article class="glass-card rounded-2xl p-6 border border-slate-800 space-y-5">
+          <div class="flex items-center gap-3">
+            <span class="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-300 flex items-center justify-center"><i class="fa-solid fa-route"></i></span>
+            <div><p class="text-[10px] font-bold text-blue-300 uppercase tracking-wider">STEP BY STEP</p><h3 class="text-lg font-black text-white">평가 진행 순서</h3></div>
+          </div>
+          <ol class="space-y-3 text-sm text-slate-300">
+            <li class="flex gap-3"><span class="w-6 h-6 rounded-full bg-brandTeal text-slate-950 font-black text-xs flex items-center justify-center flex-shrink-0">1</span><p><strong class="text-white">평가 대상자 목록</strong>에서 서버가 배정한 동료를 선택합니다.</p></li>
+            <li class="flex gap-3"><span class="w-6 h-6 rounded-full bg-brandTeal text-slate-950 font-black text-xs flex items-center justify-center flex-shrink-0">2</span><p>최근 평가기간에 직접 관찰한 업무 행동과 결과를 기준으로 각 항목에 응답합니다.</p></li>
+            <li class="flex gap-3"><span class="w-6 h-6 rounded-full bg-brandTeal text-slate-950 font-black text-xs flex items-center justify-center flex-shrink-0">3</span><p>구체적인 사례와 개선 방향을 포함하여 <strong class="text-white">50자 이상의 종합 피드백</strong>을 작성합니다.</p></li>
+            <li class="flex gap-3"><span class="w-6 h-6 rounded-full bg-brandTeal text-slate-950 font-black text-xs flex items-center justify-center flex-shrink-0">4</span><p>미리보기에서 대상자와 내용을 확인한 뒤 제출합니다. 주기가 열려 있는 동안에는 수정할 수 있습니다.</p></li>
+          </ol>
+        </article>
+
+        <article class="glass-card rounded-2xl p-6 border border-slate-800 space-y-5">
+          <div class="flex items-center gap-3">
+            <span class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center"><i class="fa-solid fa-scale-balanced"></i></span>
+            <div><p class="text-[10px] font-bold text-amber-300 uppercase tracking-wider">SCORING STANDARD</p><h3 class="text-lg font-black text-white">1~5점 판단 기준</h3></div>
+          </div>
+          <div class="space-y-2 text-xs">
+            <div class="flex gap-3 items-start bg-emerald-950/30 border border-emerald-500/20 rounded-xl p-3"><strong class="text-emerald-300 w-12">5점</strong><span class="text-slate-300">지속적으로 기대 수준을 크게 초과하며 다른 구성원에게도 긍정적인 영향을 줌</span></div>
+            <div class="flex gap-3 items-start bg-teal-950/30 border border-teal-500/20 rounded-xl p-3"><strong class="text-teal-300 w-12">4점</strong><span class="text-slate-300">기대 수준을 안정적으로 충족하고 일부 영역에서 기대 이상을 보임</span></div>
+            <div class="flex gap-3 items-start bg-slate-950/60 border border-slate-800 rounded-xl p-3"><strong class="text-white w-12">3점</strong><span class="text-slate-300">현재 직무에서 요구되는 일반적인 수준을 충족함</span></div>
+            <div class="flex gap-3 items-start bg-orange-950/20 border border-orange-500/20 rounded-xl p-3"><strong class="text-orange-300 w-12">2점</strong><span class="text-slate-300">일부 영역에서 기대 수준에 미치지 못해 구체적인 개선과 지원이 필요함</span></div>
+            <div class="flex gap-3 items-start bg-rose-950/20 border border-rose-500/20 rounded-xl p-3"><strong class="text-rose-300 w-12">1점</strong><span class="text-slate-300">반복적으로 기대 수준에 미치지 못하며 지속적인 개선 계획과 지원이 필요함</span></div>
+          </div>
+          <p class="text-[11px] text-slate-400 leading-relaxed"><i class="fa-solid fa-circle-info text-amber-400 mr-1"></i>개인적인 호감이나 한 번의 사건이 아니라 평가기간 전체의 반복된 행동을 기준으로 판단하세요.</p>
+        </article>
+
+        <article class="glass-card rounded-2xl p-6 border border-slate-800 space-y-5">
+          <div class="flex items-center gap-3">
+            <span class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center"><i class="fa-solid fa-comment-dots"></i></span>
+            <div><p class="text-[10px] font-bold text-emerald-300 uppercase tracking-wider">FEEDBACK</p><h3 class="text-lg font-black text-white">좋은 서술형 피드백 작성법</h3></div>
+          </div>
+          <div class="bg-slate-950/60 border border-slate-800 rounded-xl p-4 text-sm text-slate-300 leading-relaxed">
+            <p class="font-bold text-white mb-2">관찰한 행동 → 업무에 미친 영향 → 유지·개선 방향</p>
+            <p>“긴급 배차 변경 시 관련 부서에 변경사항을 신속하게 공유하여 운행 혼선을 줄였습니다. 앞으로도 변경사항을 표준 양식으로 기록한다면 협업의 일관성이 더욱 높아질 것으로 보입니다.”</p>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div class="bg-emerald-950/30 border border-emerald-500/30 rounded-xl p-3"><p class="font-bold text-emerald-300 mb-1">권장</p><p class="text-slate-300">구체적인 상황, 실제 행동, 업무 영향과 실행 가능한 제안</p></div>
+            <div class="bg-rose-950/20 border border-rose-500/30 rounded-xl p-3"><p class="font-bold text-rose-300 mb-1">지양</p><p class="text-slate-300">“그냥 잘함”, “마음에 안 듦” 같은 단정, 소문, 인격·사생활 평가</p></div>
+          </div>
+        </article>
+
+        <article class="glass-card rounded-2xl p-6 border border-slate-800 space-y-5">
+          <div class="flex items-center gap-3">
+            <span class="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-300 flex items-center justify-center"><i class="fa-solid fa-shield-halved"></i></span>
+            <div><p class="text-[10px] font-bold text-purple-300 uppercase tracking-wider">PRIVACY & AI</p><h3 class="text-lg font-black text-white">익명성·결과·AI 안내</h3></div>
+          </div>
+          <ul class="space-y-3 text-sm text-slate-300">
+            <li class="flex gap-2"><i class="fa-solid fa-user-secret text-purple-300 mt-1"></i><span>피평가자에게는 평가자 신원이 직접 공개되지 않습니다. 다만 인사 운영과 분쟁 대응을 위해 권한이 있는 관리자·임원은 원자료를 확인할 수 있습니다.</span></li>
+            <li class="flex gap-2"><i class="fa-solid fa-lock text-purple-300 mt-1"></i><span>평가 결과는 평가 완료, 관리자 검토 및 공개 절차가 끝난 뒤 확인할 수 있습니다.</span></li>
+            <li class="flex gap-2"><i class="fa-solid fa-robot text-purple-300 mt-1"></i><span>AI 리포트는 확정된 평가자료와 익명 의견을 요약한 코칭 참고자료이며, 승진·징계·보상 결정을 자동으로 내리지 않습니다.</span></li>
+            <li class="flex gap-2"><i class="fa-solid fa-triangle-exclamation text-purple-300 mt-1"></i><span>민감한 개인정보, 확인되지 않은 소문, 건강·가족·정치·종교에 관한 추측을 작성하지 마세요.</span></li>
+          </ul>
+        </article>
+      </div>
+
+      <div class="glass-card rounded-2xl p-6 border border-amber-500/20 bg-amber-950/10">
+        <h3 class="text-base font-black text-white flex items-center gap-2"><i class="fa-solid fa-brain text-amber-300"></i>공정한 평가를 위한 최종 점검</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 mt-4 text-xs text-slate-300">
+          <p class="bg-slate-950/50 border border-slate-800 rounded-xl p-3">최근 한 번의 사건에 지나치게 영향을 받지 않았나요?</p>
+          <p class="bg-slate-950/50 border border-slate-800 rounded-xl p-3">친분이나 부서 관계가 점수에 영향을 주지 않았나요?</p>
+          <p class="bg-slate-950/50 border border-slate-800 rounded-xl p-3">점수와 서술 의견이 서로 일치하나요?</p>
+          <p class="bg-slate-950/50 border border-slate-800 rounded-xl p-3">당사자가 읽어도 존중받는 표현으로 작성했나요?</p>
         </div>
       </div>
     </section>
@@ -3168,7 +3219,6 @@
     function renderCurrentCentralViews() {
       populateCycleSelects();
       if (currentActiveView === 'list') renderEmployeeGrid();
-      if (currentActiveView === 'goals') renderGoalsList();
       if (currentActiveView === 'myresults') renderMyResults();
       if (currentActiveView === 'admin' || currentActiveView === 'evalmanage') {
         if (currentActiveSubtab === 'users') renderUsersTable();
@@ -5148,6 +5198,9 @@
 
 
     function navigateTo(viewId) {
+      // Older builds stored the removed personal-goals view in sessionStorage.
+      if (viewId === 'goals') viewId = 'guide';
+
       // Dynamic Permission Guard for Admin/Management Pages
       if (viewId === 'evalmanage' || viewId === 'admin') {
         const roleInfo = checkUserRole(currentLoggedInUser);
@@ -5161,7 +5214,7 @@
       sessionStorage.setItem('cnhy_session_view', viewId);
 
       // Hide all main section views
-      const views = ['login', 'list', 'eval', 'goals', 'myresults', 'evalmanage', 'admin'];
+      const views = ['login', 'list', 'eval', 'guide', 'myresults', 'evalmanage', 'admin'];
       views.forEach(v => {
         const el = document.getElementById(`view-${v}`);
         if (el) el.classList.add('hidden');
@@ -5182,8 +5235,6 @@
           activeEl.classList.remove('hidden');
         }
       }
-      if (viewId === 'goals') renderGoalsList();
-
       // Highlight active nav tab if applicable
       const activeTab = document.getElementById(`nav-tab-${viewId}`);
       if (activeTab) {
