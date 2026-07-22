@@ -2388,11 +2388,6 @@
           usersDb.push(masterAdminSeed);
         }
 
-        // Ensure default essential accounts exist if usersDb is completely empty
-        if (usersDb.length === 0) {
-          usersDb = JSON.parse(JSON.stringify(DEFAULT_USERS_DB));
-        }
-
         // Sync with D Drive FastAPI SQLite Database (Only when running on local machine)
         if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
           fetch('http://localhost:8000/api/users')
