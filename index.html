@@ -250,7 +250,7 @@
       <button onclick="openChangePasswordModal()" title="클릭하여 비밀번호 변경" class="hidden md:flex items-center gap-2 bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 hover:border-brandTeal/60 px-3 py-1.5 rounded-xl text-xs transition shadow cursor-pointer group">
         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
         <span class="text-slate-300 group-hover:text-white font-semibold flex items-center gap-1.5" id="current-user-badge">
-          유종열 대리 (jongyeol@hanyang.com)
+          로그인한 사용자
         </span>
         <i class="fa-solid fa-key text-[10px] text-amber-400 ml-0.5 group-hover:scale-110 transition"></i>
       </button>
@@ -306,7 +306,7 @@
             <label class="block text-xs font-bold text-slate-300 mb-1">아이디 (이메일 주소)</label>
             <div class="relative">
               <i class="fa-solid fa-envelope absolute left-3.5 top-3.5 text-slate-500 text-sm"></i>
-              <input type="email" id="login-emp-id" placeholder="jongyeol@hanyang.com 또는 admin@hanyang.com" required class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-brandTeal focus:ring-1 focus:ring-brandTeal">
+              <input type="email" id="login-emp-id" placeholder="회사 이메일 주소" autocomplete="username" required class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-brandTeal focus:ring-1 focus:ring-brandTeal">
             </div>
           </div>
 
@@ -314,7 +314,7 @@
             <label class="block text-xs font-bold text-slate-300 mb-1">비밀번호 (Password)</label>
             <div class="relative">
               <i class="fa-solid fa-key absolute left-3.5 top-3.5 text-slate-500 text-sm"></i>
-              <input type="password" id="login-password" placeholder="초기 비밀번호: 휴대폰 번호 뒤 4자리 (예: 5555)" required class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-brandTeal focus:ring-1 focus:ring-brandTeal">
+              <input type="password" id="login-password" placeholder="비밀번호" autocomplete="current-password" required class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-brandTeal focus:ring-1 focus:ring-brandTeal">
             </div>
           </div>
 
@@ -327,12 +327,10 @@
         <div class="p-3.5 bg-slate-900/80 rounded-2xl border border-slate-800 text-left text-[11px] text-slate-400 space-y-1.5 shadow">
           <p class="font-bold text-brandGold flex items-center gap-1.5">
             <i class="fa-solid fa-shield-halved text-amber-400"></i>
-            <span>초기 비밀번호 접속 안내 (휴대폰 뒤 4자리)</span>
+            <span>보안 로그인 안내</span>
           </p>
-          <p>• <strong>유종열 대리 (관리자)</strong>: <code class="text-teal-300 font-mono font-bold">jongyeol@hanyang.com</code> (초기암호: <code class="text-amber-400 font-bold font-mono">5555</code>)</p>
-          <p>• <strong>홍길동 과장 (경리부)</strong>: <code class="text-teal-300 font-mono font-bold">hong@hanyang.com</code> (초기암호: <code class="text-amber-400 font-bold font-mono">2222</code>)</p>
-          <p>• <strong>이순신 차장 (안전관리)</strong>: <code class="text-teal-300 font-mono font-bold">lee@chungnam.com</code> (초기암호: <code class="text-amber-400 font-bold font-mono">3333</code>)</p>
-          <p class="text-[10px] text-slate-400 pt-1 border-t border-slate-800/80">※ 최초 로그인 후 상단 프로필 [유종열 대리] 영역을 클릭하면 원하는 비밀번호로 변경할 수 있습니다.</p>
+          <p>Supabase Auth에 등록된 회사 계정으로 로그인해 주세요.</p>
+          <p class="text-[10px] text-slate-400 pt-1 border-t border-slate-800/80">계정 발급 또는 비밀번호 재설정은 인사관리자에게 문의해 주세요.</p>
         </div>
       </div>
     </section>
@@ -344,7 +342,7 @@
           <div>
             <div class="flex items-center gap-2 mb-1">
               <span class="bg-teal-500/20 text-brandTeal border border-brandTeal/30 text-[11px] font-bold px-2.5 py-0.5 rounded-full">한양고속 • 인사총무부</span>
-              <span class="text-xs text-slate-400">jongyeol@hanyang.com</span>
+              <span class="text-xs text-slate-400">Supabase Auth 계정</span>
             </div>
             <h2 class="text-2xl font-black text-white">유종열 대리님 환영합니다! 👋</h2>
             <p class="text-xs text-slate-300 mt-1">배정된 동료들에 대한 360° 다면평가를 성실히 진행해 주세요. (자기평가 제외됨)</p>
@@ -792,7 +790,7 @@
         <div>
           <div class="flex items-center gap-2 mb-1">
             <span class="bg-amber-500/20 text-brandGold border border-brandGold/30 text-[11px] font-bold px-2.5 py-0.5 rounded-full">ADMINISTRATOR CONTROL</span>
-            <span class="text-xs text-slate-400">admin@hanyang.com</span>
+            <span class="text-xs text-slate-400">관리자 계정</span>
           </div>
           <h2 class="text-2xl font-black text-white flex items-center gap-2">
             <i class="fa-solid fa-user-shield text-brandGold"></i>
@@ -2159,76 +2157,28 @@
 
   <!-- STATE & APPLICATION SCRIPTS -->
   <script>
-    // Supabase Cloud & Realtime Rest Sync Engine
+    // Supabase Auth and PostgreSQL client. The publishable key is intentionally
+    // public; database access is enforced by Supabase Auth and RLS policies.
     const SUPABASE_URL = "https://cjtjfbqhyeljwwkjevxj.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_KgmJfj59fmywdVwzhLQ-4Q_C8rP-Dcb";
 
     let supabaseClient = null;
-    let syncDebounceTimer = null;
-    let isChannelSubscribed = false;
-
     if (window.supabase && SUPABASE_URL.includes("supabase.co")) {
       try {
-        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        console.log("⚡ Supabase Realtime Cloud Client Successfully Connected:", SUPABASE_URL);
-
-        // Ultra-Fast Realtime Channel Engine (WebSocket Instant Mode)
-        realtimeChannel = supabaseClient.channel('cnhy-hr-live-sync-v2', {
-          config: { broadcast: { self: true } }
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+          auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: true
+          }
         });
-
-        realtimeChannel
-          .on('broadcast', { event: 'sync_data' }, (payload) => {
-            console.log("📡 Received Ultra-Fast Broadcast Data:", payload);
-            if (payload && payload.payload) {
-              isReceivingBroadcast = true;
-              if (payload.payload.usersDb && Array.isArray(payload.payload.usersDb)) {
-                usersDb = payload.payload.usersDb;
-              }
-              if (payload.payload.customManualMatchingsDb && Array.isArray(payload.payload.customManualMatchingsDb)) {
-                customManualMatchingsDb = payload.payload.customManualMatchingsDb;
-              }
-              saveToLocalStorage();
-
-              if (currentActiveView === 'eval') {
-                isReceivingBroadcast = false;
-                return;
-              }
-
-              // Instant UI Refresh
-              clearTimeout(syncDebounceTimer);
-              syncDebounceTimer = setTimeout(() => {
-                populateCycleSelects();
-                if (currentActiveView === 'myresults') renderMyResults();
-                if (currentActiveView === 'admin') renderUsersTable();
-                if (currentActiveView === 'list') renderEmployeeGrid();
-                isReceivingBroadcast = false;
-              }, 10);
-            }
-          })
-          .subscribe((status) => {
-            if (status === 'SUBSCRIBED') {
-              isChannelSubscribed = true;
-              console.log("⚡ Supabase Realtime WebSocket Subscribed & Ultra-Fast Ready!");
-            }
-          });
       } catch (e) {
-        console.warn("Supabase init fallback:", e);
+        console.error("Supabase initialization failed:", e);
       }
     }
 
     // Default Seed Databases (For Initial Setup & Reset)
-    const DEFAULT_USERS_DB = [
-      { id: 1, name: '홍길동', email: 'hong@hanyang.com', dept: '경리', workplace: '본사', role: '과장', type: '팀원급', sysRole: '일반사용자', joindate: '2020-03-01', phone: '010-1111-2222', active: true, raw_score: 91.5, final_score: 91.5, is_adjusted: false, final_grade: 'S', completed: 0, total: 6, company: '한양고속' },
-      { id: 2, name: '이순신', email: 'lee@chungnam.com', dept: '안전관리', workplace: '본사', role: '차장', type: '팀장급', sysRole: '일반사용자', joindate: '2018-05-15', phone: '010-2222-3333', active: true, raw_score: 88.0, final_score: 88.0, is_adjusted: false, final_grade: 'A', completed: 0, total: 6, company: '충남고속' },
-      { id: 3, name: '강감찬', email: 'kang@hanyang.com', dept: '사업', workplace: '본사', role: '부장', type: '부서실장급', sysRole: '일반사용자', joindate: '2015-01-10', phone: '010-3333-4444', active: true, raw_score: 100.0, final_score: 100.0, is_adjusted: true, final_grade: 'EX', completed: 0, total: 6, company: '한양고속' },
-      { id: 4, name: '유종열', email: 'jongyeol@hanyang.com', dept: '인사총무', workplace: '본사', role: '대리', type: '팀원급', sysRole: '관리자', joindate: '2021-09-01', phone: '010-4444-5555', active: true, raw_score: 95.0, final_score: 95.0, is_adjusted: false, final_grade: 'S', completed: 0, total: 6, company: '한양고속' },
-      { id: 5, name: '김유신', email: 'kim@chungnam.com', dept: '차량', workplace: '강남영업소', role: '팀장', type: '팀장급', sysRole: '일반사용자', joindate: '2017-11-20', phone: '010-5555-6666', active: true, raw_score: 82.4, final_score: 82.4, is_adjusted: false, final_grade: 'B', completed: 0, total: 6, company: '충남고속' },
-      { id: 6, name: '윤봉길', email: 'yoon@chungnam.com', dept: '영업소', workplace: '천안영업소', role: '주임', type: '팀원급', sysRole: '일반사용자', joindate: '2022-04-12', phone: '010-6666-7777', active: true, raw_score: 78.5, final_score: 78.5, is_adjusted: false, final_grade: 'B', completed: 0, total: 6, company: '충남고속' },
-      { id: 7, name: '안중근', email: 'ahn@hanyang.com', dept: '정비', workplace: '대전영업소', role: '반장', type: '팀원급', sysRole: '일반사용자', joindate: '2019-08-05', phone: '010-7777-8888', active: true, raw_score: 86.0, final_score: 86.0, is_adjusted: false, final_grade: 'A', completed: 0, total: 6, company: '한양고속' },
-      { id: 8, name: '이충용', email: 'leecy@hanyang.com', dept: '임원실', workplace: '본사', role: '대표이사', type: '임원급', sysRole: '일반사용자', joindate: '2010-01-01', phone: '010-9999-8888', active: true, raw_score: 100.0, final_score: 100.0, is_adjusted: false, final_grade: 'EX', completed: 0, total: 6, company: '한양고속' },
-      { id: 9, name: '시스템 최고관리자', email: 'admin@hanyang.com', dept: '인사총무', workplace: '본사', role: '최고관리자', type: '팀장급', sysRole: '관리자', joindate: '2020-01-01', phone: '010-7777-7777', active: true, raw_score: 100.0, final_score: 100.0, is_adjusted: false, final_grade: 'EX', completed: 0, total: 6, company: '한양고속' }
-    ];
+    const DEFAULT_USERS_DB = [];
 
     const DEFAULT_CYCLES_DB = [
       { id: 1, name: "'26년 상반기 인사평가", desc: "2026년 상반기 전사 360° 동료 다면평가 주간", start: "2026-01-01", end: "2026-06-30", deadline: "2026-07-31", status: "진행 중" }
@@ -2289,81 +2239,91 @@
 
     function saveToLocalStorage() {
       try {
-        localStorage.setItem('cnhy_users_db', JSON.stringify(usersDb));
-        localStorage.setItem('cnhy_cycles_db', JSON.stringify(cyclesDb));
-        localStorage.setItem('cnhy_questions_db', JSON.stringify(customQuestionsDb));
-        localStorage.setItem('cnhy_history_db', JSON.stringify(evaluationHistoryDb));
-        localStorage.setItem('cnhy_cycle_scores_db', JSON.stringify(cycleScoresDb));
-        localStorage.setItem('cnhy_manual_matchings_db', JSON.stringify(customManualMatchingsDb));
-        if (currentLoggedInUser) {
-          sessionStorage.setItem('cnhy_session_user', JSON.stringify(currentLoggedInUser));
-          sessionStorage.setItem('cnhy_session_view', currentActiveView);
-        } else {
-          sessionStorage.removeItem('cnhy_session_user');
-          sessionStorage.removeItem('cnhy_session_view');
-        }
+        // Sensitive HR data stays in Supabase. The browser stores UI state only.
+        sessionStorage.setItem('cnhy_session_view', currentActiveView);
         localStorage.setItem('cnhy_last_subtab', currentActiveSubtab);
-
-        // Auto-broadcast changes to all connected devices over Supabase Realtime channel
-        if (!isReceivingBroadcast && realtimeChannel && typeof realtimeChannel.send === 'function') {
-          try {
-            realtimeChannel.send({
-              type: 'broadcast',
-              event: 'sync_data',
-              payload: { usersDb, customManualMatchingsDb, timestamp: Date.now() }
-            });
-          } catch (broadcastErr) {
-            console.log('Realtime auto-broadcast:', broadcastErr);
-          }
-        }
-
-        // Push Master State to Supabase PostgreSQL Database Tables
-        if (!isReceivingBroadcast && supabaseClient) {
-          // 1. Save master state JSON snapshot
-          supabaseClient
-            .from('cnhy_system_state')
-            .upsert({
-              id: 'master_state',
-              state_data: { usersDb, customManualMatchingsDb, updatedAt: new Date().toISOString() }
-            })
-            .then(({ error }) => {
-              if (error) console.log('Supabase Cloud State upsert warning:', error);
-              else console.log('☁️ Successfully Saved Master State to Supabase Central Cloud DB!');
-            });
-
-          // 2. Direct Upsert to public.users PostgreSQL Table
-          if (usersDb && usersDb.length > 0) {
-            const pgUsers = usersDb.map(u => ({
-              id: u.id,
-              name: u.name,
-              email: u.email,
-              dept: u.dept,
-              workplace: u.workplace,
-              role: u.role,
-              type: u.type,
-              sys_role: u.sysRole || '일반사용자',
-              company: u.company,
-              joindate: u.joindate || new Date().toISOString().split('T')[0],
-              phone: u.phone || '010-0000-0000',
-              active: true
-            }));
-
-            supabaseClient
-              .from('users')
-              .upsert(pgUsers, { onConflict: 'id' })
-              .then(({ error }) => {
-                if (error) console.log('Supabase PostgreSQL users upsert warning:', error);
-                else console.log('🐘 Successfully Synced', pgUsers.length, 'Users to PostgreSQL public.users Table!');
-              });
-          }
-        }
       } catch (e) {
-        console.error('LocalStorage write failed:', e);
+        console.error('UI preference write failed:', e);
       }
     }
 
     async function loadFromLocalStorage() {
       try {
+        if (!supabaseClient) throw new Error('Supabase client is unavailable.');
+
+        const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
+        if (sessionError) throw sessionError;
+        if (!sessionData.session) {
+          currentLoggedInUser = null;
+          usersDb = [];
+          customManualMatchingsDb = [];
+          return false;
+        }
+
+        const [profileResult, cyclesResult, questionsResult] = await Promise.all([
+          supabaseClient.rpc('my_profile'),
+          supabaseClient.from('evaluation_cycles').select('*').order('id', { ascending: false }),
+          supabaseClient.from('evaluation_questions').select('*').order('id', { ascending: true })
+        ]);
+
+        if (profileResult.error) throw profileResult.error;
+        if (!profileResult.data || profileResult.data.length !== 1) {
+          throw new Error('로그인 계정과 연결된 활성 직원 프로필이 없습니다.');
+        }
+
+        const profile = profileResult.data[0];
+        currentLoggedInUser = {
+          ...profile,
+          sysRole: profile.sys_role,
+          isAdmin: profile.sys_role === '관리자',
+          isExecutive: profile.sys_role === '임원'
+        };
+
+        const roleInfo = checkUserRole(currentLoggedInUser);
+        const peopleResult = roleInfo.isPrivileged
+          ? await supabaseClient.rpc('admin_list_users')
+          : await supabaseClient.rpc('my_assigned_targets');
+        if (peopleResult.error) throw peopleResult.error;
+        usersDb = roleInfo.isPrivileged
+          ? (peopleResult.data || []).map(u => ({
+              ...u, sysRole: u.sys_role, completed: 0, total: 0
+            }))
+          : (peopleResult.data || []).map(target => ({
+              id: target.target_id,
+              matchingId: target.matching_id,
+              cycleId: target.cycle_id,
+              name: target.name,
+              dept: target.dept,
+              workplace: target.workplace,
+              role: target.role,
+              type: target.employee_type,
+              company: target.company,
+              active: true,
+              completed: target.submitted ? 1 : 0,
+              total: 1
+            }));
+        customManualMatchingsDb = usersDb.map(target => ({
+          id: target.matchingId,
+          evaluatorId: currentLoggedInUser.id,
+          targetId: target.id,
+          type: '서버 배정'
+        }));
+        cyclesDb = cyclesResult.error ? [] : (cyclesResult.data || []).map(cycle => ({
+          ...cycle,
+          start: cycle.start_date,
+          end: cycle.end_date
+        }));
+        customQuestionsDb = questionsResult.error ? [] : (questionsResult.data || []).map(q => ({
+          ...q,
+          cycleId: q.cycle_id,
+          targetTrack: q.target_track,
+          targetDept: q.target_dept,
+          is_default: q.is_default
+        }));
+        return true;
+
+        /* Legacy local-state loader retained temporarily below for migration
+           reference. It is unreachable because secure loading returns above. */
         const sessCur = sessionStorage.getItem('cnhy_session_user');
         if (sessCur) currentLoggedInUser = JSON.parse(sessCur);
 
@@ -2477,12 +2437,11 @@
             .catch(err => console.log('Local D-Drive DB Sync (Standalone mode active)'));
         }
       } catch (e) {
-        console.error('LocalStorage read failed:', e);
-        usersDb = JSON.parse(JSON.stringify(DEFAULT_USERS_DB));
-        cyclesDb = JSON.parse(JSON.stringify(DEFAULT_CYCLES_DB));
-        customQuestionsDb = JSON.parse(JSON.stringify(DEFAULT_QUESTIONS_DB));
-        evaluationHistoryDb = JSON.parse(JSON.stringify(DEFAULT_HISTORY_DB));
-        cycleScoresDb = JSON.parse(JSON.stringify(DEFAULT_CYCLE_SCORES_DB));
+        console.error('Secure cloud load failed:', e);
+        currentLoggedInUser = null;
+        usersDb = [];
+        customManualMatchingsDb = [];
+        return false;
       }
     }
 
@@ -2493,21 +2452,8 @@
       if (currentActiveView === 'admin') renderUsersTable();
       if (currentActiveView === 'list') renderEmployeeGrid();
 
-      // Cloud Push Notification via Supabase Broadcast
-      if (realtimeChannel) {
-        try {
-          realtimeChannel.send({
-            type: 'broadcast',
-            event: 'sync_data',
-            payload: { usersDb, customManualMatchingsDb, timestamp: Date.now() }
-          });
-        } catch (err) {
-          console.log('Supabase broadcast error:', err);
-        }
-      }
-
       if (userNotice) {
-        alert('✨ [실시간 클라우드 DB 동기화 완료]\nSupabase 클라우드 서버와 연결되었습니다!\n모든 접속 단말기(크롬, 모바일)의 임직원 데이터 및 매칭 정보가 최신 상태로 원클릭 보정/동기화되었습니다!');
+        alert('Supabase 서버에서 최신 데이터를 불러왔습니다.');
       }
     }
 
@@ -2524,12 +2470,6 @@
         location.reload();
       }
     }
-
-    // Ensure Cloud State is fetched first before initial UI rendering
-    window.addEventListener('DOMContentLoaded', async () => {
-      await loadFromLocalStorage();
-      populateCycleSelects();
-    });
 
     function populateCycleSelects() {
       const myReportSelect = document.getElementById('my-report-cycle-select');
@@ -3302,87 +3242,88 @@
       return { isAdmin, isExecutive, isPrivileged };
     }
 
-    let currentLoggedInUser = { name: '유종열', email: 'jongyeol@hanyang.com', role: '대리', dept: '인사총무', sysRole: '관리자', isAdmin: true, isExecutive: false };
-
-    // Helper: Get user password (default to last 4 digits of phone number if custom password not set)
-    function getUserPassword(user) {
-      if (user.custom_password) return user.custom_password;
-
-      // Extract last 4 digits of phone number (e.g. "010-4444-5555" -> "5555")
-      if (user.phone) {
-        const cleanPhone = user.phone.replace(/[^0-9]/g, '');
-        if (cleanPhone.length >= 4) {
-          return cleanPhone.slice(-4);
-        }
-      }
-      return '1234'; // Default fallback
-    }
+    let currentLoggedInUser = null;
 
     // Strict Password Authentication Login Handler
-    function handleLoginSubmit(e) {
+    async function handleLoginSubmit(e) {
       e.preventDefault();
       const email = document.getElementById('login-emp-id').value.trim().toLowerCase();
       const pass = document.getElementById('login-password').value.trim();
 
-      const foundUser = usersDb.find(u => u.email.toLowerCase() === email);
-
-      if (!foundUser) {
-        alert('⚠️ 등록되지 않은 이메일 주소입니다. 이메일을 다시 확인해 주세요.');
+      if (!supabaseClient) {
+        alert('인증 서버에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.');
         return;
       }
 
-      // Strict Password Verification
-      const expectedPass = getUserPassword(foundUser);
-      if (pass !== expectedPass) {
-        alert(`🔒 비밀번호가 일치하지 않습니다!\n\n초기 비밀번호는 휴대폰 번호 뒤 4자리(예: ${getUserPassword(foundUser)})이거나, 본인이 변경한 비밀번호입니다.`);
+      const { error: loginError } = await supabaseClient.auth.signInWithPassword({
+        email,
+        password: pass
+      });
+      if (loginError) {
+        console.error('Supabase login failed:', loginError);
+        alert('이메일 또는 비밀번호를 확인해 주세요.');
         return;
       }
 
-      const roles = checkUserRole(foundUser);
-      const isAdminUser = roles.isAdmin;
-      const isExecUser = roles.isExecutive;
-      currentLoggedInUser = { ...foundUser, isAdmin: isAdminUser, isExecutive: isExecUser };
+      const loaded = await loadFromLocalStorage();
+      if (!loaded || !currentLoggedInUser) {
+        await supabaseClient.auth.signOut();
+        alert('로그인 계정과 연결된 직원 프로필이 없습니다. 관리자에게 문의해 주세요.');
+        return;
+      }
 
-      // Show top header items
+      const foundUser = currentLoggedInUser;
+      const authenticatedRoles = checkUserRole(foundUser);
+      currentLoggedInUser = {
+        ...foundUser,
+        isAdmin: authenticatedRoles.isAdmin,
+        isExecutive: authenticatedRoles.isExecutive
+      };
+
+      finishAuthenticatedLogin();
+    }
+
+    async function callUsersApi(method, body) {
+      if (!supabaseClient) throw new Error('Supabase 연결이 없습니다.');
+      const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
+      if (sessionError || !sessionData.session) throw new Error('로그인이 필요합니다.');
+      const response = await fetch('/api/users', {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionData.session.access_token}`
+        },
+        body: body === undefined ? undefined : JSON.stringify(body)
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.error || '사용자 처리 요청에 실패했습니다.');
+      return payload;
+    }
+
+    async function refreshAdminUsers() {
+      const payload = await callUsersApi('GET');
+      usersDb = (payload.users || []).map(u => ({ ...u, sysRole: u.sys_role, completed: 0, total: 0 }));
+      renderUsersTable();
+      renderEmployeeGrid();
+      renderAdminSummaryTable();
+    }
+
+    function finishAuthenticatedLogin() {
       const headerUserInfo = document.getElementById('header-user-info');
       const mainNavTabs = document.getElementById('main-nav-tabs');
       if (headerUserInfo) headerUserInfo.classList.remove('hidden');
       if (mainNavTabs) mainNavTabs.classList.remove('hidden');
 
-      // Update header badge
-      document.getElementById('current-user-badge').innerText = `${currentLoggedInUser.name} (${currentLoggedInUser.email})`;
+      const badge = document.getElementById('current-user-badge');
+      if (badge) badge.innerText = `${currentLoggedInUser.name} (${currentLoggedInUser.email})`;
 
-      // Guide Button Toggle Check
-      const userHeaderGuideBtn = document.getElementById('user-header-guide-btn');
-      const adminHeaderGuideBtn = document.getElementById('admin-header-guide-btn');
       const roleInfo = checkUserRole(currentLoggedInUser);
-
-      if (roleInfo.isPrivileged) {
-        if (adminHeaderGuideBtn) adminHeaderGuideBtn.classList.remove('hidden');
-        if (userHeaderGuideBtn) userHeaderGuideBtn.classList.add('hidden');
-      } else {
-        if (userHeaderGuideBtn) userHeaderGuideBtn.classList.remove('hidden');
-        if (adminHeaderGuideBtn) adminHeaderGuideBtn.classList.add('hidden');
-      }
-
-      // Navigation Tab Visibility Rules
-      // 1) ⚙️ 평가 관리는 마스터 관리자 & 임원(isPrivileged) 모두 접근 가능
-      // 2) 🛡️ 사용자/계정 대시보드는 오직 마스터 관리자(isAdmin: 유종열/sysRole==='관리자')만 전점 접근 가능!
-      const adminNavTab = document.getElementById('nav-tab-admin');
       const evalManageNavTab = document.getElementById('nav-tab-evalmanage');
-      if (evalManageNavTab) {
-        if (roleInfo.isPrivileged) evalManageNavTab.classList.remove('hidden');
-        else evalManageNavTab.classList.add('hidden');
-      }
-      if (adminNavTab) {
-        if (roleInfo.isAdmin) adminNavTab.classList.remove('hidden');
-        else adminNavTab.classList.add('hidden');
-      }
+      const adminNavTab = document.getElementById('nav-tab-admin');
+      if (evalManageNavTab) evalManageNavTab.classList.toggle('hidden', !roleInfo.isPrivileged);
+      if (adminNavTab) adminNavTab.classList.toggle('hidden', !roleInfo.isAdmin);
 
-      saveToLocalStorage();
       populateCycleSelects();
-
-      // Land on 'list' view always post-login
       navigateTo('list');
       renderEmployeeGrid();
     }
@@ -3407,43 +3348,38 @@
       }
     }
 
-    function handleUserPasswordChangeSubmit(e) {
+    async function handleUserPasswordChangeSubmit(e) {
       e.preventDefault();
       if (!currentLoggedInUser) return;
 
-      const currP = document.getElementById('change-current-pass').value.trim();
       const newP = document.getElementById('change-new-pass').value.trim();
       const confP = document.getElementById('change-confirm-pass').value.trim();
 
-      const userInDb = usersDb.find(u => u.id === currentLoggedInUser.id || u.email.toLowerCase() === currentLoggedInUser.email.toLowerCase());
-      if (!userInDb) return;
+      if (!supabaseClient) return;
 
-      const expectedPass = getUserPassword(userInDb);
-      if (currP !== expectedPass) {
-        alert('⚠️ 현재 비밀번호가 일치하지 않습니다.');
-        return;
-      }
-
-      if (newP.length < 4) {
-        alert('⚠️ 새 비밀번호는 4자리 이상 입력해 주세요.');
+      if (newP.length < 8) {
+        alert('새 비밀번호는 8자리 이상 입력해 주세요.');
         return;
       }
 
       if (newP !== confP) {
-        alert('⚠️ 새 비밀번호와 비밀번호 확인이 일치하지 않습니다.');
+        alert('새 비밀번호와 확인 값이 일치하지 않습니다.');
         return;
       }
 
-      // Update password in DB
-      userInDb.custom_password = newP;
-      currentLoggedInUser.custom_password = newP;
+      const { error } = await supabaseClient.auth.updateUser({ password: newP });
+      if (error) {
+        console.error('Password update failed:', error);
+        alert('비밀번호를 변경하지 못했습니다. 다시 로그인한 후 시도해 주세요.');
+        return;
+      }
 
-      alert(`🎉 [${userInDb.name}] 님의 비밀번호가 성공적으로 변경되었습니다!\n다음 로그인부터 새 비밀번호로 접속하실 수 있습니다.`);
+      alert('비밀번호가 안전하게 변경되었습니다.');
       closeChangePasswordModal();
-      saveToLocalStorage();
     }
 
-    function handleLogout() {
+    async function handleLogout() {
+      if (supabaseClient) await supabaseClient.auth.signOut();
       sessionStorage.removeItem('cnhy_session_user');
       sessionStorage.removeItem('cnhy_session_view');
       localStorage.removeItem('cnhy_current_user');
@@ -3849,10 +3785,9 @@
       if (compEl) compEl.innerText = `${done} 건`;
     }
 
-    function confirmFinalSubmission() {
+    async function confirmFinalSubmission() {
       closePreviewModal();
       if (currentTargetEmp) {
-        currentTargetEmp.completed = currentTargetEmp.total;
 
         // Dynamic Custom Questions Score Calculation (1~5 scaled to 100)
         let qSum = 0;
@@ -3893,41 +3828,29 @@
 
         const commentVal = document.getElementById('eval-comment-input').value;
         const subKey = `${currentLoggedInUser.id}_${currentTargetEmp.id}`;
-        const mySubmissions = JSON.parse(localStorage.getItem('cnhy_user_submissions') || '{}');
-        mySubmissions[subKey] = true;
-        localStorage.setItem('cnhy_user_submissions', JSON.stringify(mySubmissions));
 
-        // Direct Insert/Upsert to Supabase PostgreSQL public.evaluations Table
-        if (supabaseClient) {
-          supabaseClient
-            .from('evaluations')
-            .upsert({
-              cycle_id: 1,
-              evaluator_id: currentLoggedInUser.id,
-              target_id: currentTargetEmp.id,
-              perf_score: perfVal,
-              collab_score: collabVal,
-              growth_score: growthVal,
-              harmony_score: harmonyVal,
-              qualitative_comment: commentVal
-            }, { onConflict: 'cycle_id,evaluator_id,target_id' })
-            .then(({ error }) => {
-              if (error) console.log('Supabase PostgreSQL evaluation insert error:', error);
-              else console.log('🐘 Successfully Saved Evaluation to PostgreSQL public.evaluations Table!');
-            });
+        if (!supabaseClient || !currentTargetEmp.matchingId) {
+          alert('유효한 서버 평가 배정을 찾지 못했습니다. 새로고침 후 다시 시도해 주세요.');
+          return;
         }
 
-        // Save detailed submission values for future editing/prefilling
-        const savedDetails = JSON.parse(localStorage.getItem('cnhy_user_submission_details') || '{}');
-        savedDetails[subKey] = {
-          perf: perfVal,
-          collab: collabVal,
-          growth: growthVal,
-          harmony: harmonyVal,
-          comment: commentVal,
-          updatedAt: new Date().toISOString()
-        };
-        localStorage.setItem('cnhy_user_submission_details', JSON.stringify(savedDetails));
+        const { error: submitError } = await supabaseClient.rpc('submit_evaluation', {
+          p_matching_id: currentTargetEmp.matchingId,
+          p_perf_score: perfVal,
+          p_collab_score: collabVal,
+          p_growth_score: growthVal,
+          p_harmony_score: harmonyVal,
+          p_comment: commentVal
+        });
+        if (submitError) {
+          console.error('Secure evaluation submission failed:', submitError);
+          alert('평가를 제출하지 못했습니다. 평가 기간과 배정 상태를 확인해 주세요.');
+          return;
+        }
+
+        currentTargetEmp.completed = currentTargetEmp.total;
+
+        // Evaluation answers remain in Supabase and are never cached in localStorage.
       }
 
       saveToLocalStorage();
@@ -3952,7 +3875,7 @@
       usersDb.forEach((u) => {
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-800/40 transition';
-        const autoPassword = `pw${String(u.id).padStart(4, '0')}!`;
+        const accountStatus = u.auth_user_id ? 'Auth 연결됨' : 'Auth 미연결';
         const roleBadge = u.sysRole === '관리자'
           ? `<span class="bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded font-bold text-[10px]">👑 관리자</span>`
           : `<span class="bg-slate-800 text-slate-400 px-2 py-0.5 rounded font-bold text-[10px]">👤 일반사용자</span>`;
@@ -3967,7 +3890,7 @@
           <td class="py-2.5 px-3">${roleBadge}</td>
           <td class="py-2.5 px-3 text-slate-400">${u.joindate}</td>
           <td class="py-2.5 px-3 font-mono text-slate-400">${u.phone}</td>
-          <td class="py-2.5 px-3 font-mono text-amber-400 font-bold">${autoPassword}</td>
+          <td class="py-2.5 px-3 text-xs ${u.auth_user_id ? 'text-emerald-400' : 'text-amber-400'} font-bold">${accountStatus}</td>
           <td class="py-2.5 px-3 text-center">
             <div class="flex items-center justify-center gap-1.5">
               <button onclick="openEditUserModal(${u.id})" class="bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white px-2 py-1 rounded text-[11px] font-bold transition flex items-center gap-1 border border-blue-500/30">
@@ -4007,7 +3930,7 @@
       document.getElementById('modal-edit-user').classList.add('hidden');
     }
 
-    function handleEditUserSubmit(e) {
+    async function handleEditUserSubmit(e) {
       e.preventDefault();
       const user = usersDb.find(u => u.id === currentEditingUserId);
       if (!user) return;
@@ -4023,30 +3946,37 @@
       user.joindate = document.getElementById('edit-user-joindate').value;
       user.phone = document.getElementById('edit-user-phone').value.trim();
 
-      alert(`사용자 [${user.name}] 님의 계정 정보 및 시스템 권한(${user.sysRole})이 정상적으로 수정되었습니다.`);
-      closeEditUserModal();
-      saveToLocalStorage();
-      renderUsersTable();
-      renderEmployeeGrid();
-      renderAdminSummaryTable();
+      try {
+        await callUsersApi('PATCH', {
+          id: user.id, name: user.name, email: user.email, company: user.company,
+          dept: user.dept, workplace: user.workplace, role: user.role,
+          type: user.type, sys_role: user.sysRole, joindate: user.joindate, phone: user.phone
+        });
+        closeEditUserModal();
+        await refreshAdminUsers();
+        alert(`사용자 [${user.name}] 정보가 서버에 수정되었습니다.`);
+      } catch (error) {
+        alert(`수정 실패: ${error.message}`);
+      }
     }
 
-    function deleteUserAccount(id) {
+    async function deleteUserAccount(id) {
       const userIdx = usersDb.findIndex(u => u.id === id);
       if (userIdx === -1) return;
       const targetUser = usersDb[userIdx];
 
       if (confirm(`사용자 [${targetUser.name}] 님의 계정을 정말 삭제하시겠습니까?\n삭제 후에는 해당 사용자의 계정이 시스템에서 즉시 제거됩니다.`)) {
-        usersDb.splice(userIdx, 1);
-        alert(`사용자 [${targetUser.name}] 계정이 성공적으로 삭제되었습니다.`);
-        saveToLocalStorage();
-        renderUsersTable();
-        renderEmployeeGrid();
-        renderAdminSummaryTable();
+        try {
+          await callUsersApi('DELETE', { id });
+          await refreshAdminUsers();
+          alert(`사용자 [${targetUser.name}] 계정을 비활성화했습니다.`);
+        } catch (error) {
+          alert(`비활성화 실패: ${error.message}`);
+        }
       }
     }
 
-    function handleAddUserSubmit(e) {
+    async function handleAddUserSubmit(e) {
       e.preventDefault();
       const company = document.getElementById('user-company-in').value;
       const name = document.getElementById('user-name-in').value.trim();
@@ -4073,31 +4003,19 @@
         company
       };
 
-      // Directly save to usersDb and sync to Supabase Central Cloud DB
-      const nextId = usersDb.length > 0 ? Math.max(...usersDb.map(u => u.id)) + 1 : 1;
-      usersDb.push({
-        id: nextId,
-        ...newUserObj,
-        active: true,
-        raw_score: 85.0,
-        final_score: 85.0,
-        is_adjusted: false,
-        final_grade: 'A',
-        completed: 6,
-        total: 6,
-        assigned_task: `${dept}부 고유 업무`
-      });
-
-      saveToLocalStorage();
-      triggerRealtimeCloudSync(false);
-      renderUsersTable();
-      renderEmployeeGrid();
-      alert(`사용자 [${name} (${company})] 님이 성공적으로 등록되었습니다.`);
+      try {
+        const payload = await callUsersApi('POST', { users: [{ ...newUserObj, sys_role: sysRole }] });
+        if (payload.failed) throw new Error(payload.results?.[0]?.message || '등록 실패');
+        await refreshAdminUsers();
+        alert(`사용자 [${name} (${company})] 님을 Auth와 직원 DB에 등록했습니다.`);
+      } catch (error) {
+        alert(`등록 실패: ${error.message}`);
+      }
     }
 
     function downloadCSVTemplate() {
-      const header = "성명,이메일,소속사,부서,근무지,직급,입사일자,사원구분,전화번호,시스템권한\n";
-      const sample = "홍길동,hong@hanyang.com,(주)한양고속,경리,본사,과장,2020-03-01,팀원급,010-1234-5678,일반사용자\n";
+      const header = "성명,이메일,소속사,부서,근무지,직급,입사일자,사원구분,전화번호,시스템권한,임시비밀번호(선택)\n";
+      const sample = "홍길동,hong@hanyang.com,(주)한양고속,경리,본사,과장,2020-03-01,팀원급,010-1234-5678,일반사용자,\n";
       const content = "\uFEFF" + header + sample;
 
       const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
@@ -4110,46 +4028,62 @@
       document.body.removeChild(link);
     }
 
+    function parseCSV(text) {
+      const rows = [];
+      let row = [], field = '', quoted = false;
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if (ch === '"') {
+          if (quoted && text[i + 1] === '"') { field += '"'; i++; }
+          else quoted = !quoted;
+        } else if (ch === ',' && !quoted) { row.push(field.trim()); field = ''; }
+        else if ((ch === '\n' || ch === '\r') && !quoted) {
+          if (ch === '\r' && text[i + 1] === '\n') i++;
+          row.push(field.trim()); field = '';
+          if (row.some(Boolean)) rows.push(row);
+          row = [];
+        } else field += ch;
+      }
+      row.push(field.trim());
+      if (row.some(Boolean)) rows.push(row);
+      return rows;
+    }
+
+    function downloadImportResults(results) {
+      const escape = value => `"${String(value ?? '').replace(/"/g, '""')}"`;
+      const lines = ['성명,이메일,처리결과,임시비밀번호,메시지', ...results.map(r =>
+        [r.name, r.email, r.status, r.temporary_password, r.message].map(escape).join(','))];
+      const blob = new Blob(['\uFEFF' + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url; link.download = `사용자_등록결과_${new Date().toISOString().slice(0,10)}.csv`;
+      document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url);
+    }
+
     function handleCSVUpload(event) {
       const file = event.target.files[0];
       if (!file) return;
 
       const reader = new FileReader();
-      reader.onload = function(e) {
-        const text = e.target.result;
-        const lines = text.split('\n').filter(l => l.trim().length > 0);
-        let count = 0;
-
-        for (let i = 1; i < lines.length; i++) {
-          const cols = lines[i].split(',').map(c => c.trim());
-          if (cols.length >= 8) {
-            usersDb.push({
-              id: usersDb.length + 1,
-              name: cols[0],
-              email: cols[1].toLowerCase(),
-              company: cols[2] || (cols[4].includes('충남') ? '(주)충남고속' : '(주)한양고속'),
-              dept: cols[3],
-              workplace: cols[4],
-              role: cols[5],
-              joindate: cols[6],
-              type: cols[7],
-              phone: cols[8] || '010-0000-0000',
-              active: true,
-              raw_score: 85.0,
-              final_score: 85.0,
-              is_adjusted: false,
-              final_grade: 'A',
-              completed: 6,
-              total: 6,
-              assigned_task: `${cols[3]}부 업무`
-            });
-            count++;
-          }
+      reader.onload = async function(e) {
+        try {
+          const rows = parseCSV(e.target.result);
+          const users = rows.slice(1).map(cols => ({
+            name: cols[0], email: (cols[1] || '').toLowerCase(), company: cols[2],
+            dept: cols[3], workplace: cols[4], role: cols[5], joindate: cols[6],
+            type: cols[7], phone: cols[8], sys_role: cols[9] || '일반사용자',
+            temporary_password: cols[10] || ''
+          }));
+          if (!users.length) throw new Error('등록할 사용자 행이 없습니다.');
+          const payload = await callUsersApi('POST', { users });
+          downloadImportResults(payload.results || []);
+          await refreshAdminUsers();
+          alert(`CSV 사용자 등록 완료: 성공 ${payload.success}명, 실패 ${payload.failed}명\n상세 결과 CSV가 다운로드됩니다.`);
+        } catch (error) {
+          alert(`CSV 사용자 등록 실패: ${error.message}`);
+        } finally {
+          event.target.value = '';
         }
-
-        alert(`CSV 파일에서 총 ${count}명의 사용자를 소속사 정보와 함께 일괄 등록 완료하였습니다!`);
-        saveToLocalStorage();
-        renderUsersTable();
       };
       reader.readAsText(file, 'utf-8');
     }
@@ -4532,52 +4466,38 @@
       if (!file) return;
 
       const reader = new FileReader();
-      reader.onload = function(e) {
+      reader.onload = async function(e) {
         try {
-          const text = e.target.result;
-          const lines = text.split(/\r\n|\n/);
-          let count = 0;
-
-          for (let i = 1; i < lines.length; i++) {
-            const line = lines[i].trim();
-            if (!line) continue;
-
-            const cols = line.split(',').map(c => c.trim().replace(/^"|"$/g, ''));
-            if (cols.length >= 6) {
-              const category = cols[0] || '성과';
-              const targetTrack = cols[1] || '기본 필수질문';
-              const targetDept = cols[2] || '전체';
-              const type = cols[3] || '5지선다형';
-              const weight = parseFloat(cols[4]) || 10.0;
-              const textContent = cols[5];
-              const required = (cols[6] || 'Y').toUpperCase() === 'Y';
-              const is_default = (cols[7] || 'Y').toUpperCase() === 'Y';
-
-              if (textContent) {
-                customQuestionsDb.push({
-                  id: Date.now() + Math.floor(Math.random() * 10000),
-                  cycleId: 1,
-                  category,
-                  targetTrack,
-                  targetDept,
-                  type,
-                  weight,
-                  max_score: 5,
-                  text: textContent,
-                  required,
-                  is_default
-                });
-                count++;
-              }
-            }
-          }
-
-          alert(`🎉 CSV 업로드 완료! 총 ${count}개의 직군/부서별 커스텀 질문이 성공적으로 등록되었습니다.`);
-          saveToLocalStorage();
+          const rows = parseCSV(e.target.result);
+          const cycleId = Number(document.getElementById('question-cycle-select').value);
+          if (!cycleId) throw new Error('질문을 등록할 평가 주기를 선택해 주세요.');
+          const questions = rows.slice(1).map(cols => ({
+            cycle_id: cycleId,
+            category: cols[0] || '성과', target_track: cols[1] || '기본 필수질문',
+            target_dept: cols[2] || '전체', type: cols[3] || '5지선다형',
+            weight: Number(cols[4]), text: cols[5],
+            required: (cols[6] || 'Y').toUpperCase() === 'Y',
+            is_default: (cols[7] || 'Y').toUpperCase() === 'Y'
+          }));
+          const { data: sessionData } = await supabaseClient.auth.getSession();
+          if (!sessionData.session) throw new Error('로그인이 필요합니다.');
+          const response = await fetch('/api/questions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sessionData.session.access_token}` },
+            body: JSON.stringify({ questions })
+          });
+          const payload = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error(payload.error || '질문 등록 요청에 실패했습니다.');
+          const refreshed = await supabaseClient.from('evaluation_questions').select('*').order('id');
+          if (refreshed.error) throw refreshed.error;
+          customQuestionsDb = (refreshed.data || []).map(q => ({
+            ...q, cycleId: q.cycle_id, targetTrack: q.target_track,
+            targetDept: q.target_dept, is_default: q.is_default
+          }));
           renderQuestionsList();
+          alert(`CSV 질문 등록 완료: 성공 ${payload.success}개, 실패 ${payload.failed}개`);
         } catch (err) {
-          alert('CSV 파일 파싱 중 오류가 발생했습니다. 파이프 형태나 CSV 형식을 확인해주세요.');
-          console.error(err);
+          alert(`CSV 질문 등록 실패: ${err.message}`);
         }
       };
       reader.readAsText(file, 'UTF-8');
@@ -4654,7 +4574,8 @@
     // ADMIN SUBTAB 5: SUMMARY & 2ND ADJUSTMENT
     let currentSelectedSummaryCycleId = 1;
 
-    function handleLogout() {
+    async function handleLogout() {
+      if (supabaseClient) await supabaseClient.auth.signOut();
       sessionStorage.removeItem('cnhy_session_user');
       sessionStorage.removeItem('cnhy_session_view');
       localStorage.removeItem('cnhy_current_user');
@@ -4670,11 +4591,11 @@
     }
 
     // Default Initialization (브라우저 탭 닫기 전까지는 F5 새로고침시 세션 유지, 탭 닫고 다시 올땐 로그인 창)
-    window.addEventListener('DOMContentLoaded', () => {
-      loadFromLocalStorage();
+    window.addEventListener('DOMContentLoaded', async () => {
+      await loadFromLocalStorage();
 
       const lastSubtab = localStorage.getItem('cnhy_last_subtab') || 'users';
-      const storedUser = sessionStorage.getItem('cnhy_session_user');
+      const storedUser = currentLoggedInUser ? JSON.stringify(currentLoggedInUser) : null;
       const storedView = sessionStorage.getItem('cnhy_session_view');
 
       const headerUserInfo = document.getElementById('header-user-info');
