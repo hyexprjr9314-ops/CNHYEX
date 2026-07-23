@@ -410,61 +410,25 @@
           <strong class="text-xs text-slate-200">2026년 상반기 인사평가</strong>
         </div>
       </div>
-
-      <!-- Category Sliders & Guidance -->
-      <div class="glass-card rounded-2xl p-6 border border-slate-800 space-y-6">
+      <!-- Server-calculated question scoring guidance -->
+      <div class="glass-card rounded-2xl p-6 border border-slate-800 space-y-5">
         <div class="border-b border-slate-800 pb-3">
           <h3 class="text-lg font-bold text-white flex items-center gap-2">
-            <i class="fa-solid fa-calculator text-brandTeal"></i>
-            <span>점수 환산 안내 및 카테고리 가중치 평가</span>
+            <i class="fa-solid fa-server text-brandTeal"></i>
+            <span>5지선다 문항 기반 자동 점수 환산</span>
           </h3>
           <p class="text-xs text-slate-400 mt-1 leading-relaxed">
-            5지 선다형 문항은 5점 척도로 응답하며, 점수 계산 시 100점으로 환산됩니다. (문항 점수 × 20 = 100점 환산). 카테고리 점수는 해당 카테고리 문항 평균의 환산 점수이며, 총점은 카테고리 평균입니다. 서술형 문항은 정성 참고자료로 활용됩니다.
+            별도의 점수 슬라이더는 사용하지 않습니다. 모든 5지선다 문항에 직접 답하면 서버가 질문별 가중치로 영역 점수를 계산하고, 아래 카테고리 가중치를 최종 집계에 반영합니다. 서술형 피드백은 점수에 포함하지 않고 코칭·AI 분석 자료로만 사용합니다.
           </p>
         </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <!-- 1. 성과 -->
-          <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800 space-y-2">
-            <div class="flex justify-between items-center">
-              <span class="text-xs font-bold text-slate-200"><i class="fa-solid fa-trophy text-brandGold mr-1"></i> 1. 성과</span>
-              <span class="text-xs font-bold text-brandTeal" id="slider-val-perf">33.3% (85점)</span>
-            </div>
-            <input type="range" id="slider-perf" min="0" max="100" value="85" class="w-full accent-brandTeal bg-slate-800 h-2 rounded-lg cursor-pointer" oninput="document.getElementById('slider-val-perf').innerText = '33.3% (' + this.value + '점)'">
-            <p class="text-[10px] text-slate-400">성과 및 목표 달성도에 대한 평가</p>
-          </div>
-
-          <!-- 2. 협업 -->
-          <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800 space-y-2">
-            <div class="flex justify-between items-center">
-              <span class="text-xs font-bold text-slate-200"><i class="fa-solid fa-handshake text-blue-400 mr-1"></i> 2. 협업</span>
-              <span class="text-xs font-bold text-brandTeal" id="slider-val-collab">33.3% (90점)</span>
-            </div>
-            <input type="range" id="slider-collab" min="0" max="100" value="90" class="w-full accent-brandTeal bg-slate-800 h-2 rounded-lg cursor-pointer" oninput="document.getElementById('slider-val-collab').innerText = '33.3% (' + this.value + '점)'">
-            <p class="text-[10px] text-slate-400">업무 방식 및 협업에 대한 평가</p>
-          </div>
-
-          <!-- 3. 성장 -->
-          <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800 space-y-2">
-            <div class="flex justify-between items-center">
-              <span class="text-xs font-bold text-slate-200"><i class="fa-solid fa-arrow-trend-up text-emerald-400 mr-1"></i> 3. 성장</span>
-              <span class="text-xs font-bold text-brandTeal" id="slider-val-growth">33.4% (80점)</span>
-            </div>
-            <input type="range" id="slider-growth" min="0" max="100" value="80" class="w-full accent-brandTeal bg-slate-800 h-2 rounded-lg cursor-pointer" oninput="document.getElementById('slider-val-growth').innerText = '33.4% (' + this.value + '점)'">
-            <p class="text-[10px] text-slate-400">개선점 및 향후 성장에 대한 평가</p>
-          </div>
-
-          <!-- 4. 조화 -->
-          <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800 space-y-2">
-            <div class="flex justify-between items-center">
-              <span class="text-xs font-bold text-slate-200"><i class="fa-solid fa-heart text-rose-400 mr-1"></i> 4. 조화 (선택)</span>
-              <span class="text-xs font-bold text-brandTeal" id="slider-val-harmony">0.0% (85점)</span>
-            </div>
-            <input type="range" id="slider-harmony" min="0" max="100" value="85" class="w-full accent-brandTeal bg-slate-800 h-2 rounded-lg cursor-pointer" oninput="document.getElementById('slider-val-harmony').innerText = '0.0% (' + this.value + '점)'">
-            <p class="text-[10px] text-slate-400">조직 문화 조화 및 화합 평가</p>
-          </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800"><span class="text-xs text-slate-400">성과</span><strong id="eval-weight-perf" class="block text-lg text-amber-300">40.0%</strong></div>
+          <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800"><span class="text-xs text-slate-400">협업</span><strong id="eval-weight-collab" class="block text-lg text-blue-300">30.0%</strong></div>
+          <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800"><span class="text-xs text-slate-400">성장</span><strong id="eval-weight-growth" class="block text-lg text-emerald-300">20.0%</strong></div>
+          <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800"><span class="text-xs text-slate-400">조화</span><strong id="eval-weight-harmony" class="block text-lg text-rose-300">10.0%</strong></div>
         </div>
       </div>
+
 
       <!-- Peer Questions Container -->
       <div class="glass-card rounded-2xl p-6 border border-slate-800 space-y-6">
@@ -3356,6 +3320,7 @@
           growth: Number(settings.growth_weight), harmony: Number(settings.harmony_weight)
         };
         isAutoMatchingEnabled = settings.auto_matching_enabled !== false;
+        renderEvaluationWeightGuide();
         [['weight-perf-in', categoryWeights.perf], ['weight-collab-in', categoryWeights.collab],
          ['weight-growth-in', categoryWeights.growth], ['weight-harmony-in', categoryWeights.harmony]]
           .forEach(([id, value]) => { const input = document.getElementById(id); if (input) input.value = value; });
@@ -3953,24 +3918,12 @@
             };
           }
         }
-
         if (prevData) {
-          if (prevData.perf) document.getElementById('slider-perf').value = prevData.perf;
-          if (prevData.collab) document.getElementById('slider-collab').value = prevData.collab;
-          if (prevData.growth) document.getElementById('slider-growth').value = prevData.growth;
-          if (prevData.harmony) document.getElementById('slider-harmony').value = prevData.harmony;
           if (prevData.comment) document.getElementById('eval-comment-input').value = prevData.comment;
           (prevData.answers || []).forEach(answer => {
             const radio = document.querySelector(`input[name="pq_dynamic_${answer.question_id}"][value="${Number(answer.score)}"]`);
             if (radio) radio.checked = true;
           });
-
-          // Trigger slider label updates
-          const w = categoryWeights || { perf: 40, collab: 30, growth: 20, harmony: 10 };
-          document.getElementById('slider-val-perf').innerText = `${w.perf.toFixed(1)}% (${prevData.perf || 85}점)`;
-          document.getElementById('slider-val-collab').innerText = `${w.collab.toFixed(1)}% (${prevData.collab || 90}점)`;
-          document.getElementById('slider-val-growth').innerText = `${w.growth.toFixed(1)}% (${prevData.growth || 80}점)`;
-          document.getElementById('slider-val-harmony').innerText = `${w.harmony.toFixed(1)}% (${prevData.harmony || 85}점)`;
           updateCommentCounter();
         }
 
@@ -3987,6 +3940,8 @@
         navigateTo('eval');
       }
     }
+
+    let currentMatchedScoringQuestionIds = [];
 
     function renderPeerQuestions() {
       const container = document.getElementById('statutory-questions-container');
@@ -4019,6 +3974,8 @@
         return trackMatch && deptMatch;
       });
 
+      currentMatchedScoringQuestionIds = matchedQuestions.filter(q => q.type !== '서술형').map(q => Number(q.id));
+
       // Update Top Track Info Badge Header
       const trackBadge = document.createElement('div');
       trackBadge.className = 'p-3.5 bg-gradient-to-r from-slate-900 via-slate-900 to-teal-950/40 rounded-xl border border-teal-500/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-xs mb-4';
@@ -4038,7 +3995,7 @@
       if (matchedQuestions.length === 0) {
         const emptyNotice = document.createElement('div');
         emptyNotice.className = 'p-6 bg-slate-900/60 rounded-xl border border-slate-800 text-center text-slate-400 text-xs';
-        emptyNotice.innerText = '해당 피평가자의 직군/부서에 등록된 질문이 없습니다. 기본 평가 슬라이더 및 서술 코멘트를 작성해 주세요.';
+        emptyNotice.innerText = '해당 피평가자의 직군/부서에 등록된 5지선다 질문이 없습니다. 관리자에게 질문 구성을 요청해 주세요.';
         container.appendChild(emptyNotice);
         return;
       }
@@ -4078,7 +4035,7 @@
             <div class="flex items-center gap-3 pt-1">
               ${[1, 2, 3, 4, 5].map(num => `
                 <label class="flex items-center gap-1.5 cursor-pointer bg-slate-950/40 px-2.5 py-1 rounded-lg border border-slate-800 hover:border-brandTeal transition">
-                  <input type="radio" name="pq_dynamic_${q.id}" value="${num}" ${num === 4 ? 'checked' : ''} class="accent-brandTeal">
+                  <input type="radio" name="pq_dynamic_${q.id}" value="${num}" required class="accent-brandTeal">
                   <span class="text-xs text-slate-300 font-bold">${num}점</span>
                 </label>
               `).join('')}
@@ -4107,12 +4064,17 @@
         alert('신뢰도 높은 피드백을 위해 동료평가 서술 코멘트는 50자 이상 작성해야 합니다.');
         return;
       }
-
-      const p = document.getElementById('slider-perf').value;
-      const c = document.getElementById('slider-collab').value;
-      const g = document.getElementById('slider-growth').value;
-
-      document.getElementById('preview-sliders-summary').innerText = `성과 ${p} | 협업 ${c} | 성장 ${g}`;
+      const answeredCount = document.querySelectorAll('input[name^="pq_dynamic_"]:checked').length;
+      const requiredCount = currentMatchedScoringQuestionIds.length;
+      if (requiredCount === 0) {
+        alert('점수를 계산할 5지선다 문항이 없습니다. 관리자에게 질문 구성을 요청해 주세요.');
+        return;
+      }
+      if (answeredCount !== requiredCount) {
+        alert(`모든 5지선다 문항에 답변해 주세요. (${answeredCount}/${requiredCount})`);
+        return;
+      }
+      document.getElementById('preview-sliders-summary').innerText = `5지선다 응답 ${answeredCount}/${requiredCount} 완료 · 점수는 서버에서 자동 계산`;
       document.getElementById('preview-comment-summary').innerText = `"${text}"`;
       document.getElementById('modal-preview').classList.remove('hidden');
     }
@@ -4140,11 +4102,6 @@
           score: Number(radio.value)
         })).filter(answer => answer.question_id && answer.score >= 1 && answer.score <= 5);
 
-        const perfVal = parseFloat(document.getElementById('slider-perf').value) || 85;
-        const collabVal = parseFloat(document.getElementById('slider-collab').value) || 90;
-        const growthVal = parseFloat(document.getElementById('slider-growth').value) || 80;
-        const harmonyVal = parseFloat(document.getElementById('slider-harmony').value) || 85;
-
         const commentVal = document.getElementById('eval-comment-input').value;
 
         if (!supabaseClient || !currentTargetEmp.matchingId) {
@@ -4154,10 +4111,10 @@
 
         const { error: submitError } = await supabaseClient.rpc('submit_evaluation_central', {
           p_matching_id: currentTargetEmp.matchingId,
-          p_perf_score: perfVal,
-          p_collab_score: collabVal,
-          p_growth_score: growthVal,
-          p_harmony_score: harmonyVal,
+          p_perf_score: null,
+          p_collab_score: null,
+          p_growth_score: null,
+          p_harmony_score: null,
           p_comment: commentVal,
           p_answers: centralAnswers
         });
@@ -4574,7 +4531,16 @@
         indicator.className = "text-xs font-bold text-amber-400";
       }
     }
-
+    function renderEvaluationWeightGuide() {
+      const values = [
+        ['eval-weight-perf', categoryWeights.perf], ['eval-weight-collab', categoryWeights.collab],
+        ['eval-weight-growth', categoryWeights.growth], ['eval-weight-harmony', categoryWeights.harmony]
+      ];
+      values.forEach(([id, value]) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = `${Number(value).toFixed(1)}%`;
+      });
+    }
     async function saveCategoryWeights() {
       const p = parseFloat(document.getElementById('weight-perf-in').value) || 0;
       const c = parseFloat(document.getElementById('weight-collab-in').value) || 0;
@@ -4597,17 +4563,7 @@
         alert(`가중치 저장 실패: ${error.message}`);
         return;
       }
-
-      // Update evaluation form UI sliders labels dynamically
-      const perfLabel = document.getElementById('slider-val-perf');
-      const collabLabel = document.getElementById('slider-val-collab');
-      const growthLabel = document.getElementById('slider-val-growth');
-      const harmonyLabel = document.getElementById('slider-val-harmony');
-
-      if (perfLabel) perfLabel.innerText = `${p.toFixed(1)}% (${document.getElementById('slider-perf').value}점)`;
-      if (collabLabel) collabLabel.innerText = `${c.toFixed(1)}% (${document.getElementById('slider-collab').value}점)`;
-      if (growthLabel) growthLabel.innerText = `${g.toFixed(1)}% (${document.getElementById('slider-growth').value}점)`;
-      if (harmonyLabel) harmonyLabel.innerText = `${h.toFixed(1)}% (${document.getElementById('slider-harmony').value}점)`;
+      renderEvaluationWeightGuide();
 
       alert(`4대 카테고리 가중치가 중앙 서버에 저장되었습니다!\n\n- 성과: ${p.toFixed(1)}%\n- 협업: ${c.toFixed(1)}%\n- 성장: ${g.toFixed(1)}%\n- 조화: ${h.toFixed(1)}%`);
     }
