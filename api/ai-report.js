@@ -106,7 +106,6 @@ async function aggregateTarget(service, cycleId, targetId) {
 function reportSchema() {
   const category = {
     type: 'object',
-    additionalProperties: false,
     required: ['pattern', 'advice'],
     properties: {
       pattern: { type: 'string' },
@@ -115,14 +114,13 @@ function reportSchema() {
   };
   return {
     type: 'object',
-    additionalProperties: false,
     required: ['summary', 'strengths', 'improvements', 'categories', 'peer_feedback_summary', 'action_plan', 'caution'],
     properties: {
       summary: { type: 'string' },
       strengths: { type: 'array', minItems: 2, maxItems: 3, items: { type: 'string' } },
       improvements: { type: 'array', minItems: 1, maxItems: 2, items: { type: 'string' } },
       categories: {
-        type: 'object', additionalProperties: false,
+        type: 'object',
         required: ['performance', 'collaboration', 'growth', 'harmony'],
         properties: { performance: category, collaboration: category, growth: category, harmony: category }
       },
