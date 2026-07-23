@@ -218,6 +218,9 @@ async function generateAndStore(service, aggregate, cycleId, targetId, authUserI
       && reportResult.data?.source_hash === hash) {
     return { state: 'completed', generated: false, source_hash: hash };
   }
+  if (!force && jobResult.data?.state === 'analyzing' && jobResult.data.source_hash === hash) {
+    return { state: 'analyzing', generated: false, source_hash: hash };
+  }
 
   const now = new Date().toISOString();
   const attempt = Number(jobResult.data?.attempts || 0) + 1;
