@@ -315,7 +315,16 @@ export default async function handler(req, res) {
         weights: aggregate.weights,
         scores: aggregate.complete && (privileged || (!adjusted && aggregate.cycle.results_published)) ? aggregate.scores : null,
         adjusted,
-        adjustment: privileged ? aggregate.adjustment : (adjusted ? { adjusted: true } : null),
+        adjustment: privileged
+          ? aggregate.adjustment
+          : adjusted
+            ? {
+                adjusted: true,
+                final_grade: aggregate.cycle.results_published === true
+                  ? aggregate.adjustment.final_grade
+                  : null
+              }
+            : null,
         report: visible ? reportResult.data : null,
         state: !aggregate.complete ? 'in_progress'
           : !isCurrent ? (jobResult.data?.state === 'failed' ? 'failed' : 'waiting')
