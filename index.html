@@ -4636,6 +4636,17 @@
         filteredQuestions = filteredQuestions.filter(q => (q.targetTrack || '기본 필수질문') === currentSelectedQuestionTrack);
       }
 
+      ensureDirectoryToolbar('questions', container, filteredQuestions, {
+        render: renderQuestionsList, placeholder: '질문 내용·카테고리·트랙·부서 검색', sortKey: 'order',
+        companyLabel: '전체 평가 트랙', companyValue: question => question.targetTrack || '기본 필수질문',
+        deptLabel: '전체 대상 부서', deptValue: question => question.targetDept || '전체',
+        statusLabel: '전체 카테고리', statusValue: question => question.category,
+        statusOptions: directoryUniqueValues(filteredQuestions, question => question.category).map(value => ({ value, label: value })),
+        searchValues: question => [question.text, question.category, question.targetTrack, question.targetDept, question.type],
+        sortOptions: [{ key: 'order', label: '등록 순서' }, { key: 'text', label: '질문 가나다순' }, { key: 'category', label: '카테고리' }, { key: 'weight', label: '가중치' }],
+        sortValues: { order: question => Number(question.id || 0), name: question => question.text, text: question => question.text, category: question => question.category, weight: question => Number(question.weight || 0) }
+      });
+      filteredQuestions = filterDirectoryItems('questions', filteredQuestions);
       if (filteredQuestions.length === 0) {
         container.innerHTML = `<div class="bg-slate-900/60 p-6 rounded-xl border border-slate-800 text-center text-slate-400 text-xs">등록된 질문이 없습니다. [새 질문 추가] 또는 [📤 CSV 질문 일괄 업로드]로 질문을 채워주세요.</div>`;
         return;
