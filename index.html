@@ -1025,11 +1025,7 @@
             <div>
               <label class="block text-xs font-bold text-slate-300 mb-1">상태 선택</label>
               <select id="cycle-status-in" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white">
-                <option value="초안">초안</option>
-                <option value="진행 중" selected>진행 중</option>
-                <option value="일시정지">일시정지</option>
-                <option value="완료">완료</option>
-                <option value="취소">취소</option>
+                <option value="초안" selected>초안 · 질문과 배정 구성 후 시작</option>
               </select>
             </div>
             <div class="sm:col-span-2 md:col-span-2 flex items-end">
@@ -1885,10 +1881,9 @@
             <label class="block text-xs font-bold text-slate-300 mb-1">상태</label>
             <select id="edit-cycle-status" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white font-bold">
               <option value="초안">초안</option>
-              <option value="진행 중">진행 중</option>
+              <option value="진행중">진행중 · 저장 시 통합 점검</option>
               <option value="일시정지">일시정지</option>
-              <option value="완료">완료</option>
-              <option value="취소">취소</option>
+              <option value="마감/보관됨">마감/보관됨</option>
             </select>
           </div>
         </div>
@@ -4190,6 +4185,20 @@
       if (compEl) compEl.innerText = `${done} 건`;
     }
 
+    function evaluationSubmitErrorMessage(error) {
+      const detail = String(error?.message || error?.details || '알 수 없는 서버 오류');
+      const mappings = [
+        [/Comment must contain at least 50 characters/i, '서술형 종합 피드백을 50자 이상 입력해 주세요.'],
+        [/Every multiple-choice evaluation question must be answered/i, '이 평가에 필요한 모든 5지선다 문항에 답변해 주세요.'],
+        [/An answer is invalid or does not belong/i, '현재 평가주기·직군·부서에 맞지 않는 질문 응답이 포함되어 있습니다. 새로고침 후 다시 작성해 주세요.'],
+        [/Category .+ needs at least one/i, '성과·협업·성장·조화 중 질문 구성이 누락된 영역이 있습니다. 관리자에게 평가주기 사전점검을 요청해 주세요.'],
+        [/not assigned, enabled, or open/i, '현재 로그인 계정의 배정·권한 또는 평가 기간이 유효하지 않습니다. 관리자에게 평가주기 사전점검을 요청해 주세요.'],
+        [/matching does not exist/i, '서버에서 해당 평가 배정을 찾을 수 없습니다. 새로고침 후 다시 시도해 주세요.'],
+        [/Duplicate question answers/i, '동일한 질문에 중복 응답이 감지되었습니다. 새로고침 후 다시 작성해 주세요.']
+      ];
+      const known = mappings.find(([pattern]) => pattern.test(detail));
+      return '평가 제출 실패: ' + (known ? known[1] : detail);
+    }
     async function confirmFinalSubmission() {
       closePreviewModal();
       if (currentTargetEmp) {
@@ -4218,7 +4227,7 @@
         });
         if (submitError) {
           console.error('Secure evaluation submission failed:', submitError);
-          alert('평가를 제출하지 못했습니다. 평가 기간과 배정 상태를 확인해 주세요.');
+          alert(evaluationSubmitErrorMessage(submitError));
           return;
         }
         // The last completed assignment triggers one server-side report generation.
@@ -4552,7 +4561,14 @@
             <p class="text-xs text-slate-400 mt-1">${c.desc}</p>
             <p class="text-[10px] text-amber-400 mt-1"><i class="fa-solid fa-clock mr-1"></i>평가 마감일: ${c.deadline}</p>
           </div>
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 flex-wrap justify-end">
+            <button onclick="validateEvaluationCycle(${c.id}, false)" class="bg-cyan-600/20 hover:bg-cyan-600 text-cyan-300 hover:text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 border border-cyan-500/30">
+              <i class="fa-solid fa-list-check"></i> 사전점검
+            </button>
+            ${c.status !== '진행중' && c.status !== '마감/보관됨' ? `
+            <button onclick="validateEvaluationCycle(${c.id}, true)" class="bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 border border-emerald-500/30">
+              <i class="fa-solid fa-play"></i> 검증 후 시작
+            </button>` : ''}
             <button onclick="openEditCycleModal(${c.id})" class="bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 border border-blue-500/30">
               <i class="fa-solid fa-pen-to-square"></i> 수정
             </button>
@@ -4565,6 +4581,36 @@
       });
     }
 
+    function formatCycleValidationReport(report) {
+      const counts = report?.counts || {};
+      const header = '대상자 ' + (counts.targets || 0) + '명 · 배정 ' + (counts.assignments || 0)
+        + '건 · 유효 질문 ' + (counts.questions || 0) + '개';
+      const issues = Array.isArray(report?.issues) ? report.issues : [];
+      if (!issues.length) return '✅ 통합 점검 통과\n' + header + '\n이 평가주기를 시작할 수 있습니다.';
+      const visible = issues.slice(0, 20).map((issue, index) => (index + 1) + '. ' + issue.message).join('\n');
+      const remainder = issues.length > 20 ? '\n외 ' + (issues.length - 20) + '건의 문제가 더 있습니다.' : '';
+      return '❌ 통합 점검 실패 (' + issues.length + '건)\n' + header + '\n\n' + visible + remainder;
+    }
+
+    async function validateEvaluationCycle(cycleId, activate = false) {
+      const cycle = cyclesDb.find(item => Number(item.id) === Number(cycleId));
+      if (activate && !confirm('평가 주기 [' + (cycle?.name || cycleId) + ']를 통합 점검 후 시작하시겠습니까?')) return;
+      try {
+        const response = await callAdminStateApi({
+          action: activate ? 'cycle_activate' : 'cycle_validate',
+          cycle_id: Number(cycleId)
+        });
+        alert(formatCycleValidationReport(response.data));
+        if (activate) {
+          announceCentralChange();
+          await loadFromServer();
+          populateCycleSelects();
+          renderCyclesList();
+        }
+      } catch (error) {
+        alert('평가주기 ' + (activate ? '시작' : '점검') + ' 실패:\n' + error.message);
+      }
+    }
     function openEditCycleModal(id) {
       const cycle = cyclesDb.find(c => c.id === id);
       if (!cycle) return;

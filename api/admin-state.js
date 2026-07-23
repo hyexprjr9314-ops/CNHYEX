@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 
 const PRIVILEGED = new Set(['관리자', '임원']);
 const ADMIN_ONLY = new Set([
-  'cycle_create', 'cycle_update', 'cycle_delete', 'question_create', 'question_update',
+  'cycle_create', 'cycle_update', 'cycle_delete', 'cycle_validate', 'cycle_activate', 'question_create', 'question_update',
   'question_delete', 'matching_toggle', 'matching_replace', 'auto_generate', 'permission_update', 'settings_update'
 ]);
 const send = (res, status, payload) => res.status(status).json(payload);
@@ -234,9 +234,27 @@ export default async function handler(req, res) {
       }
       result = await service.from('evaluation_settings').update(payload).eq('id', 1).select().single();
     } else if (action === 'cycle_create') {
-      result = await service.from('evaluation_cycles').insert(cyclePayload(req.body)).select().single();
+      const payload = cyclePayload(req.body);
+      payload.status = '초안';
+      result = await service.from('evaluation_cycles').insert(payload).select().single();
     } else if (action === 'cycle_update') {
-      result = await service.from('evaluation_cycles').update(cyclePayload(req.body)).eq('id', Number(req.body.id)).select().single();
+      const cycleId = Number(req.body.id);
+      const payload = cyclePayload(req.body);
+      if (payload.status === '진행중') {
+        payload.status = '초안';
+        const saved = await service.from('evaluation_cycles').update(payload).eq('id', cycleId).select().single();
+        if (saved.error) throw saved.error;
+        const activated = await service.rpc('activate_evaluation_cycle', { p_cycle_id: cycleId });
+        if (activated.error) throw Object.assign(new Error(activated.error.message), { status: 409 });
+        result = { data: { ...saved.data, status: '진행중', validation: activated.data }, error: null };
+      } else {
+        result = await service.from('evaluation_cycles').update(payload).eq('id', cycleId).select().single();
+      }
+    } else if (action === 'cycle_validate') {
+      result = await service.rpc('validate_evaluation_cycle', { p_cycle_id: Number(req.body.cycle_id) });
+    } else if (action === 'cycle_activate') {
+      result = await service.rpc('activate_evaluation_cycle', { p_cycle_id: Number(req.body.cycle_id) });
+      if (result.error) throw Object.assign(new Error(result.error.message), { status: 409 });
     } else if (action === 'cycle_delete') {
       const cycleId = Number(req.body.id);
       const used = await service.from('matchings').select('id', { count: 'exact', head: true }).eq('cycle_id', cycleId);
