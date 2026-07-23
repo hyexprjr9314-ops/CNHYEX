@@ -4202,7 +4202,7 @@
         [/Duplicate question answers/i, '동일한 질문에 중복 응답이 감지되었습니다. 새로고침 후 다시 작성해 주세요.']
       ];
       const known = mappings.find(([pattern]) => pattern.test(detail));
-      return 평가 제출 실패: ${known ? known[1] : detail};
+      return '평가 제출 실패: ' + (known ? known[1] : detail);
     }
 
     async function confirmFinalSubmission() {
@@ -4567,7 +4567,14 @@
             <p class="text-xs text-slate-400 mt-1">${c.desc}</p>
             <p class="text-[10px] text-amber-400 mt-1"><i class="fa-solid fa-clock mr-1"></i>평가 마감일: ${c.deadline}</p>
           </div>
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 flex-wrap justify-end">
+            <button onclick="validateEvaluationCycle(${c.id}, false)" class="bg-cyan-600/20 hover:bg-cyan-600 text-cyan-300 hover:text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 border border-cyan-500/30">
+              <i class="fa-solid fa-list-check"></i> 사전점검
+            </button>
+            ${c.status !== '진행중' && c.status !== '마감/보관됨' ? `
+            <button onclick="validateEvaluationCycle(${c.id}, true)" class="bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 border border-emerald-500/30">
+              <i class="fa-solid fa-play"></i> 검증 후 시작
+            </button>` : ''}
             <button onclick="openEditCycleModal(${c.id})" class="bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 border border-blue-500/30">
               <i class="fa-solid fa-pen-to-square"></i> 수정
             </button>
@@ -4582,17 +4589,18 @@
 
     function formatCycleValidationReport(report) {
       const counts = report?.counts || {};
-      const header = 대상자 ${counts.targets || 0}명 · 배정 ${counts.assignments || 0}건 · 유효 질문 ${counts.questions || 0}개;
+      const header = '대상자 ' + (counts.targets || 0) + '명 · 배정 ' + (counts.assignments || 0)
+        + '건 · 유효 질문 ' + (counts.questions || 0) + '개';
       const issues = Array.isArray(report?.issues) ? report.issues : [];
-      if (!issues.length) return ✅ 통합 점검 통과\n${header}\n이 평가주기를 시작할 수 있습니다.;
-      const visible = issues.slice(0, 20).map((issue, index) => `. ${issue.message}).join('\n');
-      const remainder = issues.length > 20 ? \n외 ${issues.length - 20}건의 문제가 더 있습니다. : '';
-      return ❌ 통합 점검 실패 (${issues.length}건)\n${header}\n\n${visible}${remainder};
+      if (!issues.length) return '✅ 통합 점검 통과\n' + header + '\n이 평가주기를 시작할 수 있습니다.';
+      const visible = issues.slice(0, 20).map((issue, index) => (index + 1) + '. ' + issue.message).join('\n');
+      const remainder = issues.length > 20 ? '\n외 ' + (issues.length - 20) + '건의 문제가 더 있습니다.' : '';
+      return '❌ 통합 점검 실패 (' + issues.length + '건)\n' + header + '\n\n' + visible + remainder;
     }
 
     async function validateEvaluationCycle(cycleId, activate = false) {
       const cycle = cyclesDb.find(item => Number(item.id) === Number(cycleId));
-      if (activate && !confirm(평가 주기 [${cycle?.name || cycleId}]를 통합 점검 후 시작하시겠습니까?)) return;
+      if (activate && !confirm('평가 주기 [' + (cycle?.name || cycleId) + ']를 통합 점검 후 시작하시겠습니까?')) return;
       try {
         const response = await callAdminStateApi({
           action: activate ? 'cycle_activate' : 'cycle_validate',
@@ -4606,10 +4614,9 @@
           renderCyclesList();
         }
       } catch (error) {
-        alert(평가주기 ${activate ? '시작' : '점검'} 실패:\n${error.message});
+        alert('평가주기 ' + (activate ? '시작' : '점검') + ' 실패:\n' + error.message);
       }
     }
-
     function openEditCycleModal(id) {
       const cycle = cyclesDb.find(c => c.id === id);
       if (!cycle) return;
