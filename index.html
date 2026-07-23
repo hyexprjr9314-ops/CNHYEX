@@ -4874,8 +4874,10 @@
 
       const cycleScores = cycleScoresDb[currentSelectedSummaryCycleId] || {};
 
-      usersDb.forEach(emp => {
-        const isEvalOnly = emp.is_evaluatee === false;
+      // 점수 집계·2차 조정은 실제 피평가자만 대상으로 한다.
+      // 평가 전담자는 평가 진행·배정 관리에는 남지만 이 결과 목록에서는 제외한다.
+      usersDb.filter(emp => emp.is_evaluatee !== false).forEach(emp => {
+        const isEvalOnly = false;
         const empScoreData = cycleScores[emp.id];
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-800/40 transition';
