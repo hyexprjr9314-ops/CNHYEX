@@ -336,16 +336,16 @@
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative z-10">
           <div>
             <div class="flex items-center gap-2 mb-1">
-              <span class="bg-teal-500/20 text-brandTeal border border-brandTeal/30 text-[11px] font-bold px-2.5 py-0.5 rounded-full">한양고속 • 인사총무부</span>
+              <span id="welcome-company-dept" class="bg-teal-500/20 text-brandTeal border border-brandTeal/30 text-[11px] font-bold px-2.5 py-0.5 rounded-full">소속 정보 확인 중</span>
               <span class="text-xs text-slate-400">Supabase Auth 계정</span>
             </div>
-            <h2 class="text-2xl font-black text-white">유종열 대리님 환영합니다! 👋</h2>
-            <p class="text-xs text-slate-300 mt-1">배정된 동료들에 대한 360° 다면평가를 성실히 진행해 주세요. (자기평가 제외됨)</p>
+            <h2 id="welcome-user-title" class="text-2xl font-black text-white">사용자 정보를 불러오는 중입니다.</h2>
+            <p id="welcome-assignment-message" class="text-xs text-slate-300 mt-1">평가 배정 정보를 확인하고 있습니다.</p>
           </div>
           <div class="flex items-center gap-3">
             <div class="bg-slate-900/80 border border-slate-800 p-3 rounded-xl text-center">
               <span class="block text-[10px] text-slate-400 font-bold uppercase">배정 건수</span>
-              <strong class="text-lg font-black text-brandTeal" id="count-total-assignments">6 건</strong>
+              <strong class="text-lg font-black text-brandTeal" id="count-total-assignments">0 건</strong>
             </div>
             <div class="bg-slate-900/80 border border-slate-800 p-3 rounded-xl text-center">
               <span class="block text-[10px] text-slate-400 font-bold uppercase">완료 건수</span>
@@ -2313,6 +2313,30 @@
       }[char]));
     }
 
+
+    function renderLoggedInWelcome(totalAssignments = evaluationTargetsDb.length) {
+      const profile = currentLoggedInUser;
+      const companyDept = document.getElementById('welcome-company-dept');
+      const title = document.getElementById('welcome-user-title');
+      const message = document.getElementById('welcome-assignment-message');
+      if (!profile) {
+        if (companyDept) companyDept.innerText = '소속 정보 없음';
+        if (title) title.innerText = '로그인이 필요합니다.';
+        if (message) message.innerText = 'Supabase Auth 계정으로 로그인해 주세요.';
+        return;
+      }
+
+      const organization = [profile.company, profile.dept].filter(Boolean).join(' • ');
+      const displayName = [profile.name, profile.role].filter(Boolean).join(' ');
+      if (companyDept) companyDept.innerText = organization || '소속 정보 없음';
+      if (title) title.innerText = `${displayName || '사용자'}님 환영합니다! 👋`;
+      if (message) {
+        message.innerText = Number(totalAssignments) > 0
+          ? '배정된 동료들에 대한 360° 다면평가를 성실히 진행해 주세요. (자기평가 제외됨)'
+          : '현재 배정된 평가 대상자가 없습니다.';
+      }
+    }
+
     async function loadFromServer() {
       try {
         if (!supabaseClient) throw new Error('Supabase client is unavailable.');
@@ -3803,9 +3827,22 @@
       }
 
       // The server RPC is the sole authority for assignment visibility.
-      let targetEmployees = evaluationTargetsDb.filter(emp =>
+      // Dashboard counters always represent every server assignment, not the
+      // current search/filter result.
+      const allTargetEmployees = evaluationTargetsDb.filter(emp =>
         Number(emp.id) !== Number(currentLoggedInUser?.id) && emp.active !== false
       );
+      const totalAssignmentCount = allTargetEmployees.length;
+      const completedAssignmentCount = allTargetEmployees.filter(emp =>
+        Number(emp.completed || 0) > 0
+      ).length;
+      const totEl = document.getElementById('count-total-assignments');
+      const compEl = document.getElementById('count-completed-assignments');
+      if (totEl) totEl.innerText = `${totalAssignmentCount} 건`;
+      if (compEl) compEl.innerText = `${completedAssignmentCount} 건`;
+      renderLoggedInWelcome(totalAssignmentCount);
+
+      let targetEmployees = [...allTargetEmployees];
 
       // Filter by Track Subtab if Admin selected a track
       if (isAdminOrExecutive && currentSelectedEmpTrackFilter !== '전체') {
@@ -3832,16 +3869,16 @@
         sortValues: { status: employee => Number(employee.completed || 0) > 0 ? 1 : 0, name: employee => employee.name, company: employee => [employee.company, employee.dept].join(' '), dept: employee => employee.dept }
       });
       targetEmployees = filterDirectoryItems('targets', targetEmployees);
-      let doneCount = 0;
-
       if (targetEmployees.length === 0) {
-        container.innerHTML = `<div class="col-span-full bg-slate-900/60 p-8 rounded-2xl border border-slate-800 text-center text-slate-400 text-xs">현재 배정된 평가 대상자가 없습니다.</div>`;
+        const emptyMessage = allTargetEmployees.length === 0
+          ? '현재 배정된 평가 대상자가 없습니다.'
+          : '검색·필터 조건에 맞는 평가 대상자가 없습니다.';
+        container.innerHTML = `<div class="col-span-full bg-slate-900/60 p-8 rounded-2xl border border-slate-800 text-center text-slate-400 text-xs">${emptyMessage}</div>`;
         return;
       }
 
       targetEmployees.forEach(emp => {
         const isDone = Number(emp.completed || 0) > 0;
-        if (isDone) doneCount++;
 
         const activeCycle = cyclesDb.find(c => String(c.id) === String(emp.cycleId));
         const isCycleClosed = activeCycle && activeCycle.status === '마감/보관됨';
@@ -3939,11 +3976,6 @@
         container.appendChild(card);
       });
 
-      // Update counters
-      const totEl = document.getElementById('count-total-assignments');
-      const compEl = document.getElementById('count-completed-assignments');
-      if (totEl) totEl.innerText = `${targetEmployees.length} 건`;
-      if (compEl) compEl.innerText = `${doneCount} 건`;
     }
 
     let isCurrentFormEditMode = false;
