@@ -4190,7 +4190,7 @@
       ensureDirectoryToolbar('users', userTable.parentElement, usersDb, {
         render: renderUsersTable, placeholder: '이름·이메일·전화번호·소속·부서 검색', sortKey: 'company',
         companyValue: user => user.company, deptValue: user => user.dept,
-        statusLabel: '전체 계정 상태', statusValue: user => !user.active ? 'inactive' : user.auth_user_id ? 'connected' : 'unconnected',
+        statusLabel: '전체 계정 상태', statusValue: user => user.active === false ? 'inactive' : user.auth_user_id ? 'connected' : 'unconnected',
         statusOptions: [{ value: 'connected', label: 'Auth 연결' }, { value: 'unconnected', label: 'Auth 미연결' }, { value: 'inactive', label: '비활성' }],
         searchValues: user => [user.name, user.email, user.phone, user.company, user.dept, user.role, user.workplace],
         sortOptions: [{ key: 'company', label: '소속사→부서→이름' }, { key: 'name', label: '이름' }, { key: 'dept', label: '부서' }, { key: 'role', label: '직급' }, { key: 'joindate', label: '입사일' }],
