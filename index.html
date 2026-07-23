@@ -3068,11 +3068,21 @@
 
       evalListContainer.innerHTML = '';
 
+      ensureDirectoryToolbar('matchingEvaluators', evalListContainer, usersDb, {
+        render: renderManualMatchingTable, placeholder: '평가자 이름·이메일·소속·부서 검색', sortKey: 'assignments',
+        companyValue: user => user.company, deptValue: user => user.dept,
+        statusLabel: '전체 배정 상태', statusValue: user => cycleMatchings.some(match => match.evaluatorId === user.id) ? 'assigned' : 'unassigned',
+        statusOptions: [{ value: 'unassigned', label: '미배정 평가자' }, { value: 'assigned', label: '배정 있음' }],
+        searchValues: user => [user.name, user.email, user.company, user.dept, user.role, user.workplace],
+        sortOptions: [{ key: 'assignments', label: '배정 적은 순' }, { key: 'name', label: '이름' }, { key: 'company', label: '소속사' }, { key: 'dept', label: '부서' }],
+        sortValues: { assignments: user => cycleMatchings.filter(match => match.evaluatorId === user.id).length, name: user => user.name, company: user => [user.company, user.dept].join(' '), dept: user => user.dept }
+      });
+      const visibleEvaluators = filterDirectoryItems('matchingEvaluators', usersDb);
       if (!selectedEvaluatorForMatching && usersDb.length > 0) {
         selectedEvaluatorForMatching = usersDb[0].id;
       }
 
-      usersDb.forEach(u => {
+      visibleEvaluators.forEach(u => {
         const matchesCount = cycleMatchings.filter(m => m.evaluatorId === u.id).length;
         const isSelected = selectedEvaluatorForMatching === u.id;
 
@@ -3132,8 +3142,19 @@
         .map(m => m.targetId);
 
       if (matchCountEl) matchCountEl.innerText = `${activeTargetIds.length}명`;
+      const targetCandidates = usersDb.filter(target => target.id !== selectedEvaluatorForMatching);
+      ensureDirectoryToolbar('matchingTargets', tagsGrid, targetCandidates, {
+        render: renderInteractiveTargetTags, placeholder: '피평가자 이름·소속·부서·직급 검색', sortKey: 'matched',
+        companyValue: target => target.company, deptValue: target => target.dept,
+        statusLabel: '전체 연결 상태', statusValue: target => activeTargetIds.includes(target.id) ? 'matched' : 'unmatched',
+        statusOptions: [{ value: 'unmatched', label: '미연결' }, { value: 'matched', label: '매칭 ON' }],
+        searchValues: target => [target.name, target.email, target.company, target.dept, target.role, target.workplace],
+        sortOptions: [{ key: 'matched', label: '미연결 우선' }, { key: 'name', label: '이름' }, { key: 'company', label: '소속사' }, { key: 'dept', label: '부서' }],
+        sortValues: { matched: target => activeTargetIds.includes(target.id) ? 1 : 0, name: target => target.name, company: target => [target.company, target.dept].join(' '), dept: target => target.dept }
+      });
+      const visibleTargets = filterDirectoryItems('matchingTargets', targetCandidates);
 
-      usersDb.forEach(target => {
+      visibleTargets.forEach(target => {
         if (target.id === selectedEvaluatorForMatching) return; // Exclude self (자기 자신 제외)
 
         const isMatched = activeTargetIds.includes(target.id);
