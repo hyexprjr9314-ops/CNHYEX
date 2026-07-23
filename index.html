@@ -2626,15 +2626,26 @@
       const countEl = document.getElementById('archived-cycles-count');
       if (!container) return;
 
-      if (countEl) countEl.innerText = `${evaluationHistoryDb.length}건`;
+      const historyRows = evaluationHistoryDb.flatMap((archive, archiveIndex) => (archive.snapshot || []).map((person, rowIndex) => ({ ...person, archiveIndex, rowIndex, cycleName: archive.cycleName, closedAt: archive.closedAt })));
+      ensureDirectoryToolbar('history', container, historyRows, {
+        render: renderHistoryTable, placeholder: '평가 주기·이름·소속·부서·직급 검색', sortKey: 'closedAt', sortDirection: 'desc',
+        companyValue: row => row.company, deptValue: row => row.dept,
+        statusLabel: '전체 등급', statusValue: row => row.grade,
+        statusOptions: ['EX', 'S', 'A', 'B', 'C', 'D'].map(value => ({ value, label: `${value} 등급` })),
+        searchValues: row => [row.cycleName, row.name, row.company, row.dept, row.role, row.grade],
+        sortOptions: [{ key: 'closedAt', label: '최신 마감일' }, { key: 'name', label: '이름' }, { key: 'company', label: '소속사' }, { key: 'score', label: '최종점수' }, { key: 'grade', label: '등급' }],
+        sortValues: { closedAt: row => row.closedAt, name: row => row.name, company: row => [row.company, row.dept].join(' '), score: row => Number(row.score || 0), grade: row => ({ EX: 0, S: 1, A: 2, B: 3, C: 4, D: 5 }[row.grade] ?? 99) }
+      });
+      const visibleHistoryRows = filterDirectoryItems('history', historyRows);
+      const visibleHistory = evaluationHistoryDb.map((archive, archiveIndex) => ({ ...archive, snapshot: visibleHistoryRows.filter(row => row.archiveIndex === archiveIndex) })).filter(archive => archive.snapshot.length > 0);
+      if (countEl) countEl.innerText = `${visibleHistory.length}건`;
       container.innerHTML = '';
-
-      if (evaluationHistoryDb.length === 0) {
+      if (visibleHistory.length === 0) {
         container.innerHTML = `<div class="bg-slate-900/60 p-8 rounded-xl border border-slate-800 text-center text-slate-400 text-xs">보관된 과거 평가 이력이 없습니다.</div>`;
         return;
       }
 
-      evaluationHistoryDb.forEach(archive => {
+      visibleHistory.forEach(archive => {
         const div = document.createElement('div');
         div.className = 'bg-slate-900/90 p-5 rounded-2xl border border-slate-800 space-y-4 shadow-xl';
 
