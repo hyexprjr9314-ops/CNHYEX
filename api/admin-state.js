@@ -82,7 +82,9 @@ function buildScores(evaluations, adjustments, settings, matchings = []) {
     if (!grouped.has(key)) grouped.set(key, []);
     grouped.get(key).push(row);
   }
-  const adjustmentMap = new Map((adjustments || []).map(row => [`${row.cycle_id}:${row.target_id}`, row]));
+  const adjustmentMap = new Map((adjustments || [])
+    .filter(row => row.status !== 'cancelled')
+    .map(row => [`${row.cycle_id}:${row.target_id}`, row]));
   const result = {};
   for (const [key, rows] of grouped) {
     const [cycleId, targetId] = key.split(':');
