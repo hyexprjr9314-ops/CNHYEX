@@ -2201,6 +2201,33 @@
       </form>
     </div>
   </div>
+  <!-- MODAL: PASSWORD RECOVERY -->
+  <div id="modal-password-recovery" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md hidden items-center justify-center z-[100] p-4">
+    <div class="glass-card max-w-md w-full rounded-3xl p-6 border border-brandTeal/40 shadow-2xl space-y-4 bg-slate-900">
+      <div class="border-b border-slate-800 pb-3">
+        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-shield-keyhole text-brandTeal"></i>
+          <span>새 비밀번호 설정</span>
+        </h3>
+        <p class="text-xs text-slate-400 mt-1">이메일 인증이 완료되었습니다. 앞으로 사용할 새 비밀번호를 입력하세요.</p>
+      </div>
+      <form onsubmit="handleRecoveryPasswordSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">새 비밀번호</label>
+          <input type="password" id="recovery-new-password" minlength="8" autocomplete="new-password" required placeholder="8자리 이상 입력" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-sm text-white">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">새 비밀번호 확인</label>
+          <input type="password" id="recovery-confirm-password" minlength="8" autocomplete="new-password" required placeholder="새 비밀번호 다시 입력" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-sm text-white">
+        </div>
+        <p class="text-[11px] text-slate-400"><i class="fa-solid fa-circle-info mr-1 text-brandGold"></i>변경이 완료되면 다시 로그인해야 합니다.</p>
+        <button type="submit" id="recovery-password-submit" class="w-full bg-gradient-to-r from-brandTeal to-teal-500 text-white font-bold py-3 rounded-xl hover:from-teal-600 hover:to-teal-400 transition">
+          새 비밀번호 저장
+        </button>
+      </form>
+    </div>
+  </div>
+
 
   <!-- STATE & APPLICATION SCRIPTS -->
   <script>
@@ -2233,6 +2260,20 @@
       } catch (e) {
         console.error("Supabase initialization failed:", e);
       }
+    }
+    if (supabaseClient) {
+      supabaseClient.auth.onAuthStateChange((event) => {
+        if (event === 'PASSWORD_RECOVERY') {
+          window.setTimeout(() => {
+            const modal = document.getElementById('modal-password-recovery');
+            if (modal) {
+              modal.classList.remove('hidden');
+              modal.classList.add('flex');
+              document.getElementById('recovery-new-password')?.focus();
+            }
+          }, 0);
+        }
+      });
     }
 
     // Business data is always loaded from Supabase.
@@ -4219,6 +4260,11 @@
                 <i class="fa-solid fa-pen-to-square"></i> 수정
               </button>
               ${activeButton}
+              ${u.auth_user_id && u.active ? `
+                <button onclick="sendPasswordResetEmail(${u.id})" class="bg-teal-600/20 hover:bg-teal-600 text-teal-300 hover:text-white px-2 py-1 rounded text-[11px] font-bold transition flex items-center gap-1 border border-teal-500/30" title="${u.email}로 비밀번호 설정 링크 발송">
+                  <i class="fa-solid fa-envelope-circle-check"></i> 비밀번호 메일
+                </button>
+              ` : ''}
             </div>
           </td>
         `;
@@ -4282,6 +4328,43 @@
         alert(`사용자 [${user.name}] 정보가 서버에 수정되었습니다.`);
       } catch (error) {
         alert(`수정 실패: ${error.message}`);
+      }
+    }
+    async function handleRecoveryPasswordSubmit(e) {
+      e.preventDefault();
+      if (!supabaseClient) return;
+      const password = document.getElementById('recovery-new-password').value;
+      const confirmation = document.getElementById('recovery-confirm-password').value;
+      if (password.length < 8) {
+        alert('새 비밀번호는 8자리 이상 입력해 주세요.');
+        return;
+      }
+      if (password !== confirmation) {
+        alert('새 비밀번호와 확인 값이 일치하지 않습니다.');
+        return;
+      }
+      const submit = document.getElementById('recovery-password-submit');
+      if (submit) { submit.disabled = true; submit.textContent = '변경 중...'; }
+      const { error } = await supabaseClient.auth.updateUser({ password });
+      if (error) {
+        if (submit) { submit.disabled = false; submit.textContent = '새 비밀번호 저장'; }
+        alert(`비밀번호를 변경하지 못했습니다: ${error.message}`);
+        return;
+      }
+      alert('새 비밀번호가 저장되었습니다. 새 비밀번호로 다시 로그인해 주세요.');
+      await supabaseClient.auth.signOut();
+      window.location.replace(`${window.location.origin}${window.location.pathname}`);
+    }
+
+    async function sendPasswordResetEmail(id) {
+      const user = usersDb.find(item => Number(item.id) === Number(id));
+      if (!user) return;
+      if (!confirm(`[${user.name}] 님의 이메일 ${user.email}로 비밀번호 설정 링크를 발송하시겠습니까?`)) return;
+      try {
+        const result = await callUsersApi('POST', { action: 'send_password_reset', id: Number(id) });
+        alert(`${result.email} 주소로 비밀번호 설정 링크를 발송했습니다.\n메일함과 스팸함을 확인해 주세요.`);
+      } catch (error) {
+        alert(`비밀번호 설정 메일 발송 실패: ${error.message}`);
       }
     }
 

@@ -48,7 +48,7 @@ async function authorize(req, service) {
   if (profileError || !profile || profile.active !== true || !['관리자', '임원'].includes(profile.sys_role)) {
     throw new Error('관리자 권한이 필요합니다.');
   }
-  return data.user;
+  return { authUser: data.user, profile };
 }
 
 async function findAuthUser(service, email) {
@@ -68,7 +68,7 @@ export default async function handler(req, res) {
   if (!url || !serviceKey) return send(res, 500, { error: 'Vercel 환경변수가 설정되지 않았습니다.' });
   const service = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
   try {
-    await authorize(req, service);
+    const actor = await authorize(req, service);
     if (req.method === 'GET') {
       const { data, error } = await service.from('users').select('*').order('id');
       if (error) throw error;
@@ -116,6 +116,37 @@ export default async function handler(req, res) {
       return send(res, 405, { error: '영구 삭제는 지원하지 않습니다. 활성화 상태를 변경해 주세요.' });
     }
     if (req.method !== 'POST') return send(res, 405, { error: '지원하지 않는 요청입니다.' });
+
+    if (req.body?.action === 'send_password_reset') {
+      const id = Number(req.body?.id);
+      if (!id) return send(res, 400, { error: '사용자 ID가 필요합니다.' });
+      const { data: target, error: targetError } = await service.from('users')
+        .select('id,name,email,auth_user_id,active').eq('id', id).single();
+      if (targetError) throw targetError;
+      if (!target.auth_user_id) return send(res, 409, { error: 'Supabase Auth에 연결되지 않은 사용자입니다.' });
+      if (target.active !== true) return send(res, 409, { error: '비활성화된 사용자에게는 메일을 발송할 수 없습니다.' });
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(target.email)) {
+        return send(res, 400, { error: '실제로 수신할 수 있는 이메일 주소가 필요합니다.' });
+      }
+
+      const productionHost = process.env.VERCEL_PROJECT_PRODUCTION_URL || req.headers.host;
+      const redirectTo = process.env.PASSWORD_RESET_REDIRECT_URL
+        || `https://${productionHost}/?password_recovery=1`;
+      const requestedAt = new Date().toISOString();
+      const { error: resetError } = await service.auth.resetPasswordForEmail(target.email, { redirectTo });
+      const audit = await service.from('password_reset_email_audit').insert({
+        target_id: target.id, target_email: target.email,
+        requested_by: actor.authUser.id, requested_at: requestedAt,
+        status: resetError ? 'failed' : 'sent',
+        error_message: resetError ? String(resetError.message || resetError).slice(0, 1000) : null
+      });
+      if (audit.error) throw audit.error;
+      if (resetError) throw resetError;
+      return send(res, 200, {
+        sent: true, email: target.email,
+        message: '비밀번호 재설정 링크를 이메일로 발송했습니다.'
+      });
+    }
 
     const rows = Array.isArray(req.body?.users) ? req.body.users : [];
     if (!rows.length || rows.length > 500) return send(res, 400, { error: '사용자 1~500명을 전달해 주세요.' });
