@@ -1025,11 +1025,7 @@
             <div>
               <label class="block text-xs font-bold text-slate-300 mb-1">상태 선택</label>
               <select id="cycle-status-in" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white">
-                <option value="초안">초안</option>
-                <option value="진행 중" selected>진행 중</option>
-                <option value="일시정지">일시정지</option>
-                <option value="완료">완료</option>
-                <option value="취소">취소</option>
+                <option value="초안" selected>초안 · 질문과 배정 구성 후 시작</option>
               </select>
             </div>
             <div class="sm:col-span-2 md:col-span-2 flex items-end">
@@ -1885,10 +1881,9 @@
             <label class="block text-xs font-bold text-slate-300 mb-1">상태</label>
             <select id="edit-cycle-status" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white font-bold">
               <option value="초안">초안</option>
-              <option value="진행 중">진행 중</option>
+              <option value="진행중">진행중 · 저장 시 통합 점검</option>
               <option value="일시정지">일시정지</option>
-              <option value="완료">완료</option>
-              <option value="취소">취소</option>
+              <option value="마감/보관됨">마감/보관됨</option>
             </select>
           </div>
         </div>
@@ -4204,7 +4199,6 @@
       const known = mappings.find(([pattern]) => pattern.test(detail));
       return '평가 제출 실패: ' + (known ? known[1] : detail);
     }
-
     async function confirmFinalSubmission() {
       closePreviewModal();
       if (currentTargetEmp) {
