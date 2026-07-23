@@ -3367,8 +3367,9 @@
       else if (total >= 80) grade = 'A';
       else if (total >= 70) grade = 'B';
       else if (total >= 60) grade = 'C';
-      if (titleEl) titleEl.textContent = `${grade} Grade`;
-      if (medalEl) medalEl.innerHTML = '<i class="fa-solid fa-award text-amber-300 text-3xl"></i>';
+      if (cardEl) cardEl.className = grade === 'S' ? 'glitter-diamond border px-6 py-3 rounded-2xl text-center flex items-center gap-4 transition-all shadow-2xl' : grade === 'A' ? 'glitter-gold border px-6 py-3 rounded-2xl text-center flex items-center gap-4 transition-all shadow-2xl' : 'bg-slate-800/90 border border-slate-700 px-6 py-3 rounded-2xl text-center flex items-center gap-4 transition-all shadow-xl';
+      if (titleEl) { titleEl.className = grade === 'S' ? 'text-xl font-black text-cyan-200' : grade === 'A' ? 'text-xl font-black text-amber-300' : 'text-xl font-black text-slate-200'; titleEl.textContent = `${grade} Grade`; }
+      if (medalEl) medalEl.innerHTML = grade === 'S' ? '<i class="fa-solid fa-gem text-cyan-300 text-3xl animate-spin3d"></i>' : grade === 'A' ? '<i class="fa-solid fa-award text-amber-300 text-3xl animate-spin3d"></i>' : grade === 'B' ? '<i class="fa-solid fa-medal text-slate-300 text-3xl animate-spin3d"></i>' : grade === 'C' ? '<i class="fa-solid fa-shield text-amber-500 text-3xl animate-spin3d"></i>' : grade === 'D' ? '<i class="fa-solid fa-cube text-stone-300 text-3xl animate-spin3d"></i>' : '<span class="text-4xl animate-bounce">🪽</span>';
       mapping.forEach(([prefix, value]) => {
         const valueEl = document.getElementById(`my-${prefix}-val`);
         const barEl = document.getElementById(`my-${prefix}-bar`);
