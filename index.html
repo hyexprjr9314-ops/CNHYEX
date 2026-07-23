@@ -3517,6 +3517,7 @@
     }
 
     function applyPublishedScores(scores) {
+      const cardEl = document.getElementById('my-grade-card');
       const chartCard = document.getElementById('my-chart-card');
       const adjustedNotice = document.getElementById('my-adjusted-notice');
       if (chartCard) chartCard.classList.remove('hidden');
