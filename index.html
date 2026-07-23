@@ -3548,20 +3548,69 @@
       });
     }
 
-    function applyAdjustedResultMode() {
+    function applyAdjustedResultMode(finalGrade = null) {
       const chartCard = document.getElementById('my-chart-card');
       const adjustedNotice = document.getElementById('my-adjusted-notice');
       const cardEl = document.getElementById('my-grade-card');
       const titleEl = document.getElementById('my-grade-title');
       const medalEl = document.getElementById('my-medal-container');
+      const totalEl = document.getElementById('my-total-score');
       if (chartCard) chartCard.classList.add('hidden');
       if (adjustedNotice) adjustedNotice.classList.remove('hidden');
-      if (cardEl) cardEl.className = 'bg-amber-950/30 border border-amber-500/40 px-6 py-3 rounded-2xl text-center flex items-center gap-4 shadow-xl';
-      if (titleEl) {
-        titleEl.className = 'text-lg font-black text-amber-200';
-        titleEl.textContent = '종합평가 방식 적용';
+      if (totalEl) totalEl.textContent = '점수 비공개';
+
+      const grade = ['EX', 'S', 'A', 'B', 'C', 'D'].includes(String(finalGrade || '').toUpperCase())
+        ? String(finalGrade).toUpperCase()
+        : null;
+      const gradeUi = {
+        EX: {
+          card: 'glitter-another-level border-2 px-6 py-4 rounded-2xl text-center flex items-center gap-4 transition-all shadow-2xl relative overflow-hidden',
+          title: 'text-xl font-black text-white',
+          icon: '<span class="text-4xl animate-bounce">🪽</span>'
+        },
+        S: {
+          card: 'glitter-diamond border px-6 py-3 rounded-2xl text-center flex items-center gap-4 transition-all shadow-2xl',
+          title: 'text-xl font-black text-cyan-200',
+          icon: '<i class="fa-solid fa-gem text-cyan-300 text-3xl animate-spin3d"></i>'
+        },
+        A: {
+          card: 'glitter-gold border px-6 py-3 rounded-2xl text-center flex items-center gap-4 transition-all shadow-2xl',
+          title: 'text-xl font-black text-amber-300',
+          icon: '<i class="fa-solid fa-award text-amber-300 text-3xl animate-spin3d"></i>'
+        },
+        B: {
+          card: 'bg-slate-800/90 border border-slate-600 px-6 py-3 rounded-2xl text-center flex items-center gap-4 shadow-xl',
+          title: 'text-xl font-black text-slate-200',
+          icon: '<i class="fa-solid fa-medal text-slate-300 text-3xl"></i>'
+        },
+        C: {
+          card: 'bg-amber-950/30 border border-amber-700/50 px-6 py-3 rounded-2xl text-center flex items-center gap-4 shadow-xl',
+          title: 'text-xl font-black text-amber-500',
+          icon: '<i class="fa-solid fa-shield text-amber-600 text-3xl"></i>'
+        },
+        D: {
+          card: 'bg-stone-900/90 border border-stone-700 px-6 py-3 rounded-2xl text-center flex items-center gap-4 shadow-xl',
+          title: 'text-xl font-black text-stone-300',
+          icon: '<i class="fa-solid fa-cube text-stone-400 text-3xl"></i>'
+        }
+      };
+
+      if (grade) {
+        const ui = gradeUi[grade];
+        if (cardEl) cardEl.className = ui.card;
+        if (titleEl) {
+          titleEl.className = ui.title;
+          titleEl.textContent = `${grade} Grade`;
+        }
+        if (medalEl) medalEl.innerHTML = ui.icon;
+      } else {
+        if (cardEl) cardEl.className = 'bg-amber-950/30 border border-amber-500/40 px-6 py-3 rounded-2xl text-center flex items-center gap-4 shadow-xl';
+        if (titleEl) {
+          titleEl.className = 'text-lg font-black text-amber-200';
+          titleEl.textContent = '결과 공개 전';
+        }
+        if (medalEl) medalEl.innerHTML = '<i class="fa-solid fa-lock text-amber-300 text-3xl"></i>';
       }
-      if (medalEl) medalEl.innerHTML = '<i class="fa-solid fa-scale-balanced text-amber-300 text-3xl"></i>';
     }
 
     async function loadServerAiReport(cycleId) {
@@ -3570,7 +3619,7 @@
       try {
         const payload = await callAiReportApi('GET', { cycle_id: cycleId });
         if (requestId !== latestAiReportRequest) return;
-        if (payload.adjusted) applyAdjustedResultMode();
+        if (payload.adjusted) applyAdjustedResultMode(payload.adjustment?.final_grade || null);
         if (payload.state === 'in_progress') {
           setAiReportVisibility(false, `평가 진행 중입니다. 제출 ${payload.submitted_count}/${payload.assigned_count}건`);
           return;
