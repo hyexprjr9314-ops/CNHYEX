@@ -2517,6 +2517,110 @@
       }
     }
 
+    const directoryViewStates = {};
+    const directoryViewConfigs = {};
+
+    function getDirectoryState(view, defaults = {}) {
+      if (!directoryViewStates[view]) directoryViewStates[view] = { query: '', company: '', dept: '', status: '', sortKey: defaults.sortKey || 'name', sortDirection: defaults.sortDirection || 'asc' };
+      return directoryViewStates[view];
+    }
+
+    function directoryUniqueValues(items, accessor) {
+      if (!accessor) return [];
+      return [...new Set(items.map(accessor).map(value => String(value || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ko'));
+    }
+
+    function populateDirectorySelect(select, label, values, selected) {
+      if (!select) return;
+      select.replaceChildren(new Option(label, ''));
+      values.forEach(value => select.add(new Option(value, value)));
+      select.value = selected;
+    }
+
+    function ensureDirectoryToolbar(view, anchor, items, config) {
+      if (!anchor) return;
+      directoryViewConfigs[view] = config;
+      const state = getDirectoryState(view, config);
+      let toolbar = document.getElementById(`directory-toolbar-${view}`);
+      if (!toolbar) {
+        toolbar = document.createElement('div');
+        toolbar.id = `directory-toolbar-${view}`;
+        toolbar.className = 'mb-3 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-2 rounded-xl border border-slate-800 bg-slate-950/50 p-3';
+        toolbar.innerHTML = `
+          <label class="relative xl:col-span-2"><i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i><input data-directory="query" type="search" class="w-full rounded-lg border border-slate-700 bg-slate-900 py-2 pl-8 pr-3 text-xs text-white outline-none focus:border-brandTeal"></label>
+          <select data-directory="company" class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-bold text-slate-200"></select>
+          <select data-directory="dept" class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-bold text-slate-200"></select>
+          <select data-directory="status" class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-bold text-slate-200"></select>
+          <div class="flex gap-1"><select data-directory="sort" class="min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-900 px-2 py-2 text-xs font-bold text-slate-200"></select><button type="button" data-directory="direction" class="rounded-lg border border-slate-700 px-2 text-slate-300 hover:text-white" title="정렬 방향 전환">↑</button></div>
+          <div class="md:col-span-2 xl:col-span-6 flex items-center justify-between gap-2 text-[11px] text-slate-400"><span data-directory="count">0개 표시</span><button type="button" data-directory="reset" class="font-bold hover:text-white"><i class="fa-solid fa-rotate-left mr-1"></i>검색·필터 초기화</button></div>`;
+        anchor.before(toolbar);
+        const rerender = () => directoryViewConfigs[view]?.render?.();
+        toolbar.querySelector('[data-directory="query"]').addEventListener('input', event => { state.query = event.target.value; rerender(); });
+        toolbar.querySelector('[data-directory="company"]').addEventListener('change', event => { state.company = event.target.value; state.dept = ''; rerender(); });
+        toolbar.querySelector('[data-directory="dept"]').addEventListener('change', event => { state.dept = event.target.value; rerender(); });
+        toolbar.querySelector('[data-directory="status"]').addEventListener('change', event => { state.status = event.target.value; rerender(); });
+        toolbar.querySelector('[data-directory="sort"]').addEventListener('change', event => { state.sortKey = event.target.value; state.sortDirection = 'asc'; rerender(); });
+        toolbar.querySelector('[data-directory="direction"]').addEventListener('click', () => { state.sortDirection = state.sortDirection === 'asc' ? 'desc' : 'asc'; rerender(); });
+        toolbar.querySelector('[data-directory="reset"]').addEventListener('click', () => { Object.assign(state, { query: '', company: '', dept: '', status: '', sortKey: config.sortKey || 'name', sortDirection: config.sortDirection || 'asc' }); rerender(); });
+      }
+      toolbar.querySelector('[data-directory="query"]').placeholder = config.placeholder || '이름·이메일·소속·부서 검색';
+      toolbar.querySelector('[data-directory="query"]').value = state.query;
+      const companyAccessor = config.companyValue;
+      const deptAccessor = config.deptValue;
+      populateDirectorySelect(toolbar.querySelector('[data-directory="company"]'), config.companyLabel || '전체 소속사', directoryUniqueValues(items, companyAccessor), state.company);
+      const deptItems = items.filter(item => !state.company || !companyAccessor || String(companyAccessor(item) || '') === state.company);
+      populateDirectorySelect(toolbar.querySelector('[data-directory="dept"]'), config.deptLabel || '전체 부서', directoryUniqueValues(deptItems, deptAccessor), state.dept);
+      const status = toolbar.querySelector('[data-directory="status"]');
+      const statuses = config.statusOptions || [];
+      status.replaceChildren(new Option(config.statusLabel || '전체 상태', ''));
+      statuses.forEach(option => status.add(new Option(option.label, option.value)));
+      status.value = state.status;
+      status.classList.toggle('hidden', statuses.length === 0);
+      const sort = toolbar.querySelector('[data-directory="sort"]');
+      sort.replaceChildren(...config.sortOptions.map(option => new Option(option.label, option.key)));
+      sort.value = state.sortKey;
+      toolbar.querySelector('[data-directory="direction"]').textContent = state.sortDirection === 'asc' ? '↑' : '↓';
+    }
+
+    function filterDirectoryItems(view, items) {
+      const config = directoryViewConfigs[view];
+      const state = getDirectoryState(view, config || {});
+      if (!config) return items;
+      const query = state.query.trim().toLocaleLowerCase('ko');
+      const filtered = items.filter(item => {
+        const searchable = (config.searchValues?.(item) || []).join(' ').toLocaleLowerCase('ko');
+        const company = config.companyValue?.(item);
+        const dept = config.deptValue?.(item);
+        const status = config.statusValue?.(item);
+        return (!query || searchable.includes(query)) && (!state.company || String(company || '') === state.company) && (!state.dept || String(dept || '') === state.dept) && (!state.status || String(status || '') === state.status);
+      });
+      filtered.sort((left, right) => {
+        const accessor = config.sortValues[state.sortKey] || config.sortValues.name;
+        const a = accessor(left); const b = accessor(right);
+        let comparison = typeof a === 'number' && typeof b === 'number' ? a - b : String(a ?? '').localeCompare(String(b ?? ''), 'ko', { numeric: true });
+        if (comparison === 0 && config.sortValues.name) comparison = String(config.sortValues.name(left) || '').localeCompare(String(config.sortValues.name(right) || ''), 'ko');
+        return state.sortDirection === 'asc' ? comparison : -comparison;
+      });
+      const count = document.querySelector(`#directory-toolbar-${view} [data-directory="count"]`);
+      if (count) count.textContent = `전체 ${items.length}개 중 ${filtered.length}개 표시`;
+      return filtered;
+    }
+
+    function bindDirectoryTableSort(view, table, keys) {
+      if (!table || table.dataset.directorySortView === view) return;
+      table.dataset.directorySortView = view;
+      table.querySelectorAll('thead th').forEach((header, index) => {
+        const key = keys[index]; if (!key) return;
+        header.classList.add('cursor-pointer', 'select-none', 'hover:text-white');
+        header.title = '클릭하여 오름차순·내림차순 정렬';
+        header.addEventListener('click', () => {
+          const state = getDirectoryState(view, directoryViewConfigs[view] || {});
+          state.sortDirection = state.sortKey === key && state.sortDirection === 'asc' ? 'desc' : 'asc';
+          state.sortKey = key;
+          directoryViewConfigs[view]?.render?.();
+        });
+      });
+    }
     function renderHistoryTable() {
       const container = document.getElementById('archived-history-container');
       const countEl = document.getElementById('archived-cycles-count');
