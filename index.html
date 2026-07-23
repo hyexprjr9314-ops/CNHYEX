@@ -4193,7 +4193,7 @@
         statusOptions: [{ value: 'connected', label: 'Auth 연결' }, { value: 'unconnected', label: 'Auth 미연결' }, { value: 'inactive', label: '비활성' }],
         searchValues: user => [user.name, user.email, user.phone, user.company, user.dept, user.role, user.workplace],
         sortOptions: [{ key: 'company', label: '소속사→부서→이름' }, { key: 'name', label: '이름' }, { key: 'dept', label: '부서' }, { key: 'role', label: '직급' }, { key: 'joindate', label: '입사일' }],
-        sortValues: { company: user => [user.company, user.dept].join(' '), name: user => user.name, dept: user => user.dept, role: user => user.role, joindate: user => user.joindate }
+        sortValues: { company: user => [user.company, user.dept].join(' '), name: user => user.name, email: user => user.email, dept: user => user.dept, role: user => user.role, joindate: user => user.joindate }
       });
       bindDirectoryTableSort('users', userTable, ['name', 'company', 'email', 'dept', 'role', null, null, 'joindate']);
       const visibleUsers = filterDirectoryItems('users', usersDb);
@@ -4888,7 +4888,7 @@
         statusOptions: [{ value: 'normal', label: '일반 360° 평가' }, { value: 'evaluator', label: '평가 전담' }, { value: 'target', label: '피평가 전담' }, { value: 'excluded', label: '완전 제외' }],
         searchValues: user => [user.name, user.email, user.company, user.dept, user.role, user.type],
         sortOptions: [{ key: 'company', label: '소속사→부서→이름' }, { key: 'name', label: '이름' }, { key: 'dept', label: '부서' }, { key: 'role', label: '직급' }, { key: 'status', label: '권한 유형' }],
-        sortValues: { company: user => [user.company, user.dept].join(' '), name: user => user.name, dept: user => user.dept, role: user => user.role, status: user => [user.can_evaluate !== false, user.is_evaluatee !== false].join('-') }
+        sortValues: { company: user => [user.company, user.dept].join(' '), name: user => user.name, email: user => user.email, dept: user => user.dept, role: user => user.role, status: user => [user.can_evaluate !== false, user.is_evaluatee !== false].join('-') }
       });
       bindDirectoryTableSort('permissions', permissionTable, ['name', 'email', 'company', 'role', 'status']);
 
