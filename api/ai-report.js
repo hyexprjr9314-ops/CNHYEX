@@ -34,8 +34,8 @@ async function aggregateTarget(service, cycleId, targetId) {
       .select('matching_id,perf_score,collab_score,growth_score,harmony_score,qualitative_comment')
       .eq('cycle_id', cycleId).eq('target_id', targetId),
     service.from('evaluation_result_adjustments')
-      .select('id,raw_score,final_score,final_grade,reason,adjusted_by,adjusted_at,updated_at')
-      .eq('cycle_id', cycleId).eq('target_id', targetId).maybeSingle(),
+      .select('id,raw_score,final_score,final_grade,reason,adjusted_by,adjusted_at,updated_at,status')
+      .eq('cycle_id', cycleId).eq('target_id', targetId).eq('status', 'active').maybeSingle(),
     service.from('evaluation_settings')
       .select('performance_weight,collaboration_weight,growth_weight,harmony_weight').eq('id', 1).single(),
     service.from('users').select('id,active,can_evaluate,is_evaluatee')
@@ -250,19 +250,55 @@ export default async function handler(req, res) {
       if (reason.length < 10) return send(res, 400, { error: '조정 사유를 10자 이상 입력해 주세요.' });
       const aggregate = await aggregateTarget(service, cycleId, targetId);
       if (!aggregate.complete) return send(res, 409, { error: '모든 평가가 완료된 뒤 조정할 수 있습니다.' });
+      const previousResult = await service.from('evaluation_result_adjustments')
+        .select('id,status,final_score').eq('cycle_id', cycleId).eq('target_id', targetId).maybeSingle();
+      if (previousResult.error) throw previousResult.error;
+      const previous = previousResult.data;
       const now = new Date().toISOString();
       const record = {
         cycle_id: cycleId, target_id: targetId, raw_score: aggregate.scores.total,
         final_score: finalScore, final_grade: gradeFor(finalScore), reason,
-        adjusted_by: authUser.id, adjusted_at: now, updated_at: now
+        adjusted_by: authUser.id, adjusted_at: now, updated_at: now,
+        status: 'active', cancelled_by: null, cancelled_at: null, cancellation_reason: null
       };
       const result = await service.from('evaluation_result_adjustments')
         .upsert(record, { onConflict: 'cycle_id,target_id' }).select().single();
       if (result.error) throw result.error;
+      const eventResult = await service.from('evaluation_result_adjustment_events').insert({
+        adjustment_id: result.data.id, cycle_id: cycleId, target_id: targetId,
+        event_type: !previous ? 'created' : previous.status === 'cancelled' ? 'reactivated' : 'updated',
+        previous_final_score: previous?.final_score ?? null, next_final_score: finalScore,
+        reason, acted_by: authUser.id, occurred_at: now
+      });
+      if (eventResult.error) throw eventResult.error;
       const staleReport = await service.from('ai_evaluation_reports')
         .delete().eq('cycle_id', cycleId).eq('target_id', targetId);
       if (staleReport.error) throw staleReport.error;
       return send(res, 200, { adjustment: result.data, ai_report_invalidated: true });
+    }
+
+    if (action === 'cancel_adjustment') {
+      const reason = String(req.body?.reason || '').trim();
+      if (reason.length < 10) return send(res, 400, { error: '조정 취소 사유를 10자 이상 입력해 주세요.' });
+      const aggregate = await aggregateTarget(service, cycleId, targetId);
+      const activeAdjustment = aggregate.adjustment;
+      if (!activeAdjustment) return send(res, 409, { error: '활성화된 점수 조정 내역이 없습니다.' });
+      const now = new Date().toISOString();
+      const cancelResult = await service.from('evaluation_result_adjustments').update({
+        status: 'cancelled', cancelled_by: authUser.id, cancelled_at: now,
+        cancellation_reason: reason, updated_at: now
+      }).eq('id', activeAdjustment.id).eq('status', 'active').select().single();
+      if (cancelResult.error) throw cancelResult.error;
+      const eventResult = await service.from('evaluation_result_adjustment_events').insert({
+        adjustment_id: activeAdjustment.id, cycle_id: cycleId, target_id: targetId,
+        event_type: 'cancelled', previous_final_score: activeAdjustment.final_score,
+        next_final_score: aggregate.scores.total, reason, acted_by: authUser.id, occurred_at: now
+      });
+      if (eventResult.error) throw eventResult.error;
+      const staleReport = await service.from('ai_evaluation_reports')
+        .delete().eq('cycle_id', cycleId).eq('target_id', targetId);
+      if (staleReport.error) throw staleReport.error;
+      return send(res, 200, { adjustment: cancelResult.data, restored_raw_score: aggregate.scores.total, ai_report_invalidated: true });
     }
 
     if (action === 'approve') {
