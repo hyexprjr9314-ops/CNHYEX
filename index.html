@@ -36,6 +36,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <!-- Supabase Cloud Realtime DB Client CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -271,7 +272,7 @@
         <span>평가 가이드</span>
       </button>
       <button onclick="navigateTo('myresults')" id="nav-tab-myresults" class="px-4 py-2 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-2">
-        <i class="fa-solid fa-chart-user"></i>
+        <i class="fa-solid fa-chart-line"></i>
         <span>내 평가 결과 보기</span>
       </button>
       <button onclick="navigateTo('evalmanage')" id="nav-tab-evalmanage" class="px-4 py-2 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-2 border border-brandTeal/30 text-teal-300 bg-teal-500/10">
@@ -1843,7 +1844,7 @@
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
         <div class="flex items-center gap-3">
           <div class="w-10 h-10 bg-teal-500/20 text-brandTeal rounded-xl flex items-center justify-center">
-            <i class="fa-solid fa-calendar-pen text-lg"></i>
+            <i class="fa-solid fa-calendar-days text-lg"></i>
           </div>
           <div>
             <h3 class="text-base font-bold text-white">✏️ 평가 주기 정보 수정</h3>
@@ -2202,7 +2203,7 @@
     <div class="glass-card max-w-md w-full rounded-3xl p-6 border border-brandTeal/40 shadow-2xl space-y-4 bg-slate-900">
       <div class="border-b border-slate-800 pb-3">
         <h3 class="text-lg font-bold text-white flex items-center gap-2">
-          <i class="fa-solid fa-shield-keyhole text-brandTeal"></i>
+          <i class="fa-solid fa-shield-halved text-brandTeal"></i>
           <span>새 비밀번호 설정</span>
         </h3>
         <p class="text-xs text-slate-400 mt-1">이메일 인증이 완료되었습니다. 앞으로 사용할 새 비밀번호를 입력하세요.</p>
