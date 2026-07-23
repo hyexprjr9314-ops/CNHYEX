@@ -134,12 +134,11 @@ function reportSchema() {
 }
 
 function responseText(payload) {
-  if (typeof payload.output_text === 'string') return payload.output_text;
-  for (const item of payload.output || []) {
-    for (const content of item.content || []) {
-      if (content.type === 'output_text' && typeof content.text === 'string') return content.text;
-    }
-  }
+  const text = payload.candidates?.[0]?.content?.parts
+    ?.map(part => typeof part.text === 'string' ? part.text : '')
+    .join('')
+    .trim();
+  if (text) return text;
   throw new Error('AI 응답에서 분석 결과를 찾지 못했습니다.');
 }
 
@@ -160,9 +159,9 @@ function sourceHash(aggregate) {
 }
 
 async function generateReport(aggregate) {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) throw Object.assign(new Error('Vercel에 OPENAI_API_KEY가 등록되지 않았습니다.'), { status: 503 });
-  const model = process.env.OPENAI_MODEL || 'gpt-5.6-terra';
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw Object.assign(new Error('Vercel에 GEMINI_API_KEY가 등록되지 않았습니다.'), { status: 503 });
+  const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
   const qualitativeOnly = Boolean(aggregate.adjustment);
   const input = {
     role: '직원',
@@ -172,35 +171,32 @@ async function generateReport(aggregate) {
     category_weights: qualitativeOnly ? undefined : aggregate.weights,
     anonymous_comments: aggregate.comments
   };
-  const response = await fetch('https://api.openai.com/v1/responses', {
+  const instructions = [
+    '당신은 인사평가 결과를 해석하는 한국어 코칭 리포트 작성자입니다.',
+    qualitativeOnly
+      ? '관리자 조정이 적용된 평가입니다. 점수와 등급을 언급하거나 추론하지 말고 익명 의견만 근거로 코칭하세요.'
+      : '입력된 확정 점수와 익명 의견만 근거로 사용하고 사실을 만들지 마세요.',
+    '점수, 등급, 승진, 징계 또는 해고 결정을 변경하거나 권고하지 마세요.',
+    '평가자 신원을 추정하지 말고 성격, 건강, 정치·종교 등 민감정보를 추론하지 마세요.',
+    '문장은 존중하는 어조로 구체적이고 실행 가능하게 작성하세요.'
+  ].join(' ');
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+    headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model,
-      store: false,
-      instructions: [
-        '당신은 인사평가 결과를 해석하는 한국어 코칭 리포트 작성자입니다.',
-        qualitativeOnly
-          ? '관리자 조정이 적용된 평가입니다. 점수와 등급을 언급하거나 추론하지 말고 익명 의견만 근거로 코칭하세요.'
-          : '입력된 확정 점수와 익명 의견만 근거로 사용하고 사실을 만들지 마세요.',
-        '점수, 등급, 승진, 징계 또는 해고 결정을 변경하거나 권고하지 마세요.',
-        '평가자 신원을 추정하지 말고 성격, 건강, 정치·종교 등 민감정보를 추론하지 마세요.',
-        '문장은 존중하는 어조로 구체적이고 실행 가능하게 작성하세요.'
-      ].join(' '),
-      input: JSON.stringify(input),
-      text: {
-        format: {
-          type: 'json_schema',
-          name: 'hr_evaluation_report',
-          strict: true,
-          schema: reportSchema()
+      systemInstruction: { parts: [{ text: instructions }] },
+      contents: [{ role: 'user', parts: [{ text: JSON.stringify(input) }] }],
+      generationConfig: {
+        temperature: 0.2,
+        responseFormat: {
+          text: { mimeType: 'application/json', schema: reportSchema() }
         }
       }
     })
   });
   const payload = await response.json();
-  if (!response.ok) throw new Error(payload.error?.message || 'OpenAI 분석 요청에 실패했습니다.');
-  return { model, report: JSON.parse(responseText(payload)), analysisMode: qualitativeOnly ? 'qualitative_only' : 'scored' };
+  if (!response.ok) throw new Error(payload.error?.message || 'Gemini 분석 요청에 실패했습니다.');
+  return { model: `google/${model}`, report: JSON.parse(responseText(payload)), analysisMode: qualitativeOnly ? 'qualitative_only' : 'scored' };
 }
 
 async function generateAndStore(service, aggregate, cycleId, targetId, authUserId, force = false) {
