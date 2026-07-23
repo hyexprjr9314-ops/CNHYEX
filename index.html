@@ -5561,14 +5561,14 @@
     }
 
     function downloadCSVReport() {
-      const csvHeader = "이름,이메일,부서,근무지,직급,구분,최종점수,조정여부,원점수,평가횟수,성과,협업,성장,조화\n";
+      const csvHeader = "이름,이메일,부서,근무지,직급,구분,최종점수,평가등급,조정여부,원점수,평가횟수,성과,협업,성장,조화\n";
       const scores = cycleScoresDb[currentSelectedSummaryCycleId] || {};
       const escapeCsv = value => `"${String(value ?? '').replace(/"/g, '""')}"`;
       const csvRows = usersDb.filter(user => scores[user.id]).map(user => {
         const score = scores[user.id];
         return [
           user.name,user.email,user.dept,user.workplace,user.role,user.type,
-          Number(score.final).toFixed(1),score.is_adjusted ? '조정됨' : '미조정',
+          Number(score.final).toFixed(1),score.grade || '',score.is_adjusted ? '조정됨' : '미조정',
           Number(score.raw).toFixed(1),score.completed,
           Number(score.performance).toFixed(1),Number(score.collaboration).toFixed(1),
           Number(score.growth).toFixed(1),Number(score.harmony).toFixed(1)
