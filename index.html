@@ -3758,6 +3758,16 @@
         });
       }
 
+      ensureDirectoryToolbar('targets', container, targetEmployees, {
+        render: renderEmployeeGrid, placeholder: '평가 대상 이름·소속·부서·직급 검색', sortKey: 'status',
+        companyValue: employee => employee.company, deptValue: employee => employee.dept,
+        statusLabel: '전체 진행 상태', statusValue: employee => Number(employee.completed || 0) > 0 ? 'done' : 'pending',
+        statusOptions: [{ value: 'pending', label: '평가 미완료' }, { value: 'done', label: '평가 완료' }],
+        searchValues: employee => [employee.name, employee.company, employee.dept, employee.role, employee.workplace, employee.assigned_task],
+        sortOptions: [{ key: 'status', label: '미완료 우선' }, { key: 'name', label: '이름' }, { key: 'company', label: '소속사' }, { key: 'dept', label: '부서' }],
+        sortValues: { status: employee => Number(employee.completed || 0) > 0 ? 1 : 0, name: employee => employee.name, company: employee => [employee.company, employee.dept].join(' '), dept: employee => employee.dept }
+      });
+      targetEmployees = filterDirectoryItems('targets', targetEmployees);
       let doneCount = 0;
 
       if (targetEmployees.length === 0) {
