@@ -2517,20 +2517,135 @@
       }
     }
 
+    const directoryViewStates = {};
+    const directoryViewConfigs = {};
+
+    function getDirectoryState(view, defaults = {}) {
+      if (!directoryViewStates[view]) directoryViewStates[view] = { query: '', company: '', dept: '', status: '', sortKey: defaults.sortKey || 'name', sortDirection: defaults.sortDirection || 'asc' };
+      return directoryViewStates[view];
+    }
+
+    function directoryUniqueValues(items, accessor) {
+      if (!accessor) return [];
+      return [...new Set(items.map(accessor).map(value => String(value || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ko'));
+    }
+
+    function populateDirectorySelect(select, label, values, selected) {
+      if (!select) return;
+      select.replaceChildren(new Option(label, ''));
+      values.forEach(value => select.add(new Option(value, value)));
+      select.value = selected;
+    }
+
+    function ensureDirectoryToolbar(view, anchor, items, config) {
+      if (!anchor) return;
+      directoryViewConfigs[view] = config;
+      const state = getDirectoryState(view, config);
+      let toolbar = document.getElementById(`directory-toolbar-${view}`);
+      if (!toolbar) {
+        toolbar = document.createElement('div');
+        toolbar.id = `directory-toolbar-${view}`;
+        toolbar.className = 'mb-3 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-2 rounded-xl border border-slate-800 bg-slate-950/50 p-3';
+        toolbar.innerHTML = `
+          <label class="relative xl:col-span-2"><i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i><input data-directory="query" type="search" class="w-full rounded-lg border border-slate-700 bg-slate-900 py-2 pl-8 pr-3 text-xs text-white outline-none focus:border-brandTeal"></label>
+          <select data-directory="company" class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-bold text-slate-200"></select>
+          <select data-directory="dept" class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-bold text-slate-200"></select>
+          <select data-directory="status" class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-bold text-slate-200"></select>
+          <div class="flex gap-1"><select data-directory="sort" class="min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-900 px-2 py-2 text-xs font-bold text-slate-200"></select><button type="button" data-directory="direction" class="rounded-lg border border-slate-700 px-2 text-slate-300 hover:text-white" title="정렬 방향 전환">↑</button></div>
+          <div class="md:col-span-2 xl:col-span-6 flex items-center justify-between gap-2 text-[11px] text-slate-400"><span data-directory="count">0개 표시</span><button type="button" data-directory="reset" class="font-bold hover:text-white"><i class="fa-solid fa-rotate-left mr-1"></i>검색·필터 초기화</button></div>`;
+        anchor.before(toolbar);
+        const rerender = () => directoryViewConfigs[view]?.render?.();
+        toolbar.querySelector('[data-directory="query"]').addEventListener('input', event => { state.query = event.target.value; rerender(); });
+        toolbar.querySelector('[data-directory="company"]').addEventListener('change', event => { state.company = event.target.value; state.dept = ''; rerender(); });
+        toolbar.querySelector('[data-directory="dept"]').addEventListener('change', event => { state.dept = event.target.value; rerender(); });
+        toolbar.querySelector('[data-directory="status"]').addEventListener('change', event => { state.status = event.target.value; rerender(); });
+        toolbar.querySelector('[data-directory="sort"]').addEventListener('change', event => { state.sortKey = event.target.value; state.sortDirection = 'asc'; rerender(); });
+        toolbar.querySelector('[data-directory="direction"]').addEventListener('click', () => { state.sortDirection = state.sortDirection === 'asc' ? 'desc' : 'asc'; rerender(); });
+        toolbar.querySelector('[data-directory="reset"]').addEventListener('click', () => { Object.assign(state, { query: '', company: '', dept: '', status: '', sortKey: config.sortKey || 'name', sortDirection: config.sortDirection || 'asc' }); rerender(); });
+      }
+      toolbar.querySelector('[data-directory="query"]').placeholder = config.placeholder || '이름·이메일·소속·부서 검색';
+      toolbar.querySelector('[data-directory="query"]').value = state.query;
+      const companyAccessor = config.companyValue;
+      const deptAccessor = config.deptValue;
+      populateDirectorySelect(toolbar.querySelector('[data-directory="company"]'), config.companyLabel || '전체 소속사', directoryUniqueValues(items, companyAccessor), state.company);
+      const deptItems = items.filter(item => !state.company || !companyAccessor || String(companyAccessor(item) || '') === state.company);
+      populateDirectorySelect(toolbar.querySelector('[data-directory="dept"]'), config.deptLabel || '전체 부서', directoryUniqueValues(deptItems, deptAccessor), state.dept);
+      const status = toolbar.querySelector('[data-directory="status"]');
+      const statuses = config.statusOptions || [];
+      status.replaceChildren(new Option(config.statusLabel || '전체 상태', ''));
+      statuses.forEach(option => status.add(new Option(option.label, option.value)));
+      status.value = state.status;
+      status.classList.toggle('hidden', statuses.length === 0);
+      const sort = toolbar.querySelector('[data-directory="sort"]');
+      sort.replaceChildren(...config.sortOptions.map(option => new Option(option.label, option.key)));
+      sort.value = state.sortKey;
+      toolbar.querySelector('[data-directory="direction"]').textContent = state.sortDirection === 'asc' ? '↑' : '↓';
+    }
+
+    function filterDirectoryItems(view, items) {
+      const config = directoryViewConfigs[view];
+      const state = getDirectoryState(view, config || {});
+      if (!config) return items;
+      const query = state.query.trim().toLocaleLowerCase('ko');
+      const filtered = items.filter(item => {
+        const searchable = (config.searchValues?.(item) || []).join(' ').toLocaleLowerCase('ko');
+        const company = config.companyValue?.(item);
+        const dept = config.deptValue?.(item);
+        const status = config.statusValue?.(item);
+        return (!query || searchable.includes(query)) && (!state.company || String(company || '') === state.company) && (!state.dept || String(dept || '') === state.dept) && (!state.status || String(status || '') === state.status);
+      });
+      filtered.sort((left, right) => {
+        const accessor = config.sortValues[state.sortKey] || config.sortValues.name;
+        const a = accessor(left); const b = accessor(right);
+        let comparison = typeof a === 'number' && typeof b === 'number' ? a - b : String(a ?? '').localeCompare(String(b ?? ''), 'ko', { numeric: true });
+        if (comparison === 0 && config.sortValues.name) comparison = String(config.sortValues.name(left) || '').localeCompare(String(config.sortValues.name(right) || ''), 'ko');
+        return state.sortDirection === 'asc' ? comparison : -comparison;
+      });
+      const count = document.querySelector(`#directory-toolbar-${view} [data-directory="count"]`);
+      if (count) count.textContent = `전체 ${items.length}개 중 ${filtered.length}개 표시`;
+      return filtered;
+    }
+
+    function bindDirectoryTableSort(view, table, keys) {
+      if (!table || table.dataset.directorySortView === view) return;
+      table.dataset.directorySortView = view;
+      table.querySelectorAll('thead th').forEach((header, index) => {
+        const key = keys[index]; if (!key) return;
+        header.classList.add('cursor-pointer', 'select-none', 'hover:text-white');
+        header.title = '클릭하여 오름차순·내림차순 정렬';
+        header.addEventListener('click', () => {
+          const state = getDirectoryState(view, directoryViewConfigs[view] || {});
+          state.sortDirection = state.sortKey === key && state.sortDirection === 'asc' ? 'desc' : 'asc';
+          state.sortKey = key;
+          directoryViewConfigs[view]?.render?.();
+        });
+      });
+    }
     function renderHistoryTable() {
       const container = document.getElementById('archived-history-container');
       const countEl = document.getElementById('archived-cycles-count');
       if (!container) return;
 
-      if (countEl) countEl.innerText = `${evaluationHistoryDb.length}건`;
+      const historyRows = evaluationHistoryDb.flatMap((archive, archiveIndex) => (archive.snapshot || []).map((person, rowIndex) => ({ ...person, archiveIndex, rowIndex, cycleName: archive.cycleName, closedAt: archive.closedAt })));
+      ensureDirectoryToolbar('history', container, historyRows, {
+        render: renderHistoryTable, placeholder: '평가 주기·이름·소속·부서·직급 검색', sortKey: 'closedAt', sortDirection: 'desc',
+        companyValue: row => row.company, deptValue: row => row.dept,
+        statusLabel: '전체 등급', statusValue: row => row.grade,
+        statusOptions: ['EX', 'S', 'A', 'B', 'C', 'D'].map(value => ({ value, label: `${value} 등급` })),
+        searchValues: row => [row.cycleName, row.name, row.company, row.dept, row.role, row.grade],
+        sortOptions: [{ key: 'closedAt', label: '최신 마감일' }, { key: 'name', label: '이름' }, { key: 'company', label: '소속사' }, { key: 'score', label: '최종점수' }, { key: 'grade', label: '등급' }],
+        sortValues: { closedAt: row => row.closedAt, name: row => row.name, company: row => [row.company, row.dept].join(' '), score: row => Number(row.score || 0), grade: row => ({ EX: 0, S: 1, A: 2, B: 3, C: 4, D: 5 }[row.grade] ?? 99) }
+      });
+      const visibleHistoryRows = filterDirectoryItems('history', historyRows);
+      const visibleHistory = evaluationHistoryDb.map((archive, archiveIndex) => ({ ...archive, snapshot: visibleHistoryRows.filter(row => row.archiveIndex === archiveIndex) })).filter(archive => archive.snapshot.length > 0);
+      if (countEl) countEl.innerText = `${visibleHistory.length}건`;
       container.innerHTML = '';
-
-      if (evaluationHistoryDb.length === 0) {
+      if (visibleHistory.length === 0) {
         container.innerHTML = `<div class="bg-slate-900/60 p-8 rounded-xl border border-slate-800 text-center text-slate-400 text-xs">보관된 과거 평가 이력이 없습니다.</div>`;
         return;
       }
 
-      evaluationHistoryDb.forEach(archive => {
+      visibleHistory.forEach(archive => {
         const div = document.createElement('div');
         div.className = 'bg-slate-900/90 p-5 rounded-2xl border border-slate-800 space-y-4 shadow-xl';
 
@@ -2580,6 +2695,7 @@
             </table>
           </div>
         `;
+        bindDirectoryTableSort('history', div.querySelector('table'), ['name', 'company', 'role', 'score', 'grade']);
         container.appendChild(div);
       });
     }
@@ -2964,11 +3080,21 @@
 
       evalListContainer.innerHTML = '';
 
+      ensureDirectoryToolbar('matchingEvaluators', evalListContainer, usersDb, {
+        render: renderManualMatchingTable, placeholder: '평가자 이름·이메일·소속·부서 검색', sortKey: 'assignments',
+        companyValue: user => user.company, deptValue: user => user.dept,
+        statusLabel: '전체 배정 상태', statusValue: user => cycleMatchings.some(match => match.evaluatorId === user.id) ? 'assigned' : 'unassigned',
+        statusOptions: [{ value: 'unassigned', label: '미배정 평가자' }, { value: 'assigned', label: '배정 있음' }],
+        searchValues: user => [user.name, user.email, user.company, user.dept, user.role, user.workplace],
+        sortOptions: [{ key: 'assignments', label: '배정 적은 순' }, { key: 'name', label: '이름' }, { key: 'company', label: '소속사' }, { key: 'dept', label: '부서' }],
+        sortValues: { assignments: user => cycleMatchings.filter(match => match.evaluatorId === user.id).length, name: user => user.name, company: user => [user.company, user.dept].join(' '), dept: user => user.dept }
+      });
+      const visibleEvaluators = filterDirectoryItems('matchingEvaluators', usersDb);
       if (!selectedEvaluatorForMatching && usersDb.length > 0) {
         selectedEvaluatorForMatching = usersDb[0].id;
       }
 
-      usersDb.forEach(u => {
+      visibleEvaluators.forEach(u => {
         const matchesCount = cycleMatchings.filter(m => m.evaluatorId === u.id).length;
         const isSelected = selectedEvaluatorForMatching === u.id;
 
@@ -3028,8 +3154,19 @@
         .map(m => m.targetId);
 
       if (matchCountEl) matchCountEl.innerText = `${activeTargetIds.length}명`;
+      const targetCandidates = usersDb.filter(target => target.id !== selectedEvaluatorForMatching);
+      ensureDirectoryToolbar('matchingTargets', tagsGrid, targetCandidates, {
+        render: renderInteractiveTargetTags, placeholder: '피평가자 이름·소속·부서·직급 검색', sortKey: 'matched',
+        companyValue: target => target.company, deptValue: target => target.dept,
+        statusLabel: '전체 연결 상태', statusValue: target => activeTargetIds.includes(target.id) ? 'matched' : 'unmatched',
+        statusOptions: [{ value: 'unmatched', label: '미연결' }, { value: 'matched', label: '매칭 ON' }],
+        searchValues: target => [target.name, target.email, target.company, target.dept, target.role, target.workplace],
+        sortOptions: [{ key: 'matched', label: '미연결 우선' }, { key: 'name', label: '이름' }, { key: 'company', label: '소속사' }, { key: 'dept', label: '부서' }],
+        sortValues: { matched: target => activeTargetIds.includes(target.id) ? 1 : 0, name: target => target.name, company: target => [target.company, target.dept].join(' '), dept: target => target.dept }
+      });
+      const visibleTargets = filterDirectoryItems('matchingTargets', targetCandidates);
 
-      usersDb.forEach(target => {
+      visibleTargets.forEach(target => {
         if (target.id === selectedEvaluatorForMatching) return; // Exclude self (자기 자신 제외)
 
         const isMatched = activeTargetIds.includes(target.id);
@@ -3654,6 +3791,16 @@
         });
       }
 
+      ensureDirectoryToolbar('targets', container, targetEmployees, {
+        render: renderEmployeeGrid, placeholder: '평가 대상 이름·소속·부서·직급 검색', sortKey: 'status',
+        companyValue: employee => employee.company, deptValue: employee => employee.dept,
+        statusLabel: '전체 진행 상태', statusValue: employee => Number(employee.completed || 0) > 0 ? 'done' : 'pending',
+        statusOptions: [{ value: 'pending', label: '평가 미완료' }, { value: 'done', label: '평가 완료' }],
+        searchValues: employee => [employee.name, employee.company, employee.dept, employee.role, employee.workplace, employee.assigned_task],
+        sortOptions: [{ key: 'status', label: '미완료 우선' }, { key: 'name', label: '이름' }, { key: 'company', label: '소속사' }, { key: 'dept', label: '부서' }],
+        sortValues: { status: employee => Number(employee.completed || 0) > 0 ? 1 : 0, name: employee => employee.name, company: employee => [employee.company, employee.dept].join(' '), dept: employee => employee.dept }
+      });
+      targetEmployees = filterDirectoryItems('targets', targetEmployees);
       let doneCount = 0;
 
       if (targetEmployees.length === 0) {
@@ -4039,10 +4186,21 @@
     function renderUsersTable() {
       const tbody = document.getElementById('user-table-body');
       tbody.innerHTML = '';
-      document.getElementById('user-list-count').innerText = usersDb.length;
+      const userTable = tbody.closest('table');
+      ensureDirectoryToolbar('users', userTable.parentElement, usersDb, {
+        render: renderUsersTable, placeholder: '이름·이메일·전화번호·소속·부서 검색', sortKey: 'company',
+        companyValue: user => user.company, deptValue: user => user.dept,
+        statusLabel: '전체 계정 상태', statusValue: user => user.active === false ? 'inactive' : user.auth_user_id ? 'connected' : 'unconnected',
+        statusOptions: [{ value: 'connected', label: 'Auth 연결' }, { value: 'unconnected', label: 'Auth 미연결' }, { value: 'inactive', label: '비활성' }],
+        searchValues: user => [user.name, user.email, user.phone, user.company, user.dept, user.role, user.workplace],
+        sortOptions: [{ key: 'company', label: '소속사→부서→이름' }, { key: 'name', label: '이름' }, { key: 'dept', label: '부서' }, { key: 'role', label: '직급' }, { key: 'joindate', label: '입사일' }],
+        sortValues: { company: user => [user.company, user.dept].join(' '), name: user => user.name, email: user => user.email, dept: user => user.dept, role: user => user.role, joindate: user => user.joindate }
+      });
+      bindDirectoryTableSort('users', userTable, ['name', 'company', 'email', 'dept', 'role', null, null, 'joindate']);
+      const visibleUsers = filterDirectoryItems('users', usersDb);
+      document.getElementById('user-list-count').innerText = visibleUsers.length;
 
-      usersDb.forEach((u) => {
-        const tr = document.createElement('tr');
+      visibleUsers.forEach((u) => {        const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-800/40 transition';
         const accountStatus = u.auth_user_id ? 'Auth 연결됨' : 'Auth 미연결';
         const isSuperAdmin = u.email?.toLowerCase() === 'admin@cnhyex.com';
@@ -4490,6 +4648,17 @@
         filteredQuestions = filteredQuestions.filter(q => (q.targetTrack || '기본 필수질문') === currentSelectedQuestionTrack);
       }
 
+      ensureDirectoryToolbar('questions', container, filteredQuestions, {
+        render: renderQuestionsList, placeholder: '질문 내용·카테고리·트랙·부서 검색', sortKey: 'order',
+        companyLabel: '전체 평가 트랙', companyValue: question => question.targetTrack || '기본 필수질문',
+        deptLabel: '전체 대상 부서', deptValue: question => question.targetDept || '전체',
+        statusLabel: '전체 카테고리', statusValue: question => question.category,
+        statusOptions: directoryUniqueValues(filteredQuestions, question => question.category).map(value => ({ value, label: value })),
+        searchValues: question => [question.text, question.category, question.targetTrack, question.targetDept, question.type],
+        sortOptions: [{ key: 'order', label: '등록 순서' }, { key: 'text', label: '질문 가나다순' }, { key: 'category', label: '카테고리' }, { key: 'weight', label: '가중치' }],
+        sortValues: { order: question => Number(question.id || 0), name: question => question.text, text: question => question.text, category: question => question.category, weight: question => Number(question.weight || 0) }
+      });
+      filteredQuestions = filterDirectoryItems('questions', filteredQuestions);
       if (filteredQuestions.length === 0) {
         container.innerHTML = `<div class="bg-slate-900/60 p-6 rounded-xl border border-slate-800 text-center text-slate-400 text-xs">등록된 질문이 없습니다. [새 질문 추가] 또는 [📤 CSV 질문 일괄 업로드]로 질문을 채워주세요.</div>`;
         return;
@@ -4712,9 +4881,19 @@
       const tbody = document.getElementById('permission-table-body');
       if (!tbody) return;
       tbody.innerHTML = '';
+      const permissionTable = tbody.closest('table');
+      ensureDirectoryToolbar('permissions', permissionTable.parentElement, usersDb, {
+        render: renderPermissionsTable, placeholder: '이름·이메일·소속·부서·직급 검색', sortKey: 'company',
+        companyValue: user => user.company, deptValue: user => user.dept,
+        statusLabel: '전체 권한 유형', statusValue: user => { const can = user.can_evaluate !== false; const target = user.is_evaluatee !== false; return can && target ? 'normal' : can ? 'evaluator' : target ? 'target' : 'excluded'; },
+        statusOptions: [{ value: 'normal', label: '일반 360° 평가' }, { value: 'evaluator', label: '평가 전담' }, { value: 'target', label: '피평가 전담' }, { value: 'excluded', label: '완전 제외' }],
+        searchValues: user => [user.name, user.email, user.company, user.dept, user.role, user.type],
+        sortOptions: [{ key: 'company', label: '소속사→부서→이름' }, { key: 'name', label: '이름' }, { key: 'dept', label: '부서' }, { key: 'role', label: '직급' }, { key: 'status', label: '권한 유형' }],
+        sortValues: { company: user => [user.company, user.dept].join(' '), name: user => user.name, email: user => user.email, dept: user => user.dept, role: user => user.role, status: user => [user.can_evaluate !== false, user.is_evaluatee !== false].join('-') }
+      });
+      bindDirectoryTableSort('permissions', permissionTable, ['name', 'email', 'company', 'role', 'status']);
 
-      usersDb.forEach(u => {
-        const canEvaluate = u.can_evaluate !== undefined ? u.can_evaluate : (u.active !== undefined ? u.active : true);
+      filterDirectoryItems('permissions', usersDb).forEach(u => {        const canEvaluate = u.can_evaluate !== undefined ? u.can_evaluate : (u.active !== undefined ? u.active : true);
         const isEvaluatee = u.is_evaluatee !== undefined ? u.is_evaluatee : true;
 
         let statusBadge = `<span class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded font-bold text-[10px]">🟢 일반 360° 평가</span>`;
