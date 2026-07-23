@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { createHash } from 'node:crypto';
 
 const PRIVILEGED_ROLES = new Set(['관리자', '임원']);
 
@@ -142,6 +143,22 @@ function responseText(payload) {
   throw new Error('AI 응답에서 분석 결과를 찾지 못했습니다.');
 }
 
+function sourceHash(aggregate) {
+  const source = {
+    submitted_count: aggregate.submitted_count,
+    scores: aggregate.scores,
+    weights: aggregate.weights,
+    comments: [...(aggregate.comments || [])].sort(),
+    adjustment: aggregate.adjustment ? {
+      final_score: aggregate.adjustment.final_score,
+      final_grade: aggregate.adjustment.final_grade,
+      reason: aggregate.adjustment.reason,
+      updated_at: aggregate.adjustment.updated_at
+    } : null
+  };
+  return createHash('sha256').update(JSON.stringify(source)).digest('hex');
+}
+
 async function generateReport(aggregate) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw Object.assign(new Error('Vercel에 OPENAI_API_KEY가 등록되지 않았습니다.'), { status: 503 });
@@ -186,6 +203,64 @@ async function generateReport(aggregate) {
   return { model, report: JSON.parse(responseText(payload)), analysisMode: qualitativeOnly ? 'qualitative_only' : 'scored' };
 }
 
+async function generateAndStore(service, aggregate, cycleId, targetId, authUserId, force = false) {
+  if (!aggregate.complete) return { state: 'waiting', generated: false };
+  const hash = sourceHash(aggregate);
+  const [jobResult, reportResult] = await Promise.all([
+    service.from('ai_report_generation_jobs').select('*')
+      .eq('cycle_id', cycleId).eq('target_id', targetId).maybeSingle(),
+    service.from('ai_evaluation_reports').select('id,source_hash,status,hidden')
+      .eq('cycle_id', cycleId).eq('target_id', targetId).maybeSingle()
+  ]);
+  if (jobResult.error) throw jobResult.error;
+  if (reportResult.error) throw reportResult.error;
+  if (!force && jobResult.data?.state === 'completed' && jobResult.data.source_hash === hash
+      && reportResult.data?.source_hash === hash) {
+    return { state: 'completed', generated: false, source_hash: hash };
+  }
+
+  const now = new Date().toISOString();
+  const attempt = Number(jobResult.data?.attempts || 0) + 1;
+  const claimed = await service.from('ai_report_generation_jobs').upsert({
+    cycle_id: cycleId, target_id: targetId, source_hash: hash,
+    state: 'analyzing', attempts: attempt, last_error: null,
+    requested_at: now, completed_at: null, updated_at: now
+  }, { onConflict: 'cycle_id,target_id' });
+  if (claimed.error) throw claimed.error;
+
+  try {
+    const generated = await generateReport(aggregate);
+    const record = {
+      cycle_id: cycleId, target_id: targetId,
+      source_evaluation_count: aggregate.submitted_count,
+      perf_score: aggregate.scores.performance,
+      collab_score: aggregate.scores.collaboration,
+      growth_score: aggregate.scores.growth,
+      harmony_score: aggregate.scores.harmony,
+      total_score: aggregate.scores.total,
+      report: generated.report, status: 'approved', model: generated.model,
+      analysis_mode: generated.analysisMode, source_hash: hash, hidden: false,
+      generated_by: authUserId, generated_at: now,
+      approved_by: null, approved_at: now, updated_at: now
+    };
+    const saved = await service.from('ai_evaluation_reports')
+      .upsert(record, { onConflict: 'cycle_id,target_id' }).select().single();
+    if (saved.error) throw saved.error;
+    const completed = await service.from('ai_report_generation_jobs').update({
+      state: 'completed', completed_at: new Date().toISOString(),
+      last_error: null, updated_at: new Date().toISOString()
+    }).eq('cycle_id', cycleId).eq('target_id', targetId);
+    if (completed.error) throw completed.error;
+    return { state: 'completed', generated: true, source_hash: hash, report: saved.data };
+  } catch (error) {
+    await service.from('ai_report_generation_jobs').update({
+      state: 'failed', last_error: String(error.message || error).slice(0, 1000),
+      updated_at: new Date().toISOString()
+    }).eq('cycle_id', cycleId).eq('target_id', targetId);
+    throw error;
+  }
+}
+
 function gradeFor(score) {
   if (score >= 100) return 'EX';
   if (score >= 90) return 'S';
@@ -203,18 +278,34 @@ export default async function handler(req, res) {
     if (!cycleId) return send(res, 400, { error: '평가 주기 ID가 필요합니다.' });
 
     if (req.method === 'GET') {
+      if (req.query?.overview === '1') {
+        if (!PRIVILEGED_ROLES.has(profile.sys_role)) {
+          return send(res, 403, { error: '관리자 권한이 필요합니다.' });
+        }
+        const jobs = await service.from('ai_report_generation_jobs')
+          .select('target_id,state,attempts,last_error,requested_at,completed_at,updated_at')
+          .eq('cycle_id', cycleId);
+        if (jobs.error) throw jobs.error;
+        return send(res, 200, { jobs: jobs.data || [] });
+      }
       const targetId = Number(req.query?.target_id || profile.id);
       if (targetId !== profile.id && !PRIVILEGED_ROLES.has(profile.sys_role)) {
         return send(res, 403, { error: '다른 직원의 결과를 조회할 권한이 없습니다.' });
       }
       const aggregate = await aggregateTarget(service, cycleId, targetId);
       const reportResult = await service.from('ai_evaluation_reports')
-        .select('status,report,model,analysis_mode,generated_at,approved_at')
+        .select('status,report,model,analysis_mode,generated_at,approved_at,source_hash,hidden')
         .eq('cycle_id', cycleId).eq('target_id', targetId).maybeSingle();
       if (reportResult.error) throw reportResult.error;
+      const jobResult = await service.from('ai_report_generation_jobs')
+        .select('state,last_error,source_hash').eq('cycle_id', cycleId).eq('target_id', targetId).maybeSingle();
+      if (jobResult.error) throw jobResult.error;
       const privileged = PRIVILEGED_ROLES.has(profile.sys_role);
+      const currentHash = aggregate.complete ? sourceHash(aggregate) : null;
+      const isCurrent = Boolean(reportResult.data && reportResult.data.source_hash === currentHash);
       const visible = reportResult.data && (privileged || (
         aggregate.cycle.results_published === true && reportResult.data.status === 'approved'
+        && reportResult.data.hidden !== true && isCurrent
       ));
       const adjusted = Boolean(aggregate.adjustment);
       return send(res, 200, {
@@ -228,18 +319,34 @@ export default async function handler(req, res) {
         adjustment: privileged ? aggregate.adjustment : (adjusted ? { adjusted: true } : null),
         report: visible ? reportResult.data : null,
         state: !aggregate.complete ? 'in_progress'
-          : !reportResult.data ? 'not_generated'
-          : reportResult.data.status !== 'approved' ? 'awaiting_approval'
+          : !isCurrent ? (jobResult.data?.state === 'failed' ? 'failed' : 'waiting')
+          : jobResult.data?.state === 'analyzing' ? 'analyzing'
+          : reportResult.data.hidden === true ? 'hidden'
           : !privileged && !aggregate.cycle.results_published ? 'not_published'
-          : 'ready'
+          : 'ready',
+        generation_error: privileged ? jobResult.data?.last_error || null : null
       });
     }
 
     if (req.method !== 'POST') return send(res, 405, { error: '지원하지 않는 요청입니다.' });
-    if (!PRIVILEGED_ROLES.has(profile.sys_role)) return send(res, 403, { error: '관리자 권한이 필요합니다.' });
-    const action = String(req.body?.action || 'generate');
+    const action = String(req.body?.action || 'auto_generate');
     const targetId = Number(req.body?.target_id);
     if (!targetId) return send(res, 400, { error: '피평가자 ID가 필요합니다.' });
+
+    if (action === 'auto_generate') {
+      if (!PRIVILEGED_ROLES.has(profile.sys_role)) {
+        const assignment = await service.from('matchings').select('id')
+          .eq('cycle_id', cycleId).eq('target_id', targetId).eq('evaluator_id', profile.id).maybeSingle();
+        if (assignment.error || !assignment.data) {
+          return send(res, 403, { error: '해당 피평가자의 AI 생성을 요청할 권한이 없습니다.' });
+        }
+      }
+      const aggregate = await aggregateTarget(service, cycleId, targetId);
+      const result = await generateAndStore(service, aggregate, cycleId, targetId, authUser.id, false);
+      return send(res, 200, result);
+    }
+
+    if (!PRIVILEGED_ROLES.has(profile.sys_role)) return send(res, 403, { error: '관리자 권한이 필요합니다.' });
 
     if (action === 'adjust') {
       const finalScore = Number(req.body?.final_score);
@@ -271,10 +378,11 @@ export default async function handler(req, res) {
         reason, acted_by: authUser.id, occurred_at: now
       });
       if (eventResult.error) throw eventResult.error;
-      const staleReport = await service.from('ai_evaluation_reports')
-        .delete().eq('cycle_id', cycleId).eq('target_id', targetId);
-      if (staleReport.error) throw staleReport.error;
-      return send(res, 200, { adjustment: result.data, ai_report_invalidated: true });
+      const refreshed = await aggregateTarget(service, cycleId, targetId);
+      let automation;
+      try { automation = await generateAndStore(service, refreshed, cycleId, targetId, authUser.id, true); }
+      catch (error) { automation = { state: 'failed', error: error.message }; }
+      return send(res, 200, { adjustment: result.data, ai_automation: automation });
     }
 
     if (action === 'cancel_adjustment') {
@@ -295,10 +403,11 @@ export default async function handler(req, res) {
         next_final_score: aggregate.scores.total, reason, acted_by: authUser.id, occurred_at: now
       });
       if (eventResult.error) throw eventResult.error;
-      const staleReport = await service.from('ai_evaluation_reports')
-        .delete().eq('cycle_id', cycleId).eq('target_id', targetId);
-      if (staleReport.error) throw staleReport.error;
-      return send(res, 200, { adjustment: cancelResult.data, restored_raw_score: aggregate.scores.total, ai_report_invalidated: true });
+      const refreshed = await aggregateTarget(service, cycleId, targetId);
+      let automation;
+      try { automation = await generateAndStore(service, refreshed, cycleId, targetId, authUser.id, true); }
+      catch (error) { automation = { state: 'failed', error: error.message }; }
+      return send(res, 200, { adjustment: cancelResult.data, restored_raw_score: aggregate.scores.total, ai_automation: automation });
     }
 
     if (action === 'approve') {
@@ -306,6 +415,15 @@ export default async function handler(req, res) {
         status: 'approved', approved_by: authUser.id,
         approved_at: new Date().toISOString(), updated_at: new Date().toISOString()
       }).eq('cycle_id', cycleId).eq('target_id', targetId).select().single();
+      if (result.error) throw result.error;
+      return send(res, 200, { report: result.data });
+    }
+
+    if (action === 'hide') {
+      const hidden = req.body?.hidden;
+      if (typeof hidden !== 'boolean') return send(res, 400, { error: '숨김 상태가 필요합니다.' });
+      const result = await service.from('ai_evaluation_reports').update({ hidden, updated_at: new Date().toISOString() })
+        .eq('cycle_id', cycleId).eq('target_id', targetId).select().single();
       if (result.error) throw result.error;
       return send(res, 200, { report: result.data });
     }
@@ -325,24 +443,8 @@ export default async function handler(req, res) {
         error: `모든 평가가 완료되어야 합니다. (${aggregate.submitted_count}/${aggregate.assigned_count})`
       });
     }
-    const generated = await generateReport(aggregate);
-    const record = {
-      cycle_id: cycleId, target_id: targetId,
-      source_evaluation_count: aggregate.submitted_count,
-      perf_score: aggregate.scores.performance,
-      collab_score: aggregate.scores.collaboration,
-      growth_score: aggregate.scores.growth,
-      harmony_score: aggregate.scores.harmony,
-      total_score: aggregate.scores.total,
-      report: generated.report, status: 'draft', model: generated.model,
-      analysis_mode: generated.analysisMode,
-      generated_by: authUser.id, generated_at: new Date().toISOString(),
-      approved_by: null, approved_at: null, updated_at: new Date().toISOString()
-    };
-    const result = await service.from('ai_evaluation_reports')
-      .upsert(record, { onConflict: 'cycle_id,target_id' }).select().single();
-    if (result.error) throw result.error;
-    return send(res, 200, { report: result.data });
+    const result = await generateAndStore(service, aggregate, cycleId, targetId, authUser.id, true);
+    return send(res, 200, result);
   } catch (error) {
     console.error('AI report API error:', error);
     return send(res, error.status || 500, { error: error.message || 'AI 리포트 처리 중 오류가 발생했습니다.' });
