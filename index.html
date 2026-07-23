@@ -4837,9 +4837,19 @@
       const tbody = document.getElementById('permission-table-body');
       if (!tbody) return;
       tbody.innerHTML = '';
+      const permissionTable = tbody.closest('table');
+      ensureDirectoryToolbar('permissions', permissionTable.parentElement, usersDb, {
+        render: renderPermissionsTable, placeholder: '이름·이메일·소속·부서·직급 검색', sortKey: 'company',
+        companyValue: user => user.company, deptValue: user => user.dept,
+        statusLabel: '전체 권한 유형', statusValue: user => { const can = user.can_evaluate !== false; const target = user.is_evaluatee !== false; return can && target ? 'normal' : can ? 'evaluator' : target ? 'target' : 'excluded'; },
+        statusOptions: [{ value: 'normal', label: '일반 360° 평가' }, { value: 'evaluator', label: '평가 전담' }, { value: 'target', label: '피평가 전담' }, { value: 'excluded', label: '완전 제외' }],
+        searchValues: user => [user.name, user.email, user.company, user.dept, user.role, user.type],
+        sortOptions: [{ key: 'company', label: '소속사→부서→이름' }, { key: 'name', label: '이름' }, { key: 'dept', label: '부서' }, { key: 'role', label: '직급' }, { key: 'status', label: '권한 유형' }],
+        sortValues: { company: user => [user.company, user.dept].join(' '), name: user => user.name, dept: user => user.dept, role: user => user.role, status: user => [user.can_evaluate !== false, user.is_evaluatee !== false].join('-') }
+      });
+      bindDirectoryTableSort('permissions', permissionTable, ['name', 'email', 'company', 'role', 'status']);
 
-      usersDb.forEach(u => {
-        const canEvaluate = u.can_evaluate !== undefined ? u.can_evaluate : (u.active !== undefined ? u.active : true);
+      filterDirectoryItems('permissions', usersDb).forEach(u => {        const canEvaluate = u.can_evaluate !== undefined ? u.can_evaluate : (u.active !== undefined ? u.active : true);
         const isEvaluatee = u.is_evaluatee !== undefined ? u.is_evaluatee : true;
 
         let statusBadge = `<span class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded font-bold text-[10px]">🟢 일반 360° 평가</span>`;
