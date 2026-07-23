@@ -159,7 +159,10 @@ function sourceHash(aggregate) {
 async function generateReport(aggregate) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw Object.assign(new Error('Vercel에 GEMINI_API_KEY가 등록되지 않았습니다.'), { status: 503 });
-  const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+  const configuredModel = String(process.env.GEMINI_MODEL || '').trim();
+  const model = !configuredModel || configuredModel === 'gemini-2.5-flash'
+    ? 'gemini-3.5-flash'
+    : configuredModel;
   const qualitativeOnly = Boolean(aggregate.adjustment);
   const input = {
     role: '직원',
