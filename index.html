@@ -360,7 +360,7 @@
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <h3 class="text-base font-bold text-white flex items-center gap-2">
             <i class="fa-solid fa-users text-brandTeal"></i>
-            <span>동료평가 대상자 목록 및 1~5차 순차 파이프라인</span>
+            <span>평가 관계별 대상자 목록</span>
           </h3>
 
           <!-- ADMIN / EXECUTIVE ONLY TRACK FILTER SUB-TABS -->
@@ -3852,7 +3852,47 @@
       renderEmployeeGrid();
     }
 
-    // Employee Grid Handler (Sequential Pipeline + Track Subtabs + Privacy Protection)
+    function resolveEvaluationRelationship(evaluator, target) {
+      const sameCompany = String(evaluator?.company || '').trim() === String(target?.company || '').trim();
+      const sameDept = String(evaluator?.dept || '').trim() === String(target?.dept || '').trim();
+      const evaluatorWorkplace = String(evaluator?.workplace || '').trim();
+      const targetWorkplace = String(target?.workplace || '').trim();
+      const sameBranch = sameCompany
+        && evaluatorWorkplace !== ''
+        && evaluatorWorkplace === targetWorkplace
+        && targetWorkplace.includes('영업소');
+      const targetRole = String(target?.role || '');
+      const isLeadershipTarget = target?.type === '팀장급'
+        || /(팀장|부장|소장|지점장|센터장|실장|본부장|임원|이사|대표)/.test(targetRole);
+
+      if (isLeadershipTarget && sameCompany && (sameDept || sameBranch)) {
+        return {
+          key: 'leadership',
+          title: '부서장 리더십 평가',
+          description: '같은 조직의 팀장·부서장을 대상으로 리더십, 공정성, 의사결정과 구성원 육성을 평가합니다.',
+          icon: 'fa-people-group',
+          tone: 'purple'
+        };
+      }
+      if (sameCompany && (sameDept || sameBranch)) {
+        return {
+          key: 'internal',
+          title: '내부 부서 평가',
+          description: '같은 부서 또는 같은 영업소에서 직접 관찰한 업무수행, 책임감과 협업 행동을 평가합니다.',
+          icon: 'fa-building-user',
+          tone: 'teal'
+        };
+      }
+      return {
+        key: 'exchange',
+        title: '부서 간 교류 평가',
+        description: '다른 부서·영업소와의 실제 업무 교류를 바탕으로 의사소통, 지원과 협업 태도를 평가합니다.',
+        icon: 'fa-arrows-left-right-to-line',
+        tone: 'blue'
+      };
+    }
+
+    // Employee Grid Handler (Relationship Groups + Track Subtabs + Privacy Protection)
     function renderEmployeeGrid() {
       const container = document.getElementById('employee-card-grid');
       if (!container) return;
@@ -3924,7 +3964,62 @@
         return;
       }
 
+      const relationshipGroupDefinitions = [
+        { key: 'internal', tone: 'teal' },
+        { key: 'exchange', tone: 'blue' },
+        { key: 'leadership', tone: 'purple' }
+      ];
       targetEmployees.forEach(emp => {
+        emp.evaluationRelationship = resolveEvaluationRelationship(loggedInUserObj, emp);
+      });
+
+      relationshipGroupDefinitions.forEach(groupDefinition => {
+        const groupEmployees = targetEmployees.filter(emp => emp.evaluationRelationship.key === groupDefinition.key);
+        if (!groupEmployees.length) return;
+        const relationship = groupEmployees[0].evaluationRelationship;
+        const completedInGroup = groupEmployees.filter(emp => Number(emp.completed || 0) > 0).length;
+        const toneClasses = {
+          teal: {
+            border: 'border-teal-500/30',
+            background: 'bg-teal-950/10',
+            icon: 'bg-teal-500/15 text-teal-300 border-teal-500/30',
+            count: 'text-teal-300'
+          },
+          blue: {
+            border: 'border-blue-500/30',
+            background: 'bg-blue-950/10',
+            icon: 'bg-blue-500/15 text-blue-300 border-blue-500/30',
+            count: 'text-blue-300'
+          },
+          purple: {
+            border: 'border-purple-500/30',
+            background: 'bg-purple-950/10',
+            icon: 'bg-purple-500/15 text-purple-300 border-purple-500/30',
+            count: 'text-purple-300'
+          }
+        }[relationship.tone];
+        const section = document.createElement('section');
+        section.className = `col-span-full rounded-2xl border ${toneClasses.border} ${toneClasses.background} p-4 space-y-4`;
+        section.innerHTML = `
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div class="flex items-start gap-3">
+              <span class="w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${toneClasses.icon}">
+                <i class="fa-solid ${relationship.icon}"></i>
+              </span>
+              <div>
+                <h4 class="text-sm font-black text-white">${relationship.title}</h4>
+                <p class="text-[11px] text-slate-400 mt-1">${relationship.description}</p>
+              </div>
+            </div>
+            <div class="text-xs font-bold ${toneClasses.count} whitespace-nowrap">
+              완료 ${completedInGroup} / 전체 ${groupEmployees.length}
+            </div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" data-relationship-card-grid="${relationship.key}"></div>
+        `;
+        const groupGrid = section.querySelector(`[data-relationship-card-grid="${relationship.key}"]`);
+
+        groupEmployees.forEach(emp => {
         const isDone = Number(emp.completed || 0) > 0;
 
         const activeCycle = cyclesDb.find(c => String(c.id) === String(emp.cycleId));
@@ -3937,31 +4032,18 @@
 
         let trackTitle = "🏢 본사 팀원급 (5단계)";
         let totalStages = 5;
-        let myCurrentStageText = "1차 동일부서 다면평가";
+        let myCurrentStageText = emp.evaluationRelationship.title;
         let isStageUnlocked = true;
 
         if (isTechnician) {
           trackTitle = "🔧 정비사 파트 (3단계)";
           totalStages = 3;
-          myCurrentStageText = "1차 내부실무 평가";
         } else if (isManager) {
           trackTitle = "👔 본사 팀장급 (3단계)";
           totalStages = 3;
-          myCurrentStageText = "1차 상향 리더십 평가";
         } else if (isBranch) {
           trackTitle = "🚌 영업소 현장 (4단계)";
           totalStages = 4;
-          myCurrentStageText = "1차 동일소속사 협업";
-        } else {
-          // HQ Staff (5 Stages)
-          if (loggedInUserObj.dept === emp.dept) {
-            myCurrentStageText = "1차 동일부서 다면평가";
-            isStageUnlocked = true;
-          } else {
-            myCurrentStageText = "2차 내부부서 협업평가";
-            // Check if 1st stage is done for sequential unlock
-            isStageUnlocked = true;
-          }
         }
 
         const card = document.createElement('div');
@@ -3994,7 +4076,7 @@
                 <i class="fa-solid fa-layer-group mr-1"></i> ${trackTitle}
               </span>
               <span class="text-[9px] font-bold px-2 py-0.5 rounded block w-fit bg-teal-500/20 text-teal-300 border border-teal-500/30">
-                <i class="fa-solid fa-user-check mr-1"></i> 내 역할: ${myCurrentStageText}
+                <i class="fa-solid fa-user-check mr-1"></i> 평가 관계: ${myCurrentStageText}
               </span>
             </div>
           </div>
@@ -4020,7 +4102,9 @@
             )}
           </div>
         `;
-        container.appendChild(card);
+        groupGrid.appendChild(card);
+        });
+        container.appendChild(section);
       });
 
     }
