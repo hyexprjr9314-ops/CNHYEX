@@ -2695,6 +2695,7 @@
             </table>
           </div>
         `;
+        bindDirectoryTableSort('history', div.querySelector('table'), ['name', 'company', 'role', 'score', 'grade']);
         container.appendChild(div);
       });
     }
