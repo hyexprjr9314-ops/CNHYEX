@@ -2684,7 +2684,7 @@
           return `
             <tr class="border-b border-slate-800/60 hover:bg-slate-800/40">
               <td class="py-2.5 px-3 font-bold text-white">${s.name}</td>
-              <td class="py-2.5 px-3 text-slate-400">${s.company} • ${s.dept}부</td>
+              <td class="py-2.5 px-3 text-slate-400">${s.company} • ${s.dept}</td>
               <td class="py-2.5 px-3 text-slate-400">${s.role}</td>
               <td class="py-2.5 px-3 font-mono font-bold text-brandTeal">${s.score.toFixed(1)}점</td>
               <td class="py-2.5 px-3">${badge}</td>
@@ -2887,7 +2887,7 @@
       const printMetaEl = document.getElementById('print-user-meta');
       if (printMetaEl) {
         const todayStr = new Date().toISOString().split('T')[0];
-        printMetaEl.innerText = `성명: ${currentLoggedInUser.name} | 소속: ${currentLoggedInUser.company || '(주)한양고속'} ${currentLoggedInUser.dept}부 | 발급일시: ${todayStr} | 서식코드: CNHY-HR-2026-PDF`;
+        printMetaEl.innerText = `성명: ${currentLoggedInUser.name} | 소속: ${currentLoggedInUser.company || '(주)한양고속'} ${currentLoggedInUser.dept} | 발급일시: ${todayStr} | 서식코드: CNHY-HR-2026-PDF`;
       }
       
       window.print();
@@ -3138,7 +3138,7 @@
               <span class="text-[10px] font-bold px-1.5 py-0.5 rounded ${u.company.includes('한양') ? 'bg-blue-500/20 text-blue-300' : 'bg-orange-500/20 text-orange-300'}">${u.company}</span>
               <strong class="text-xs font-bold ${isSelected ? 'text-white' : 'text-slate-200'}">${u.name} ${u.role}</strong>
             </div>
-            <p class="text-[11px] text-slate-400 mt-0.5">${u.dept}부 • ${u.workplace}</p>
+            <p class="text-[11px] text-slate-400 mt-0.5">${u.dept} • ${u.workplace}</p>
           </div>
           <span class="text-[11px] font-bold px-2 py-0.5 rounded-full ${matchesCount > 0 ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' : 'bg-slate-800 text-slate-500'}">
             ${matchesCount}명 매칭
@@ -3171,7 +3171,7 @@
       }
 
       if (headerInfo) {
-        headerInfo.innerHTML = `선택된 평가자: <strong class="text-white">${evaluator.company} ${evaluator.dept}부 ${evaluator.name} ${evaluator.role}</strong>`;
+        headerInfo.innerHTML = `선택된 평가자: <strong class="text-white">${evaluator.company} ${evaluator.dept} ${evaluator.name} ${evaluator.role}</strong>`;
       }
 
       const matchingCycleId = Number(document.getElementById('perm-cycle-select')?.value || currentSelectedSummaryCycleId || cyclesDb[0]?.id);
@@ -3211,7 +3211,7 @@
               <span class="text-[9px] font-bold px-1.5 py-0.2 rounded ${target.company.includes('한양') ? 'bg-blue-500/20 text-blue-300' : 'bg-orange-500/20 text-orange-300'}">${target.company}</span>
               <strong class="text-xs font-bold ${isMatched ? 'text-teal-200' : 'text-slate-300'} truncate">${target.name} ${target.role}</strong>
             </div>
-            <p class="text-[10px] text-slate-400 mt-0.5 truncate">${target.dept}부 • ${target.workplace}</p>
+            <p class="text-[10px] text-slate-400 mt-0.5 truncate">${target.dept} • ${target.workplace}</p>
           </div>
           <div class="flex-shrink-0">
             ${
@@ -3987,7 +3987,7 @@
               </span>
             </div>
             <h4 class="text-base font-bold text-white">${emp.name} ${emp.role}</h4>
-            <p class="text-xs text-slate-400 mt-1">${emp.dept}부 • ${emp.assigned_task || emp.workplace}</p>
+            <p class="text-xs text-slate-400 mt-1">${emp.dept} • ${emp.assigned_task || emp.workplace}</p>
             
             <div class="mt-2.5 space-y-1">
               <span class="text-[9px] font-bold px-2 py-0.5 rounded block w-fit bg-purple-500/20 text-purple-300 border border-purple-500/30">
@@ -4033,7 +4033,7 @@
 
       document.getElementById('eval-target-company').innerText = `(${emp.company})`;
       document.getElementById('eval-target-name').innerText = `${emp.name} ${emp.role} ${isEdit ? '[✏️ 기존 평가 수정 중]' : ''}`;
-      document.getElementById('eval-target-dept').innerText = `${emp.dept}부 • ${emp.assigned_task || emp.workplace}`;
+      document.getElementById('eval-target-dept').innerText = `${emp.dept} • ${emp.assigned_task || emp.workplace}`;
 
       if (isEdit) {
         // Direct open without pledge modal when editing
@@ -4128,7 +4128,7 @@
         <div class="flex items-center gap-2">
           <span class="bg-brandTeal/20 text-brandTeal border border-brandTeal/40 px-2.5 py-0.5 rounded-full font-bold text-[10px]">SMART DYNAMIC MATCH</span>
           <span class="font-bold text-white">
-            적용 대상 트랙: <strong class="text-brandGold font-black">${targetTrackName}</strong> (${dept}부 • ${emp.workplace})
+            적용 대상 트랙: <strong class="text-brandGold font-black">${targetTrackName}</strong> (${dept} • ${emp.workplace})
           </span>
         </div>
         <span class="text-slate-300 text-[11px]">
@@ -4340,7 +4340,7 @@
           <td class="py-2.5 px-3 font-bold text-white">${u.name}</td>
           <td class="py-2.5 px-3"><span class="text-[10px] font-bold px-2 py-0.5 rounded ${u.company.includes('한양') ? 'bg-blue-500/20 text-blue-300' : 'bg-orange-500/20 text-orange-300'}">${u.company}</span></td>
           <td class="py-2.5 px-3 font-mono text-teal-300">${u.email}</td>
-          <td class="py-2.5 px-3">${u.dept}부 • ${u.workplace}</td>
+          <td class="py-2.5 px-3">${u.dept} • ${u.workplace}</td>
           <td class="py-2.5 px-3 text-slate-400">${u.role}</td>
           <td class="py-2.5 px-3"><span class="bg-slate-800 text-slate-300 px-2 py-0.5 rounded font-bold">${u.type}</span></td>
           <td class="py-2.5 px-3">${roleBadge}</td>
@@ -5109,7 +5109,7 @@
         tr.innerHTML = `
           <td class="py-3 px-3 font-bold text-white">${u.name}</td>
           <td class="py-3 px-3 text-teal-300 font-mono">${u.email}</td>
-          <td class="py-3 px-3">${u.company} • ${u.dept}부</td>
+          <td class="py-3 px-3">${u.company} • ${u.dept}</td>
           <td class="py-3 px-3 text-slate-400">${u.role} (${u.type})</td>
           <td class="py-3 px-3">${statusBadge}</td>
           <td class="py-3 px-3 text-center">
@@ -5444,7 +5444,7 @@
               </button>
             ` : `<span>${emp.name}</span>`}
           </td>
-          <td class="py-3 px-3">${emp.company} • ${emp.dept}부</td>
+          <td class="py-3 px-3">${emp.company} • ${emp.dept}</td>
           <td class="py-3 px-3 text-slate-400">${emp.role}</td>
           <td class="py-3 px-3 font-mono">${rawScoreStr}</td>
           <td class="py-3 px-3 font-mono font-bold text-brandTeal">${finalScoreStr}</td>
@@ -5477,7 +5477,7 @@
       }
 
       document.getElementById('detail-modal-emp-name').innerText = `${emp.name} ${emp.role} 상세 360° 평가 리포트`;
-      document.getElementById('detail-modal-emp-info').innerText = `${emp.company} • ${emp.dept}부 | ${emp.workplace} 근무`;
+      document.getElementById('detail-modal-emp-info').innerText = `${emp.company} • ${emp.dept} | ${emp.workplace} 근무`;
       document.getElementById('detail-modal-raw-score').innerText = `${scoreData.raw.toFixed(1)}점`;
       document.getElementById('detail-modal-final-score').innerText = `${scoreData.final.toFixed(1)}점`;
 
@@ -5520,7 +5520,7 @@
             <div class="flex items-center gap-2">
               <span class="bg-brandTeal/20 text-brandTeal text-[10px] font-bold px-2 py-0.5 rounded-full border border-brandTeal/30">${escapeHtml(matching?.type || '서버 배정 평가')}</span>
               <h4 class="text-xs font-bold text-white">${escapeHtml(evaluator ? `${evaluator.name} ${evaluator.role}` : `평가자 #${ev.evaluator_id}`)}</h4>
-              <span class="text-[11px] text-slate-400">(${escapeHtml(evaluator ? `${evaluator.dept}부 · ${evaluator.company}` : '')})</span>
+              <span class="text-[11px] text-slate-400">(${escapeHtml(evaluator ? `${evaluator.dept} · ${evaluator.company}` : '')})</span>
             </div>
             <span class="text-xs font-mono font-bold text-amber-400">평가 환산: ${converted.toFixed(1)}점</span>
           </div>
@@ -5720,7 +5720,7 @@
           const owner = usersDb.find(user => Number(user.id) === Number(goal.user_id));
           const item = document.createElement('div');
           item.className = 'bg-amber-950/20 p-4 rounded-xl border border-amber-500/30 flex justify-between items-center gap-3';
-          item.innerHTML = `<div><p class="text-[10px] text-amber-300 font-bold">${escapeHtml(owner ? `${owner.name} · ${owner.dept}부` : `직원 #${goal.user_id}`)}</p><h4 class="text-sm font-bold text-white">${escapeHtml(goal.title)}</h4></div><div class="flex gap-2"><button onclick="reviewGoal(${Number(goal.id)},'approved')" class="bg-emerald-600 px-3 py-1.5 rounded text-xs font-bold text-white">승인</button><button onclick="reviewGoal(${Number(goal.id)},'rejected')" class="bg-rose-600 px-3 py-1.5 rounded text-xs font-bold text-white">반려</button></div>`;
+          item.innerHTML = `<div><p class="text-[10px] text-amber-300 font-bold">${escapeHtml(owner ? `${owner.name} · ${owner.dept}` : `직원 #${goal.user_id}`)}</p><h4 class="text-sm font-bold text-white">${escapeHtml(goal.title)}</h4></div><div class="flex gap-2"><button onclick="reviewGoal(${Number(goal.id)},'approved')" class="bg-emerald-600 px-3 py-1.5 rounded text-xs font-bold text-white">승인</button><button onclick="reviewGoal(${Number(goal.id)},'rejected')" class="bg-rose-600 px-3 py-1.5 rounded text-xs font-bold text-white">반려</button></div>`;
           container.appendChild(item);
         });
       }
