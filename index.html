@@ -1525,6 +1525,13 @@
             </div>
           </div>
 
+          <div id="summary-filter-toolbar" class="mb-3 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-2 rounded-xl border border-slate-800 bg-slate-950/50 p-3">
+            <label class="relative xl:col-span-2"><i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i><input id="summary-filter-search" type="search" placeholder="이름·이메일·소속사·부서·직급 검색" class="w-full rounded-lg border border-slate-700 bg-slate-900 py-2 pl-8 pr-3 text-xs text-white outline-none focus:border-brandTeal"></label>
+            <select id="summary-filter-company" class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-bold text-slate-200"><option value="">전체 소속사</option></select>
+            <select id="summary-filter-dept" class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-bold text-slate-200"><option value="">전체 부서</option></select>
+            <button type="button" onclick="resetSummaryFilters()" class="rounded-lg border border-slate-700 px-3 py-2 text-xs font-bold text-slate-300 hover:border-slate-500 hover:text-white"><i class="fa-solid fa-rotate-left mr-1"></i>검색 초기화</button>
+            <div class="md:col-span-2 xl:col-span-5 flex items-center justify-between text-[11px] text-slate-400"><span id="summary-filter-result-count">0명 표시</span><span><i class="fa-solid fa-arrow-down-a-z mr-1 text-brandTeal"></i>열 제목을 클릭하면 오름차순·내림차순으로 정렬됩니다.</span></div>
+          </div>
           <div class="overflow-x-auto">
             <table class="w-full text-left text-xs text-slate-300 border-collapse">
               <thead>
@@ -4856,6 +4863,99 @@
       }
     });
 
+    const summaryViewState = { query: '', company: '', dept: '', sortKey: 'workflow', sortDirection: 'asc' };
+
+    function populateSummaryFilterSelect(select, label, values, selectedValue) {
+      if (!select) return;
+      select.replaceChildren(new Option(label, ''));
+      values.forEach(value => select.add(new Option(value, value)));
+      select.value = selectedValue;
+    }
+
+    function syncSummaryFilterControls() {
+      const search = document.getElementById('summary-filter-search');
+      const company = document.getElementById('summary-filter-company');
+      const dept = document.getElementById('summary-filter-dept');
+      if (!search || !company || !dept) return;
+      search.value = summaryViewState.query;
+      const companies = [...new Set(usersDb.map(user => String(user.company || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ko'));
+      populateSummaryFilterSelect(company, '전체 소속사', companies, summaryViewState.company);
+      const departments = [...new Set(usersDb.filter(user => !summaryViewState.company || user.company === summaryViewState.company).map(user => String(user.dept || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ko'));
+      populateSummaryFilterSelect(dept, '전체 부서', departments, summaryViewState.dept);
+    }
+
+    function initializeSummaryFiltersAndSorting() {
+      syncSummaryFilterControls();
+      const toolbar = document.getElementById('summary-filter-toolbar');
+      if (!toolbar || toolbar.dataset.initialized === 'true') return;
+      toolbar.dataset.initialized = 'true';
+      document.getElementById('summary-filter-search').addEventListener('input', event => {
+        summaryViewState.query = event.target.value;
+        renderAdminSummaryTable();
+      });
+      document.getElementById('summary-filter-company').addEventListener('change', event => {
+        summaryViewState.company = event.target.value;
+        summaryViewState.dept = '';
+        renderAdminSummaryTable();
+      });
+      document.getElementById('summary-filter-dept').addEventListener('change', event => {
+        summaryViewState.dept = event.target.value;
+        renderAdminSummaryTable();
+      });
+      const sortKeys = ['name', 'company', 'role', 'raw', 'final', 'adjusted', 'grade'];
+      document.getElementById('admin-table-body')?.closest('table')?.querySelectorAll('thead th').forEach((header, index) => {
+        const key = sortKeys[index];
+        if (!key) return;
+        header.classList.add('cursor-pointer', 'select-none', 'hover:text-white');
+        header.title = '클릭하여 오름차순·내림차순 정렬';
+        header.addEventListener('click', () => {
+          summaryViewState.sortDirection = summaryViewState.sortKey === key && summaryViewState.sortDirection === 'asc' ? 'desc' : 'asc';
+          summaryViewState.sortKey = key;
+          renderAdminSummaryTable();
+        });
+      });
+    }
+
+    function resetSummaryFilters() {
+      Object.assign(summaryViewState, { query: '', company: '', dept: '', sortKey: 'workflow', sortDirection: 'asc' });
+      renderAdminSummaryTable();
+    }
+
+    function getVisibleSummaryEmployees(employees, cycleScores) {
+      const query = summaryViewState.query.trim().toLocaleLowerCase('ko');
+      const gradeOrder = { EX: 0, S: 1, A: 2, B: 3, C: 4, D: 5 };
+      const visible = employees.filter(employee => {
+        const searchable = [employee.name, employee.email, employee.company, employee.dept, employee.role, employee.workplace].join(' ').toLocaleLowerCase('ko');
+        return (!query || searchable.includes(query))
+          && (!summaryViewState.company || employee.company === summaryViewState.company)
+          && (!summaryViewState.dept || employee.dept === summaryViewState.dept);
+      });
+      const sortValue = employee => {
+        const score = cycleScores[employee.id] || {};
+        if (summaryViewState.sortKey === 'workflow') return score.complete ? (score.is_adjusted ? 2 : 1) : 0;
+        if (summaryViewState.sortKey === 'raw') return Number(score.raw ?? -1);
+        if (summaryViewState.sortKey === 'final') return Number(score.final ?? -1);
+        if (summaryViewState.sortKey === 'adjusted') return score.is_adjusted ? 0 : 1;
+        if (summaryViewState.sortKey === 'grade') return gradeOrder[score.grade] ?? 99;
+        if (summaryViewState.sortKey === 'company') return `${employee.company || ''} ${employee.dept || ''}`;
+        return String(employee[summaryViewState.sortKey] ?? '');
+      };
+      visible.sort((left, right) => {
+        const leftValue = sortValue(left);
+        const rightValue = sortValue(right);
+        let comparison = typeof leftValue === 'number'
+          ? leftValue - rightValue
+          : String(leftValue).localeCompare(String(rightValue), 'ko', { numeric: true });
+        if (summaryViewState.sortKey === 'workflow' && comparison === 0) {
+          comparison = Number(cycleScores[right.id]?.final ?? -1) - Number(cycleScores[left.id]?.final ?? -1);
+        }
+        if (comparison === 0) comparison = String(left.name || '').localeCompare(String(right.name || ''), 'ko');
+        return summaryViewState.sortDirection === 'asc' ? comparison : -comparison;
+      });
+      const count = document.getElementById('summary-filter-result-count');
+      if (count) count.textContent = `전체 ${employees.length}명 중 ${visible.length}명 표시`;
+      return visible;
+    }
     function renderAdminSummaryTable() {
       const summarySelect = document.getElementById('summary-cycle-select');
       if (summarySelect && summarySelect.value) {
@@ -4874,10 +4974,11 @@
       tbody.innerHTML = '';
 
       const cycleScores = cycleScoresDb[currentSelectedSummaryCycleId] || {};
+      initializeSummaryFiltersAndSorting();
 
       // 점수 집계·2차 조정은 실제 피평가자만 대상으로 한다.
       // 평가 전담자는 평가 진행·배정 관리에는 남지만 이 결과 목록에서는 제외한다.
-      usersDb.filter(emp => emp.is_evaluatee !== false).forEach(emp => {
+      getVisibleSummaryEmployees(usersDb.filter(emp => emp.is_evaluatee !== false), cycleScores).forEach(emp => {
         const isEvalOnly = false;
         const empScoreData = cycleScores[emp.id];
         const tr = document.createElement('tr');
