@@ -188,9 +188,8 @@ async function generateReport(aggregate) {
       contents: [{ role: 'user', parts: [{ text: JSON.stringify(input) }] }],
       generationConfig: {
         temperature: 0.2,
-        responseFormat: {
-          text: { mimeType: 'application/json', schema: reportSchema() }
-        }
+        responseMimeType: 'application/json',
+        responseSchema: reportSchema()
       }
     })
   });
