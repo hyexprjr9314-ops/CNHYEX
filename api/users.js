@@ -6,6 +6,17 @@ const ALLOWED_TYPES = new Set(['팀원급', '팀장급', '부서실장급', '임
 const ALLOWED_ROLES = new Set(['일반사용자', '관리자', '임원']);
 const ALLOWED_COMPANIES = new Set(['(주)한양고속', '(주)충남고속']);
 const SUPER_ADMIN_EMAIL = 'admin@cnhyex.com';
+function normalizeCompany(value) {
+  const normalized = String(value || '')
+    .normalize('NFKC')
+    .replace(/[\u200B-\u200D\uFEFF]/g, '')
+    .replace(/\s+/g, '')
+    .trim();
+  const companyName = normalized.replace(/^\(주\)/, '');
+  if (companyName === '한양고속') return '(주)한양고속';
+  if (companyName === '충남고속') return '(주)충남고속';
+  return normalized;
+}
 
 function send(res, status, payload) {
   res.status(status).json(payload);
@@ -15,7 +26,7 @@ function normalize(row) {
   return {
     name: String(row.name || '').trim(),
     email: String(row.email || '').trim().toLowerCase(),
-    company: String(row.company || '').trim(),
+    company: normalizeCompany(row.company),
     dept: String(row.dept || '').trim(),
     workplace: String(row.workplace || '').trim(),
     role: String(row.role || '').trim(),
