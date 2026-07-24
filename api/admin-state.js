@@ -7,7 +7,7 @@ import { isMutableDraftCycle } from './questions.js';
 const PRIVILEGED = new Set([ROLES.admin, ROLES.executive]);
 const ADMIN_ONLY = new Set([
   'cycle_create', 'cycle_update', 'cycle_delete', 'cycle_validate', 'cycle_activate', 'question_create', 'question_update',
-  'question_delete', 'matching_toggle', 'matching_replace', 'matching_generate', 'permission_update', 'settings_update',
+  'question_delete', 'matching_toggle', 'matching_replace', 'matching_generate', 'permission_update', 'permission_bulk_update', 'settings_update',
   'goal_status', 'cycle_close'
 ]);
 const EXECUTIVE_ALLOWED = new Set();
@@ -81,7 +81,14 @@ function questionPayload(body) {
   return row;
 }
 
-function normalizedWeights(settings) {
+function normalizedWeights(settings, track = 'headquarters_member') {
+  const scoped = settings?.track_category_weights?.[track];
+  if (Array.isArray(scoped) && scoped.length === 4) {
+    return {
+      performance: Number(scoped[0]) / 100, collaboration: Number(scoped[1]) / 100,
+      growth: Number(scoped[2]) / 100, harmony: Number(scoped[3]) / 100
+    };
+  }
   return {
     performance: Number(settings?.performance_weight ?? 40) / 100,
     collaboration: Number(settings?.collaboration_weight ?? 30) / 100,
@@ -90,8 +97,8 @@ function normalizedWeights(settings) {
   };
 }
 
-function buildScores(evaluations, adjustments, settings, matchings = []) {
-  const weights = normalizedWeights(settings);
+function buildScores(evaluations, adjustments, settings, matchings = [], users = []) {
+  const userMap = new Map((users || []).map(user => [Number(user.id), user]));
   const grouped = new Map();
   const assignedCounts = new Map();
   for (const row of matchings || []) {
@@ -109,6 +116,7 @@ function buildScores(evaluations, adjustments, settings, matchings = []) {
   const result = {};
   for (const [key, rows] of grouped) {
     const [cycleId, targetId] = key.split(':');
+    const weights = normalizedWeights(settings, targetTrack(userMap.get(Number(targetId)) || {}));
     const avg = field => rows.reduce((sum, row) => sum + Number(row[field] || 0), 0) / rows.length;
     const raw = Number((
       avg('perf_score') * weights.performance + avg('collab_score') * weights.collaboration
@@ -261,7 +269,7 @@ async function readState(service, profile) {
   });
   const eligibleMatchingIds = new Set(eligibleMatchings.map(row => Number(row.id)));
   const eligibleEvaluations = (evaluations.data || []).filter(row => eligibleMatchingIds.has(Number(row.matching_id)));
-  const cycleScores = buildScores(eligibleEvaluations, adjustments.data || [], settingsResult.data, eligibleMatchings);
+  const cycleScores = buildScores(eligibleEvaluations, adjustments.data || [], settingsResult.data, eligibleMatchings, users.data || []);
   applyRelativeGrades(cycleScores, users.data || [], archives.data || []);
   const cyclesById = new Map((cycles.data || []).map(cycle => [Number(cycle.id), cycle]));
   const currentFinalResults = (finalResults.data || []).filter(row =>
@@ -312,7 +320,7 @@ async function closeCycle(service, rpcService, cycleId, authUser) {
   if ((adjustments.data || []).some(row => row.status === 'active' && row.workflow_status !== 'second_stage_adjusted')) {
     throw Object.assign(new Error('2차 조정이 완료되지 않은 활성 조정이 있어 마감할 수 없습니다.'), { status: 409 });
   }
-  const scoreMap = buildScores(scores.data || [], adjustments.data || [], settings.data, activeMatchings)[String(cycleId)] || {};
+  const scoreMap = buildScores(scores.data || [], adjustments.data || [], settings.data, activeMatchings, users.data || [])[String(cycleId)] || {};
   const finalUsers = (users.data || []).filter(user => user.is_evaluatee !== false && scoreMap[user.id]);
   const gradePlan = buildRelativeGradePlan(finalUsers.map(user => ({
     targetId: user.id,
@@ -400,6 +408,17 @@ export default async function handler(req, res) {
         auto_matching_enabled: req.body?.auto_matching_enabled !== false,
         updated_by: authUser.id, updated_at: new Date().toISOString()
       };
+      const trackWeights = req.body?.track_category_weights;
+      if (trackWeights && typeof trackWeights === 'object') {
+        for (const track of Object.values(TRACKS)) {
+          const values = trackWeights[track];
+          if (!Array.isArray(values) || values.length !== 4 || !values.every(Number.isFinite)
+            || Math.abs(values.reduce((sum, value) => sum + value, 0) - 100) > .01) {
+            return send(res, 400, { error: '모든 직군의 카테고리 가중치 합계는 100이어야 합니다.' });
+          }
+        }
+        payload.track_category_weights = trackWeights;
+      }
       const sum = payload.performance_weight + payload.collaboration_weight + payload.growth_weight + payload.harmony_weight;
       if (![payload.performance_weight, payload.collaboration_weight, payload.growth_weight, payload.harmony_weight].every(Number.isFinite) || Math.abs(sum - 100) > .01) {
         return send(res, 400, { error: '가중치 합계는 100이어야 합니다.' });
@@ -451,6 +470,16 @@ export default async function handler(req, res) {
       if (typeof req.body.is_evaluatee === 'boolean') changes.is_evaluatee = req.body.is_evaluatee;
       changes.updated_at = new Date().toISOString();
       result = await service.from('users').update(changes).eq('id', Number(req.body.user_id)).select().single();
+    } else if (action === 'permission_bulk_update') {
+      const userIds = [...new Set((req.body.user_ids || []).map(Number).filter(Number.isInteger))].slice(0, 500);
+      if (!userIds.length) return send(res, 400, { error: '변경할 사용자를 선택해 주세요.' });
+      const changes = { updated_at: new Date().toISOString() };
+      if (req.body.can_evaluate === true) changes.can_evaluate = true;
+      if (req.body.is_evaluatee === true) changes.is_evaluatee = true;
+      if (changes.can_evaluate !== true && changes.is_evaluatee !== true) {
+        return send(res, 400, { error: '일괄 작업은 권한 활성화만 지원합니다.' });
+      }
+      result = await service.from('users').update(changes).in('id', userIds).select('id');
     } else if (action === 'matching_toggle') {
       const cycleId = Number(req.body.cycle_id), evaluatorId = Number(req.body.evaluator_id), targetId = Number(req.body.target_id);
       if (!cycleId || !evaluatorId || !targetId || evaluatorId === targetId) return send(res, 400, { error: '유효한 주기·평가자·피평가자가 필요합니다.' });

@@ -79,7 +79,7 @@ async function aggregateTarget(service, cycleId, targetId) {
     service.from('matchings').select('id,evaluator_id,target_id').eq('cycle_id', cycleId).eq('target_id', targetId),
     service.from('evaluations').select('matching_id,perf_score,collab_score,growth_score,harmony_score').eq('cycle_id', cycleId).eq('target_id', targetId),
     service.from('evaluation_result_adjustments').select('id,raw_score,final_score,reason,status,workflow_status').eq('cycle_id', cycleId).eq('target_id', targetId).eq('status', 'active').maybeSingle(),
-    service.from('evaluation_settings').select('performance_weight,collaboration_weight,growth_weight,harmony_weight').eq('id', 1).single(),
+    service.from('evaluation_settings').select('performance_weight,collaboration_weight,growth_weight,harmony_weight,track_category_weights').eq('id', 1).single(),
     service.from('users').select('id,active,can_evaluate,is_evaluatee,company,dept,workplace,role,type')
   ]);
   for (const result of [matchings, evaluations, adjustment, settings, users]) {
@@ -88,12 +88,15 @@ async function aggregateTarget(service, cycleId, targetId) {
 
   const usersById = new Map((users.data || []).map(user => [Number(user.id), user]));
   const target = usersById.get(Number(targetId));
-  const categoryLabels = TRACK_CATEGORIES[targetTrack(target)] || TRACK_CATEGORIES.headquarters_member;
+  const track = targetTrack(target);
+  const categoryLabels = TRACK_CATEGORIES[track] || TRACK_CATEGORIES.headquarters_member;
+  const scopedWeights = settings.data.track_category_weights?.[track];
+  const weightValues = Array.isArray(scopedWeights) && scopedWeights.length === 4
+    ? scopedWeights.map(Number)
+    : [settings.data.performance_weight, settings.data.collaboration_weight, settings.data.growth_weight, settings.data.harmony_weight].map(Number);
   const weights = {
-    performance: Number(settings.data.performance_weight) / 100,
-    collaboration: Number(settings.data.collaboration_weight) / 100,
-    growth: Number(settings.data.growth_weight) / 100,
-    harmony: Number(settings.data.harmony_weight) / 100
+    performance: weightValues[0] / 100, collaboration: weightValues[1] / 100,
+    growth: weightValues[2] / 100, harmony: weightValues[3] / 100
   };
   const assigned = (matchings.data || []).filter(row => {
     const evaluator = usersById.get(Number(row.evaluator_id));

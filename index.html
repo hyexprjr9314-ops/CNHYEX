@@ -225,6 +225,24 @@
     .permission-toggle-state.is-evaluatee-active {
       color: #92400E;
     }
+    .progress-stat-neutral {
+      background: #f8fafc !important;
+      border-color: #94a3b8 !important;
+    }
+    .progress-stat-neutral p { color: #475569 !important; }
+    .progress-stat-neutral strong { color: #0f172a !important; }
+    .progress-stat-complete {
+      background: #f5f3ff !important;
+      border-color: #c4b5fd !important;
+    }
+    .progress-stat-complete p { color: #6d28d9 !important; }
+    .progress-stat-complete strong { color: #4c1d95 !important; }
+    .approval-panel {
+      background: #fffbeb !important;
+      border-color: #f59e0b !important;
+    }
+    .approval-panel p:first-child { color: #92400e !important; }
+    .approval-panel p { color: #475569 !important; }
     .matching-dropzone {
       min-height: 240px;
       border: 2px dashed #94A3B8;
@@ -1497,22 +1515,28 @@
               <span class="text-xs font-bold text-slate-200">기본 평가 카테고리 가중치 설정</span>
               <span class="text-xs font-bold text-emerald-400" id="weight-total-indicator">카테고리 가중치 합계: 100.0% (적정)</span>
             </div>
+            <select id="weight-track-select" onchange="selectWeightTrack(this.value)" class="w-full rounded-lg border border-slate-300 bg-white p-2.5 text-xs font-bold text-slate-800">
+              <option value="headquarters_member">본사 팀원</option>
+              <option value="headquarters_leader">본사 팀장·부서장급</option>
+              <option value="branch_employee">영업소 직원</option>
+              <option value="mechanic">정비사</option>
+            </select>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
               <div>
-                <label class="block text-[11px] font-bold text-slate-400 mb-1">1. 성과 가중치 (%)</label>
+                <label id="weight-label-1" class="block text-[11px] font-bold text-slate-400 mb-1">1. 성과 가중치 (%)</label>
                 <input type="number" id="weight-perf-in" value="40.0" step="0.1" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white" oninput="recalculateWeights()">
               </div>
               <div>
-                <label class="block text-[11px] font-bold text-slate-400 mb-1">2. 협업 가중치 (%)</label>
+                <label id="weight-label-2" class="block text-[11px] font-bold text-slate-400 mb-1">2. 협업 가중치 (%)</label>
                 <input type="number" id="weight-collab-in" value="30.0" step="0.1" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white" oninput="recalculateWeights()">
               </div>
               <div>
-                <label class="block text-[11px] font-bold text-slate-400 mb-1">3. 성장 가중치 (%)</label>
+                <label id="weight-label-3" class="block text-[11px] font-bold text-slate-400 mb-1">3. 성장 가중치 (%)</label>
                 <input type="number" id="weight-growth-in" value="20.0" step="0.1" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white" oninput="recalculateWeights()">
               </div>
               <div>
-                <label class="block text-[11px] font-bold text-slate-400 mb-1">4. 조화 가중치 (%)</label>
+                <label id="weight-label-4" class="block text-[11px] font-bold text-slate-400 mb-1">4. 조화 가중치 (%)</label>
                 <input type="number" id="weight-harmony-in" value="10.0" step="0.1" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white" oninput="recalculateWeights()">
               </div>
             </div>
@@ -1667,6 +1691,12 @@
                 <!-- Dynamically Populated -->
               </select>
             </div>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 rounded-xl border border-slate-300 bg-white p-3">
+            <span class="text-xs font-bold text-slate-700">현재 검색·필터 결과:</span>
+            <button type="button" onclick="bulkActivatePermissions('evaluator')" class="rounded-lg bg-teal-600 px-3 py-2 text-xs font-bold text-white hover:bg-teal-700">평가 작성 권한 일괄 활성</button>
+            <button type="button" onclick="bulkActivatePermissions('evaluatee')" class="rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white hover:bg-blue-700">피평가 대상 일괄 활성</button>
+            <button type="button" onclick="bulkActivatePermissions('both')" class="rounded-lg bg-violet-600 px-3 py-2 text-xs font-bold text-white hover:bg-violet-700">두 권한 모두 활성</button>
           </div>
 
           <div class="overflow-x-auto">
@@ -1916,11 +1946,11 @@
             <select id="progress-cycle-select" onchange="renderEvaluationProgress()" class="bg-slate-900 border border-slate-700 text-xs font-bold text-white rounded-xl px-3 py-2"></select>
           </div>
           <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
-            <div class="rounded-xl border border-slate-700 bg-slate-900/70 p-4"><p class="text-xs text-slate-400">전체 배정</p><strong id="progress-total" class="text-xl text-white">0건</strong></div>
+            <div class="progress-stat-neutral rounded-xl border p-4"><p class="text-xs">전체 배정</p><strong id="progress-total" class="text-xl">0건</strong></div>
             <div class="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4"><p class="text-xs text-emerald-700">제출 완료</p><strong id="progress-completed" class="text-xl text-emerald-700">0건</strong></div>
             <div class="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4"><p class="text-xs text-amber-700">미제출</p><strong id="progress-pending" class="text-xl text-amber-700">0건</strong></div>
             <div class="rounded-xl border border-blue-500/30 bg-blue-500/10 p-4"><p class="text-xs text-blue-700">전체 진행률</p><strong id="progress-rate" class="text-xl text-blue-700">0%</strong></div>
-            <div class="rounded-xl border border-slate-700 bg-slate-900/70 p-4"><p class="text-xs text-slate-400">평가 완료 인원</p><strong id="progress-evaluator-complete" class="text-xl text-white">0명</strong></div>
+            <div class="progress-stat-complete rounded-xl border p-4"><p class="text-xs">평가 완료 인원</p><strong id="progress-evaluator-complete" class="text-xl">0명</strong></div>
           </div>
           <div class="h-3 overflow-hidden rounded-full bg-slate-200"><div id="progress-rate-bar" class="h-full bg-brandTeal transition-all" style="width:0%"></div></div>
           <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-2 rounded-xl border border-slate-800 bg-slate-950/50 p-3">
@@ -1974,7 +2004,7 @@
             </div>
           </div>
 
-          <div class="rounded-xl border border-slate-700 bg-slate-900/70 p-3 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+          <div class="approval-panel rounded-xl border p-3 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
             <div>
               <p class="text-xs font-black text-white"><i class="fa-solid fa-file-signature text-amber-400 mr-1"></i>내부 전자승인 및 결과 공개</p>
               <p class="mt-1 text-[11px] text-slate-400">조정이 완료된 선택 주기를 승인 요청하고, 임원 승인 후 결과를 공개합니다.</p>
@@ -3377,8 +3407,6 @@
           titleEl.className = "text-xl font-black text-slate-400";
           titleEl.innerText = `🔒 평가 결과 비공개 상태`;
         }
-        if (aiStrengthEl) aiStrengthEl.innerHTML = '🔒 관리자가 평가 결과를 비공개 중입니다.';
-        if (aiGuideEl) aiGuideEl.innerHTML = '🔒 평가 기간이 종료된 후 공개 여부를 문의해 주세요.';
       } else if (!hasActualEvaluations) {
         if (scoreEl) scoreEl.innerText = `-`;
         if (cardEl) cardEl.className = "bg-slate-900/90 border border-slate-800 px-6 py-3 rounded-2xl text-center flex items-center gap-4 transition-all shadow-xl";
@@ -3387,7 +3415,6 @@
           titleEl.className = "text-xl font-black text-slate-400";
           titleEl.innerText = `⏳ 미평가 (평가 진행 중)`;
         }
-        if (aiStrengthEl) aiStrengthEl.innerText = '⏳ 평가 결과가 아직 등록되지 않았습니다.';
       } else {
         const grade = empScoreData.grade;
         const totalScore = empScoreData.final.toFixed(1);
@@ -4336,6 +4363,7 @@
     let centralRealtimeChannel = null;
     let centralBroadcastChannel = null;
     let centralReloadTimer = null;
+    let lastCentralLoadAt = 0;
 
     async function callAdminStateApi(body, method = 'POST') {
       if (!supabaseClient) throw new Error('Supabase 연결이 없습니다.');
@@ -4361,11 +4389,15 @@
           perf: Number(settings.performance_weight), collab: Number(settings.collaboration_weight),
           growth: Number(settings.growth_weight), harmony: Number(settings.harmony_weight)
         };
+        if (settings.track_category_weights && typeof settings.track_category_weights === 'object') {
+          trackCategoryWeights = { ...trackCategoryWeights, ...settings.track_category_weights };
+        }
         isAutoMatchingEnabled = settings.auto_matching_enabled !== false;
         renderEvaluationWeightGuide();
         [['weight-perf-in', categoryWeights.perf], ['weight-collab-in', categoryWeights.collab],
          ['weight-growth-in', categoryWeights.growth], ['weight-harmony-in', categoryWeights.harmony]]
           .forEach(([id, value]) => { const input = document.getElementById(id); if (input) input.value = value; });
+        selectWeightTrack(selectedWeightTrack);
       }
       if (Array.isArray(payload.matchings)) {
         customManualMatchingsDb = payload.matchings.map(row => ({
@@ -4400,6 +4432,7 @@
     async function loadCentralState() {
       const payload = await callAdminStateApi(undefined, 'GET');
       applyCentralState(payload);
+      lastCentralLoadAt = Date.now();
       return payload;
     }
 
@@ -4452,7 +4485,9 @@
         centralRealtimeChannel.on('postgres_changes', { event: '*', schema: 'public', table }, scheduleCentralReload);
       });
       centralRealtimeChannel.subscribe();
-      window.addEventListener('focus', scheduleCentralReload);
+      window.addEventListener('focus', () => {
+        if (Date.now() - lastCentralLoadAt > 30000) scheduleCentralReload();
+      });
     }
 
     async function callResultStateApi(method, params = {}) {
@@ -5802,12 +5837,33 @@
 
     // ADMIN SUBTAB 3: QUESTIONS & WEIGHTS
     let categoryWeights = { perf: 40.0, collab: 30.0, growth: 20.0, harmony: 10.0 };
+    let selectedWeightTrack = 'headquarters_member';
+    let trackCategoryWeights = {
+      headquarters_member: [40, 30, 20, 10],
+      headquarters_leader: [35, 25, 25, 15],
+      branch_employee: [30, 30, 20, 20],
+      mechanic: [20, 35, 25, 20]
+    };
+
+    function selectWeightTrack(track) {
+      selectedWeightTrack = QUESTION_TRACKS[track] ? track : 'headquarters_member';
+      const labels = QUESTION_TRACKS[selectedWeightTrack].categories;
+      const values = trackCategoryWeights[selectedWeightTrack];
+      labels.forEach((label, index) => {
+        const labelEl = document.getElementById(`weight-label-${index + 1}`);
+        if (labelEl) labelEl.textContent = `${index + 1}. ${label} 가중치 (%)`;
+      });
+      ['weight-perf-in', 'weight-collab-in', 'weight-growth-in', 'weight-harmony-in']
+        .forEach((id, index) => { const input = document.getElementById(id); if (input) input.value = values[index]; });
+      recalculateWeights();
+    }
 
     function recalculateWeights() {
       const p = parseFloat(document.getElementById('weight-perf-in').value) || 0;
       const c = parseFloat(document.getElementById('weight-collab-in').value) || 0;
       const g = parseFloat(document.getElementById('weight-growth-in').value) || 0;
       const h = parseFloat(document.getElementById('weight-harmony-in').value) || 0;
+      trackCategoryWeights[selectedWeightTrack] = [p, c, g, h];
 
       const sum = p + c + g + h;
       const indicator = document.getElementById('weight-total-indicator');
@@ -5841,11 +5897,19 @@
       }
 
       try {
+        const legacyWeights = trackCategoryWeights.headquarters_member;
         await callAdminStateApi({
-          action: 'settings_update', weights: { perf: p, collab: c, growth: g, harmony: h },
+          action: 'settings_update', weights: {
+            perf: legacyWeights[0], collab: legacyWeights[1],
+            growth: legacyWeights[2], harmony: legacyWeights[3]
+          },
+          track_category_weights: trackCategoryWeights,
           auto_matching_enabled: isAutoMatchingEnabled
         });
-        categoryWeights = { perf: p, collab: c, growth: g, harmony: h };
+        categoryWeights = {
+          perf: legacyWeights[0], collab: legacyWeights[1],
+          growth: legacyWeights[2], harmony: legacyWeights[3]
+        };
         announceCentralChange();
       } catch (error) {
         alert(`가중치 저장 실패: ${error.message}`);
@@ -6191,6 +6255,27 @@
         } catch (error) {
           alert(`평가자 권한 변경 실패: ${error.message}`);
         }
+      }
+    }
+
+    async function bulkActivatePermissions(mode) {
+      const visibleUsers = filterDirectoryItems('permissions', usersDb);
+      if (!visibleUsers.length) return alert('현재 검색·필터 결과에 사용자가 없습니다.');
+      const label = mode === 'evaluator' ? '평가 작성 권한' : mode === 'evaluatee' ? '피평가 대상 권한' : '평가 작성 및 피평가 대상 권한';
+      if (!confirm(`현재 표시된 ${visibleUsers.length}명에게 ${label}을 활성화하시겠습니까?`)) return;
+      try {
+        await callAdminStateApi({
+          action: 'permission_bulk_update',
+          user_ids: visibleUsers.map(user => Number(user.id)),
+          can_evaluate: mode === 'evaluator' || mode === 'both',
+          is_evaluatee: mode === 'evaluatee' || mode === 'both'
+        });
+        announceCentralChange();
+        await loadFromServer();
+        renderPermissionsTable();
+        alert(`${visibleUsers.length}명의 ${label}이 활성화되었습니다.`);
+      } catch (error) {
+        alert(`권한 일괄 활성화 실패: ${error.message}`);
       }
     }
 
