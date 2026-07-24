@@ -61,6 +61,7 @@
 - Touch/hover differences: 데스크톱은 드래그앤드롭, 모바일·키보드는 배정·해제 버튼을 제공하며 핵심 동작은 hover에 의존하지 않음
 
 ## Interaction states
+- Permission toggles: inactive controls use a visible slate track and explicit `비활성` text; evaluator-active controls use dark teal, and evaluatee-active controls use dark amber with explicit `활성` text.
 - Loading: 텍스트와 진행 아이콘 병행
 - Empty: 명시적인 빈 상태 문구
 - Error: 원인과 재시도 행동 제공
