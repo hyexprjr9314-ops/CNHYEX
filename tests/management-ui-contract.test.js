@@ -45,3 +45,11 @@ test('manual matching keeps staged cards until the server confirms normalized id
   assert.match(saveFlow, /payload\.data\.matchings\.map\(row => Number\(row\.target_id\)\)/);
   assert.match(saveFlow, /expectedIds\.some\(\(id, index\) => id !== savedIds\[index\]\)/);
 });
+
+test('matching studio exposes and synchronizes its own cycle selector', async () => {
+  const index = await readFile(indexUrl, 'utf8');
+
+  assert.match(index, /id="matching-cycle-select"/);
+  assert.match(index, /\['perm-cycle-select', 'matching-cycle-select'\]\.forEach/);
+  assert.match(index, /getElementById\('matching-cycle-select'\)\?\.value \|\| document\.getElementById\('perm-cycle-select'\)\?\.value/);
+});
