@@ -3962,6 +3962,11 @@
       return Number(document.getElementById('matching-cycle-select')?.value || document.getElementById('perm-cycle-select')?.value || currentSelectedSummaryCycleId || cyclesDb[0]?.id);
     }
 
+    function syncSelectedCycleMatchingMode() {
+      const cycle = cyclesDb.find(row => Number(row.id) === getSelectedMatchingCycleId());
+      isAutoMatchingEnabled = cycle?.auto_matching_enabled !== false;
+    }
+
     function getServerMatchingTargetIds(evaluatorId = selectedEvaluatorForMatching, cycleId = getSelectedMatchingCycleId()) {
       return customManualMatchingsDb
         .filter(m => Number(m.evaluatorId) === Number(evaluatorId) && Number(m.cycleId) === Number(cycleId))
@@ -4016,6 +4021,7 @@
         if (cycleSelect && cycleSelect !== selectEl) cycleSelect.value = selectEl.value;
       });
       resetStagedMatchingState();
+      syncSelectedCycleMatchingMode();
       if (currentActiveSubtab === 'matching') renderManualMatchingTable();
       else renderPermissionsTable();
     }
@@ -4028,11 +4034,8 @@
       }
       const nextValue = !isAutoMatchingEnabled;
       try {
-        await callAdminStateApi({ action: 'settings_update', weights: categoryWeights, auto_matching_enabled: nextValue });
-        if (nextValue) {
-          const cycleId = getSelectedMatchingCycleId();
-          await callAdminStateApi({ action: 'matching_generate', cycle_id: cycleId });
-        }
+        const cycleId = getSelectedMatchingCycleId();
+        await callAdminStateApi({ action: 'matching_mode_update', cycle_id: cycleId, enabled: nextValue });
         isAutoMatchingEnabled = nextValue;
         announceCentralChange();
         await loadCentralState();
@@ -4626,7 +4629,7 @@
         if (settings.track_category_weights && typeof settings.track_category_weights === 'object') {
           trackCategoryWeights = { ...trackCategoryWeights, ...settings.track_category_weights };
         }
-        isAutoMatchingEnabled = settings.auto_matching_enabled !== false;
+        syncSelectedCycleMatchingMode();
         renderEvaluationWeightGuide();
         [['weight-perf-in', categoryWeights.perf], ['weight-collab-in', categoryWeights.collab],
          ['weight-growth-in', categoryWeights.growth], ['weight-harmony-in', categoryWeights.harmony]]
@@ -6076,6 +6079,23 @@
       return '❌ 통합 점검 실패 (' + issues.length + '건)\n' + header + '\n\n' + visible + remainder;
     }
 
+    function formatCycleValidationReportGrouped(report) {
+      const counts = report?.counts || {};
+      const header = `대상자 ${counts.targets || 0}명 · 배정 ${counts.assignments || 0}건 · 유효 질문 ${counts.questions || 0}개`;
+      const issues = Array.isArray(report?.issues) ? report.issues : [];
+      if (!issues.length) return `✅ 통합 사전점검 통과\n${header}\n✅ 평가주기를 시작할 수 있습니다.`;
+      const grouped = new Map();
+      for (const issue of issues) {
+        const key = [issue.target_track, issue.relationship_type, issue.category].filter(Boolean).join(' / ') || issue.message;
+        grouped.set(key, (grouped.get(key) || 0) + 1);
+      }
+      const visible = [...grouped.entries()].slice(0, 20)
+        .map(([key, affected], index) => `${index + 1}. ${key} 질문 없음 · 영향 ${affected}명`).join('\n');
+      const remainder = grouped.size > 20 ? `\n외 ${grouped.size - 20}개 유형의 문제가 더 있습니다.` : '';
+      return `⚠️ 통합 사전점검 실패 (${grouped.size}개 누락 유형)\n${header}\n\n${visible}${remainder}`
+        + '\n\n질문 관리에서 같은 평가주기·직군·평가 관계·카테고리를 확인해 주세요.';
+    }
+
     async function validateEvaluationCycle(cycleId, activate = false) {
       const cycle = cyclesDb.find(item => Number(item.id) === Number(cycleId));
       if (activate && !confirm('평가 주기 [' + (cycle?.name || cycleId) + ']를 통합 점검 후 시작하시겠습니까?')) return;
@@ -6084,7 +6104,7 @@
           action: activate ? 'cycle_activate' : 'cycle_validate',
           cycle_id: Number(cycleId)
         });
-        alert(formatCycleValidationReport(response.data));
+        alert(formatCycleValidationReportGrouped(response.data));
         if (activate) {
           announceCentralChange();
           await loadFromServer();
