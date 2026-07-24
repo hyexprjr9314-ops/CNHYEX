@@ -1,0 +1,95 @@
+{
+  "version": 1,
+  "createdAt": "2026-07-24T08:31:34.637Z",
+  "updatedAt": "2026-07-24T09:11:08.998Z",
+  "briefPath": ".omx/ultragoal/brief.md",
+  "goalsPath": ".omx/ultragoal/goals.json",
+  "ledgerPath": ".omx/ultragoal/ledger.jsonl",
+  "codexGoalMode": "aggregate",
+  "goals": [
+    {
+      "id": "G001-1-2-supab",
+      "title": "운영 스키마 확장::상대평가, 1·2차 조정, 전자결재, 메일 감사, 직군 카테고리, 평가 관계를 저장하는 멱등적 Supab...",
+      "objective": "운영 스키마 확장::상대평가, 1·2차 조정, 전자결재, 메일 감사, 직군 카테고리, 평가 관계를 저장하는 멱등적 Supabase 마이그레이션을 추가한다.",
+      "status": "complete",
+      "attempt": 1,
+      "createdAt": "2026-07-24T08:31:34.637Z",
+      "updatedAt": "2026-07-24T08:36:17.967Z",
+      "startedAt": "2026-07-24T08:31:35.307Z",
+      "completedAt": "2026-07-24T08:36:17.967Z",
+      "evidence": "Added additive idempotent governance migration 202607240002_evaluation_governance_v2.sql; static transaction/table/retired-AI and whitespace checks passed; live DB execution unavailable locally."
+    },
+    {
+      "id": "G002-s-a-b-c-d-a",
+      "title": "상대평가 엔진::본사·영업소·정비사 그룹별로 최대잔여법을 사용해 S/A/B/C/D 등급 비율을 정확히 배분하고 서버 결과 A...",
+      "objective": "상대평가 엔진::본사·영업소·정비사 그룹별로 최대잔여법을 사용해 S/A/B/C/D 등급 비율을 정확히 배분하고 서버 결과 API에 적용한다.",
+      "status": "complete",
+      "attempt": 1,
+      "createdAt": "2026-07-24T08:31:34.637Z",
+      "updatedAt": "2026-07-24T08:40:07.565Z",
+      "startedAt": "2026-07-24T08:36:18.679Z",
+      "completedAt": "2026-07-24T08:40:07.565Z",
+      "evidence": "Added api/relative-grading.js and 3 passing Node tests; integrated immutable cohort/quota persistence into cycle close and gated archived relative_grade in result API; node checks and git diff check passed."
+    },
+    {
+      "id": "G003-1-2",
+      "title": "조정·전자결재 워크플로::관리자 1차 조정 완료를 임원 2차 조정의 전제조건으로 만들고 주기 단위 내부 전자결재 승인 전 결...",
+      "objective": "조정·전자결재 워크플로::관리자 1차 조정 완료를 임원 2차 조정의 전제조건으로 만들고 주기 단위 내부 전자결재 승인 전 결과 열람을 차단한다.",
+      "status": "complete",
+      "attempt": 1,
+      "createdAt": "2026-07-24T08:31:34.637Z",
+      "updatedAt": "2026-07-24T08:47:59.123Z",
+      "startedAt": "2026-07-24T08:40:08.238Z",
+      "completedAt": "2026-07-24T08:47:59.123Z",
+      "evidence": "Implemented server-enforced admin stage-1 and executive stage-2 adjustment with audit, cycle-scoped internal approval request/decision, gated executive publishing, regular-user result gate, and compact role-aware approval UI; eligibility uses selected-cycle active matching targets. Node API checks, inline-script syntax, allocator tests, and diff checks pass."
+    },
+    {
+      "id": "G004-vercel-api",
+      "title": "역할별 권한::일반사용자·임원·관리자의 상단 탭, 평가관리 서브탭, Vercel API 작업 권한을 확정 정책대로 제한한다.",
+      "objective": "역할별 권한::일반사용자·임원·관리자의 상단 탭, 평가관리 서브탭, Vercel API 작업 권한을 확정 정책대로 제한한다.",
+      "status": "complete",
+      "attempt": 1,
+      "createdAt": "2026-07-24T08:31:34.637Z",
+      "updatedAt": "2026-07-24T08:51:50.734Z",
+      "startedAt": "2026-07-24T08:47:59.802Z",
+      "completedAt": "2026-07-24T08:51:50.734Z",
+      "evidence": "Implemented exact persisted-role UI and navigation gating; regular/admin/executive tab matrix; executive summary/history-only subtab guard; admin-only users/questions/config APIs and explicit admin-state action matrix; removed title/type privilege inference. Four tests, API checks, inline JS syntax, static search, and diff check passed."
+    },
+    {
+      "id": "G005",
+      "title": "직군별 질문과 평가 관계::직군별 네 개 카테고리와 질문 타깃을 지원하고 리더십·교류·부서 내 평가를 배정과 목록에 표시한다.",
+      "objective": "직군별 질문과 평가 관계::직군별 네 개 카테고리와 질문 타깃을 지원하고 리더십·교류·부서 내 평가를 배정과 목록에 표시한다.",
+      "status": "complete",
+      "attempt": 1,
+      "createdAt": "2026-07-24T08:31:34.637Z",
+      "updatedAt": "2026-07-24T09:05:35.182Z",
+      "startedAt": "2026-07-24T08:51:51.585Z",
+      "completedAt": "2026-07-24T09:05:35.182Z",
+      "evidence": "Added shared exact track/category/relationship classifier and tests; persisted server-derived relationship_type for auto/manual matching; RPC returns relation; server-scoped questions and forged-answer revalidation migration; dynamic four-category scoring; admin audience/category UI and CSV; target grouping/badges use persisted relationship. Explicit leader criteria aligned across JS and SQL. Five tests, API/inline JS syntax, and diff check passed."
+    },
+    {
+      "id": "G006",
+      "title": "메일 발송::등급 안내와 비밀번호 재설정 메일을 개별·일괄 발송하고 감사로그·중복 방지·재시도 결과를 제공한다.",
+      "objective": "메일 발송::등급 안내와 비밀번호 재설정 메일을 개별·일괄 발송하고 감사로그·중복 방지·재시도 결과를 제공한다.",
+      "status": "complete",
+      "attempt": 1,
+      "createdAt": "2026-07-24T08:31:34.637Z",
+      "updatedAt": "2026-07-24T09:11:08.347Z",
+      "startedAt": "2026-07-24T09:05:35.885Z",
+      "completedAt": "2026-07-24T09:11:08.347Z",
+      "evidence": "Added admin-only individual/bulk password-reset and gated grade-notice mail API, server-derived recipients/grades, audit/idempotency/retry, compact UI actions, nodemailer SMTP adapter, env/security docs, dependency lock. pnpm install succeeded; six tests, API/inline JS syntax, nodemailer import, and diff check passed."
+    },
+    {
+      "id": "G007-dom",
+      "title": "통합 검증과 문서화::기존 기능 회귀, 권한 우회, 결과 공개 게이트, 등급 배분, 메일 감사, 스크립트·DOM·비밀정보 검...",
+      "objective": "통합 검증과 문서화::기존 기능 회귀, 권한 우회, 결과 공개 게이트, 등급 배분, 메일 감사, 스크립트·DOM·비밀정보 검사를 수행하고 운영 문서를 갱신한다.",
+      "status": "in_progress",
+      "attempt": 1,
+      "createdAt": "2026-07-24T08:31:34.637Z",
+      "updatedAt": "2026-07-24T09:11:08.998Z",
+      "startedAt": "2026-07-24T09:11:08.998Z"
+    }
+  ],
+  "codexObjective": "Complete the durable ultragoal plan in .omx/ultragoal/goals.json, including later accepted/appended stories, under the original brief constraints; use .omx/ultragoal/ledger.jsonl as the audit trail.",
+  "activeGoalId": "G007-dom"
+}

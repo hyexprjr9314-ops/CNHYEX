@@ -3693,7 +3693,7 @@
       }
 
       if (headerInfo) {
-        headerInfo.innerHTML = `선택된 평가자: <strong class="text-white">${evaluator.company} ${evaluator.dept} ${evaluator.name} ${evaluator.role}</strong>`;
+        headerInfo.innerHTML = `선택된 평가자: <strong class="text-white">${escapeHtml(evaluator.company)} ${escapeHtml(evaluator.dept)} ${escapeHtml(evaluator.name)} ${escapeHtml(evaluator.role)}</strong>`;
       }
 
       const activeTargetIds = ensureStagedMatchingState();
@@ -3762,7 +3762,7 @@
         <div class="min-w-0">
           <div class="flex items-center gap-1">
             <i class="fa-solid fa-grip-vertical text-slate-400" aria-hidden="true"></i>
-            <strong class="text-[11px] font-black text-slate-800 truncate">${target.name} ${target.role}</strong>
+            <strong class="text-[11px] font-black text-slate-800 truncate">${escapeHtml(target.name)} ${escapeHtml(target.role)}</strong>
           </div>
           <p class="text-[9px] text-slate-600 mt-0.5 truncate">${target.company} · ${target.dept}</p>
           ${isStaged ? `<span class="absolute right-1 top-0.5 text-[8px] font-bold ${isAssigned ? 'text-teal-700' : 'text-rose-700'}">${isAssigned ? '배정 예정' : '해제 예정'}</span>` : ''}
@@ -4217,15 +4217,13 @@
       const titleEl = document.getElementById('my-grade-title');
       const medalEl = document.getElementById('my-medal-container');
       if (totalEl) totalEl.textContent = `${total.toFixed(1)}점`;
-      let grade = 'D';
-      if (total >= 100) grade = 'EX';
-      else if (total >= 90) grade = 'S';
-      else if (total >= 80) grade = 'A';
-      else if (total >= 70) grade = 'B';
-      else if (total >= 60) grade = 'C';
+      const grade = ['S', 'A', 'B', 'C', 'D'].includes(String(relativeGrade).toUpperCase())
+        ? String(relativeGrade).toUpperCase()
+        : null;
+      if (!grade) { applyAdjustedResultMode(null); return; }
       if (cardEl) cardEl.className = grade === 'S' ? 'glitter-diamond border px-6 py-3 rounded-2xl text-center flex items-center gap-4 transition-all shadow-2xl' : grade === 'A' ? 'glitter-gold border px-6 py-3 rounded-2xl text-center flex items-center gap-4 transition-all shadow-2xl' : grade === 'C' ? 'grade-surface-c border px-6 py-3 rounded-2xl text-center flex items-center gap-4 transition-all shadow-xl' : 'bg-slate-800/90 border border-slate-700 px-6 py-3 rounded-2xl text-center flex items-center gap-4 transition-all shadow-xl';
-      if (titleEl) { titleEl.className = grade === 'S' ? 'text-xl font-black grade-label-s' : grade === 'A' ? 'text-xl font-black grade-label-a' : grade === 'EX' ? 'text-xl font-black grade-label-ex' : grade === 'C' ? 'text-xl font-black grade-label-c' : 'text-xl font-black text-slate-200'; titleEl.textContent = `${grade} Grade`; }
-      if (medalEl) medalEl.innerHTML = grade === 'S' ? '<i class="fa-solid fa-gem text-cyan-300 text-3xl animate-spin3d"></i>' : grade === 'A' ? '<i class="fa-solid fa-award text-amber-300 text-3xl animate-spin3d"></i>' : grade === 'B' ? '<i class="fa-solid fa-medal text-slate-300 text-3xl animate-spin3d"></i>' : grade === 'C' ? '<i class="fa-solid fa-shield grade-icon-c text-3xl animate-spin3d"></i>' : grade === 'D' ? '<i class="fa-solid fa-cube text-stone-300 text-3xl animate-spin3d"></i>' : '<span class="text-4xl animate-bounce">🪽</span>';
+      if (titleEl) { titleEl.className = grade === 'S' ? 'text-xl font-black grade-label-s' : grade === 'A' ? 'text-xl font-black grade-label-a' : grade === 'C' ? 'text-xl font-black grade-label-c' : 'text-xl font-black text-slate-200'; titleEl.textContent = `${grade} Grade`; }
+      if (medalEl) medalEl.innerHTML = grade === 'S' ? '<i class="fa-solid fa-gem text-cyan-300 text-3xl animate-spin3d"></i>' : grade === 'A' ? '<i class="fa-solid fa-award text-amber-300 text-3xl animate-spin3d"></i>' : grade === 'B' ? '<i class="fa-solid fa-medal text-slate-300 text-3xl animate-spin3d"></i>' : grade === 'C' ? '<i class="fa-solid fa-shield grade-icon-c text-3xl animate-spin3d"></i>' : '<i class="fa-solid fa-cube text-stone-300 text-3xl animate-spin3d"></i>';
       mapping.forEach(([prefix, value]) => {
         const valueEl = document.getElementById(`my-${prefix}-val`);
         const barEl = document.getElementById(`my-${prefix}-bar`);
@@ -5772,14 +5770,14 @@
           <td class="py-3 px-3">${statusBadge}</td>
           <td class="py-3 px-3 text-center">
             <label class="inline-flex items-center justify-center gap-2 cursor-pointer" title="평가 작성 권한 ${canEvaluate ? '활성화됨' : '비활성화됨'}">
-              <input type="checkbox" ${canEvaluate ? 'checked' : ''} onchange="toggleEvaluatorRole(${u.id})" class="permission-toggle-input sr-only" aria-label="${u.name} 평가 작성 권한">
+              <input type="checkbox" ${canEvaluate ? 'checked' : ''} onchange="toggleEvaluatorRole(${Number(u.id)})" class="permission-toggle-input sr-only" aria-label="${escapeHtml(u.name)} 평가 작성 권한">
               <span class="permission-toggle-track permission-toggle-track--evaluator" aria-hidden="true"></span>
               <span class="permission-toggle-state ${canEvaluate ? 'is-evaluator-active' : ''}">${canEvaluate ? '활성' : '비활성'}</span>
             </label>
           </td>
           <td class="py-3 px-3 text-center">
             <label class="inline-flex items-center justify-center gap-2 cursor-pointer" title="피평가 대상 권한 ${isEvaluatee ? '활성화됨' : '비활성화됨'}">
-              <input type="checkbox" ${isEvaluatee ? 'checked' : ''} onchange="toggleEvaluateeRole(${u.id})" class="permission-toggle-input sr-only" aria-label="${u.name} 피평가 대상 권한">
+              <input type="checkbox" ${isEvaluatee ? 'checked' : ''} onchange="toggleEvaluateeRole(${Number(u.id)})" class="permission-toggle-input sr-only" aria-label="${escapeHtml(u.name)} 피평가 대상 권한">
               <span class="permission-toggle-track permission-toggle-track--evaluatee" aria-hidden="true"></span>
               <span class="permission-toggle-state ${isEvaluatee ? 'is-evaluatee-active' : ''}">${isEvaluatee ? '활성' : '비활성'}</span>
             </label>
@@ -5995,7 +5993,25 @@
       if (count) count.textContent = `전체 ${employees.length}명 중 ${visible.length}명 표시`;
       return visible;
     }
-    function renderAdminSummaryTable() {
+      function buildSummaryScoreAction(emp, scoreData, isEvalOnly) {
+        const roleInfo = checkUserRole(currentLoggedInUser);
+        const canAdjust = Boolean(scoreData?.complete) && !isEvalOnly;
+        const scorePath = `cycleScoresDb['${currentSelectedSummaryCycleId}']['${emp.id}']`;
+
+        if (!canAdjust) {
+          return '<button type="button" disabled title="모든 배정 평가가 완료된 뒤 점수를 조정할 수 있습니다." class="bg-slate-900 text-xs px-2.5 py-1 rounded text-slate-500 font-bold border border-slate-800 cursor-not-allowed">평가 미완료</button>';
+        }
+        if (roleInfo.isExecutive) {
+          if (scoreData.workflow_status === 'first_stage_adjusted') return `<button onclick="event.stopPropagation(); openScoreAdjustmentModal(usersDb.find(u=>u.id===${emp.id}), ${scorePath}, 'executive')" class="bg-indigo-600 hover:bg-indigo-500 text-xs px-2.5 py-1 rounded text-white font-bold border border-indigo-400 transition-colors">2차 조정/확정</button>`;
+          if (scoreData.workflow_status === 'second_stage_adjusted') return '<span class="inline-flex rounded border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-300">2차 확정</span>';
+          return '<span class="inline-flex rounded border border-slate-700 bg-slate-900 px-2.5 py-1 text-xs font-bold text-slate-400">1차 조정 대기</span>';
+        }
+        if (!roleInfo.isAdmin) return '';
+        if (scoreData.is_adjusted) return `<button onclick="event.stopPropagation(); openScoreAdjustmentModal(usersDb.find(u=>u.id===${emp.id}), ${scorePath}, 'admin')" class="adjust-action-edit text-xs px-2.5 py-1 rounded font-bold border transition-colors">조정 수정</button><button onclick="event.stopPropagation(); openScoreAdjustmentCancelModal(usersDb.find(u=>u.id===${emp.id}), ${scorePath})" class="adjust-action-cancel text-xs px-2.5 py-1 rounded font-bold border transition-colors">조정 취소</button>`;
+        return `<button onclick="event.stopPropagation(); openScoreAdjustmentModal(usersDb.find(u=>u.id===${emp.id}), ${scorePath}, 'admin')" class="bg-slate-800 hover:bg-slate-700 text-xs px-2.5 py-1 rounded text-slate-300 font-bold border border-slate-700">점수 입력/조정</button>`;
+      }
+
+      function renderAdminSummaryTable() {
       const summarySelect = document.getElementById('summary-cycle-select');
       if (summarySelect && summarySelect.value) {
         currentSelectedSummaryCycleId = parseInt(summarySelect.value);
@@ -6036,14 +6052,7 @@
           isAdjustedStr = `<span class="${empScoreData.is_adjusted ? 'text-amber-400 font-bold' : 'text-slate-500'}">${empScoreData.is_adjusted ? '조정됨' : '미조정'}</span>`;
 
           const g = empScoreData.grade;
-          if (g === 'EX' || empScoreData.final >= 100) {
-            gradeBadgeHtml = `
-              <div class="relative inline-flex items-center gap-1.5 glitter-another-level border border-amber-300/90 px-3 py-1 rounded-xl shadow-xl shadow-amber-900/50">
-                <span class="text-base animate-bounce">🪽</span>
-                <span class="font-black text-xs grade-label-ex">EX (ANOTHER LEVEL)</span>
-              </div>
-            `;
-          } else if (g === 'S') {
+          if (g === 'S') {
             gradeBadgeHtml = `
               <div class="relative inline-flex items-center gap-1.5 glitter-diamond border border-cyan-400/80 px-3 py-1 rounded-xl shadow-lg shadow-cyan-900/40">
                 <i class="fa-solid fa-gem text-cyan-300 text-sm animate-spin3d"></i>
@@ -6082,15 +6091,7 @@
         }
 
         const canViewDetails = currentLoggedInUser && (currentLoggedInUser.isAdmin || currentLoggedInUser.isExecutive);
-        const canAdjust = Boolean(empScoreData?.complete) && !isEvalOnly;
-        const scoreActionHtml = !canAdjust
-          ? `<button type="button" disabled title="모든 배정 평가가 완료된 뒤 점수를 조정할 수 있습니다." class="bg-slate-900 text-xs px-2.5 py-1 rounded text-slate-500 font-bold border border-slate-800 cursor-not-allowed">평가 미완료</button>`
-          : empScoreData.is_adjusted
-            ? `
-              <button onclick="event.stopPropagation(); openScoreAdjustmentModal(usersDb.find(u=>u.id===${emp.id}), cycleScoresDb['${currentSelectedSummaryCycleId}']['${emp.id}'])" class="adjust-action-edit text-xs px-2.5 py-1 rounded font-bold border transition-colors">조정 수정</button>
-              <button onclick="event.stopPropagation(); openScoreAdjustmentCancelModal(usersDb.find(u=>u.id===${emp.id}), cycleScoresDb['${currentSelectedSummaryCycleId}']['${emp.id}'])" class="adjust-action-cancel text-xs px-2.5 py-1 rounded font-bold border transition-colors">조정 취소</button>
-            `
-            : `<button onclick="event.stopPropagation(); openScoreAdjustmentModal(usersDb.find(u=>u.id===${emp.id}), cycleScoresDb['${currentSelectedSummaryCycleId}'] ? cycleScoresDb['${currentSelectedSummaryCycleId}']['${emp.id}'] : null)" class="bg-slate-800 hover:bg-slate-700 text-xs px-2.5 py-1 rounded text-slate-300 font-bold border border-slate-700">점수 입력/조정</button>`;
+        const scoreActionHtml = buildSummaryScoreAction(emp, empScoreData, isEvalOnly);
 
         
         tr.innerHTML = `

@@ -1,10 +1,16 @@
 import { createClient } from '@supabase/supabase-js';
+import { buildRelativeGradePlan, cohortKeyForUser } from './relative-grading.js';
+import { ROLES } from './role-policy.js';
+import { normalizeTrack, relationshipType, targetTrack, TRACK_CATEGORIES } from './evaluation-classification.js';
+import { isMutableDraftCycle } from './questions.js';
 
-const PRIVILEGED = new Set(['관리자', '임원']);
+const PRIVILEGED = new Set([ROLES.admin, ROLES.executive]);
 const ADMIN_ONLY = new Set([
   'cycle_create', 'cycle_update', 'cycle_delete', 'cycle_validate', 'cycle_activate', 'question_create', 'question_update',
-  'question_delete', 'matching_toggle', 'matching_replace', 'matching_generate', 'permission_update', 'settings_update'
+  'question_delete', 'matching_toggle', 'matching_replace', 'matching_generate', 'permission_update', 'settings_update',
+  'goal_status', 'cycle_close'
 ]);
+const EXECUTIVE_ALLOWED = new Set();
 const send = (res, status, payload) => res.status(status).json(payload);
 
 function serviceClient() {
@@ -12,6 +18,16 @@ function serviceClient() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) throw new Error('Supabase 서버 환경변수가 설정되지 않았습니다.');
   return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+}
+
+function authenticatedRpcClient(accessToken) {
+  const url = process.env.SUPABASE_URL;
+  const publicKey = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_PUBLISHABLE_KEY;
+  if (!url || !publicKey) throw new Error('Authenticated RPC environment is not configured.');
+  return createClient(url, publicKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    global: { headers: { Authorization: `Bearer ${accessToken}` } }
+  });
 }
 
 async function authenticate(req, service) {
@@ -38,11 +54,12 @@ function cyclePayload(body) {
   if (endDate < startDate || deadline < endDate) {
     throw Object.assign(new Error('종료일은 시작일 이후, 마감일은 종료일 이후여야 합니다.'), { status: 400 });
   }
-  const statusMap = { '진행 중': '진행중', '진행중': '진행중', '일시정지': '일시정지', '마감/보관됨': '마감/보관됨', '초안': '초안' };
   return {
     name, description: String(body.description || body.desc || '').trim(),
     start_date: startDate, end_date: endDate, deadline,
-    status: statusMap[String(body.status || '초안')] || '초안', updated_at: new Date().toISOString()
+    // Lifecycle transitions are deliberately excluded. A generic edit must
+    // never turn a draft into an active, paused, or closed cycle.
+    updated_at: new Date().toISOString()
   };
 }
 
@@ -50,10 +67,14 @@ function questionPayload(body) {
   const row = {
     cycle_id: Number(body.cycle_id || body.cycleId), category: String(body.category || '').trim(),
     text: String(body.text || '').trim(), weight: Number(body.weight),
-    type: String(body.type || '5지선다형').trim(), target_track: String(body.target_track || body.targetTrack || '기본 필수질문').trim(),
-    target_dept: String(body.target_dept || body.targetDept || '전체').trim(), required: body.required !== false,
+    type: String(body.type || '5지선다형').trim(), target_track: normalizeTrack(body.target_track || body.targetTrack),
+    target_dept: String(body.target_dept || body.targetDept || '전체').trim(),
+    audience: String(body.audience || 'all').trim(), required: body.required !== false,
     is_default: body.is_default !== false, max_score: Number(body.max_score || 5), updated_at: new Date().toISOString()
   };
+  if (!['all', 'internal', 'exchange', 'leadership'].includes(row.audience)) {
+    throw Object.assign(new Error('질문 대상 관계는 전체, 내부, 교류, 리더십 중 하나여야 합니다.'), { status: 400 });
+  }
   if (!row.cycle_id || !row.category || !row.text || !Number.isFinite(row.weight) || row.weight < 0 || row.weight > 100) {
     throw Object.assign(new Error('질문의 평가 주기, 카테고리, 내용 및 0~100 가중치가 필요합니다.'), { status: 400 });
   }
@@ -95,18 +116,121 @@ function buildScores(evaluations, adjustments, settings, matchings = []) {
     ).toFixed(2));
     const adjustment = adjustmentMap.get(key);
     const final = adjustment ? Number(adjustment.final_score) : raw;
-    const grade = adjustment?.final_grade || (final >= 100 ? 'EX' : final >= 90 ? 'S' : final >= 80 ? 'A' : final >= 70 ? 'B' : final >= 60 ? 'C' : 'D');
     const assigned = assignedCounts.get(key) || rows.length;
     result[cycleId] ||= {};
     result[cycleId][targetId] = {
-      raw, final, grade, is_adjusted: Boolean(adjustment), completed: rows.length,
+      raw, final, grade: null, grade_status: null, is_adjusted: Boolean(adjustment), completed: rows.length,
       assigned, complete: assigned > 0 && rows.length >= assigned,
       performance: Number(avg('perf_score').toFixed(2)), collaboration: Number(avg('collab_score').toFixed(2)),
       growth: Number(avg('growth_score').toFixed(2)), harmony: Number(avg('harmony_score').toFixed(2)),
-      adjustment_reason: adjustment?.reason || null, adjusted_at: adjustment?.adjusted_at || null
+      adjustment_reason: adjustment?.reason || null, adjusted_at: adjustment?.adjusted_at || null,
+      workflow_status: adjustment?.workflow_status || null
     };
   }
   return result;
+}
+
+async function assertCycleMutable(service, cycleId) {
+  const cycle = await service.from('evaluation_cycles')
+    .select('id,status,internal_approval_status')
+    .eq('id', cycleId)
+    .single();
+  if (cycle.error) throw cycle.error;
+  if (!isMutableDraftCycle(cycle.data)) {
+    throw Object.assign(new Error('초안(미시작) 상태의 평가 주기에서만 변경할 수 있습니다.'), { status: 409 });
+  }
+}
+
+export function isClosedHistoricalCycle(cycle = {}) {
+  return ['마감/보관됨', 'closed', 'archived'].includes(String(cycle.status || '').trim());
+}
+
+export function isCurrentGovernanceCycle(cycle = {}) {
+  return !isMutableDraftCycle(cycle) && !isClosedHistoricalCycle(cycle);
+}
+
+export async function assertGlobalConfigurationMutable(service) {
+  const cycles = await service.from('evaluation_cycles').select('id,status,internal_approval_status');
+  if (cycles.error) throw cycles.error;
+  // Editable drafts and immutable closed history are safe. Every current
+  // lifecycle state (active, paused, or approval) locks global weights.
+  const hasLockedCurrentCycle = (cycles.data || []).some(isCurrentGovernanceCycle);
+  if (hasLockedCurrentCycle) {
+    throw Object.assign(new Error('진행 중이거나 승인 절차가 시작된 평가 주기가 있어 전체 가중치를 변경할 수 없습니다.'), { status: 409 });
+  }
+}
+
+export function applyRelativeGrades(cycleScores, users, archives) {
+  const usersById = new Map((users || []).map(user => [Number(user.id), user]));
+  const finalGradesByCycle = new Map();
+
+  for (const archive of archives || []) {
+    const cycleId = String(archive.cycle_id);
+    if (finalGradesByCycle.has(cycleId)) continue;
+    finalGradesByCycle.set(
+      cycleId,
+      new Map((archive.snapshot || [])
+        .filter(row => row.grade)
+        .map(row => [Number(row.id), row.grade]))
+    );
+  }
+
+  for (const [cycleId, scoresByTarget] of Object.entries(cycleScores)) {
+    const candidates = Object.entries(scoresByTarget)
+      .map(([targetId, score]) => ({ targetId: Number(targetId), user: usersById.get(Number(targetId)), score }))
+      .filter(({ user, score }) => user?.active === true && user.is_evaluatee !== false && score.complete)
+      .map(({ targetId, user, score }) => ({
+        targetId,
+        cohortKey: cohortKeyForUser(user),
+        rawScore: score.raw,
+        effectiveFinalScore: score.final
+      }));
+    const provisionalGrades = buildRelativeGradePlan(candidates).gradesByTargetId;
+    const finalGrades = finalGradesByCycle.get(cycleId);
+
+    for (const [targetId, score] of Object.entries(scoresByTarget)) {
+      const target = usersById.get(Number(targetId));
+      const finalGrade = finalGrades?.get(Number(targetId)) || null;
+      score.grade = finalGrade || provisionalGrades.get(Number(targetId)) || null;
+      score.grade_status = finalGrade ? 'final' : score.grade ? 'provisional' : null;
+      score.category_labels = TRACK_CATEGORIES[targetTrack(target)] || TRACK_CATEGORIES.headquarters_member;
+    }
+  }
+
+  return cycleScores;
+}
+
+// Final results supersede every live calculation for the current finalized
+// version.  This keeps historic score pages and exports stable when settings,
+// questions, matching, or employee profiles later change.
+export function applyImmutableFinalResults(cycleScores, finalResults, cyclesById) {
+  const currentRows = (finalResults || []).filter(row =>
+    Number(row.result_version) === Number(cyclesById.get(Number(row.cycle_id))?.result_version || 0)
+  );
+  for (const row of currentRows) {
+    const cycleId = String(row.cycle_id);
+    const targetId = String(row.target_id);
+    cycleScores[cycleId] ||= {};
+    const live = cycleScores[cycleId][targetId] || {};
+    cycleScores[cycleId][targetId] = {
+      ...live,
+      raw: Number(row.raw_score),
+      final: Number(row.effective_score),
+      grade: row.relative_grade,
+      grade_status: 'final',
+      complete: true,
+      // Do not accidentally display live category averages next to a frozen
+      // final score; the final table stores labels, not mutable components.
+      performance: row.category_scores?.performance ?? null,
+      collaboration: row.category_scores?.collaboration ?? null,
+      growth: row.category_scores?.growth ?? null,
+      harmony: row.category_scores?.harmony ?? null,
+      category_labels: row.category_labels || [],
+      result_version: Number(row.result_version),
+      is_adjusted: Boolean(live.is_adjusted)
+    };
+  }
+  return cycleScores;
 }
 
 async function readState(service, profile) {
@@ -117,15 +241,17 @@ async function readState(service, profile) {
   if (settingsResult.error) throw settingsResult.error;
   if (goalsResult.error) throw goalsResult.error;
   if (!PRIVILEGED.has(profile.sys_role)) return { settings: settingsResult.data, goals: goalsResult.data || [] };
-  const [matchings, archives, evaluations, adjustments, allGoals, users] = await Promise.all([
+  const [matchings, archives, evaluations, adjustments, allGoals, users, cycles, finalResults] = await Promise.all([
     service.from('matchings').select('*').order('id'),
     service.from('evaluation_archives').select('*').order('closed_at', { ascending: false }),
     service.from('evaluations').select('matching_id,cycle_id,target_id,perf_score,collab_score,growth_score,harmony_score'),
     service.from('evaluation_result_adjustments').select('*'),
     service.from('employee_goals').select('*').order('created_at', { ascending: false }),
-    service.from('users').select('id,active,can_evaluate,is_evaluatee')
+    service.from('users').select('id,active,can_evaluate,is_evaluatee,company,dept,workplace,role,type'),
+    service.from('evaluation_cycles').select('id,result_version'),
+    service.from('evaluation_final_results').select('cycle_id,target_id,result_version,raw_score,effective_score,relative_grade,category_labels,category_scores')
   ]);
-  for (const result of [matchings, archives, evaluations, adjustments, allGoals, users]) if (result.error) throw result.error;
+  for (const result of [matchings, archives, evaluations, adjustments, allGoals, users, cycles, finalResults]) if (result.error) throw result.error;
   const userMap = new Map((users.data || []).map(user => [Number(user.id), user]));
   const eligibleMatchings = (matchings.data || []).filter(row => {
     const evaluator = userMap.get(Number(row.evaluator_id));
@@ -135,17 +261,28 @@ async function readState(service, profile) {
   });
   const eligibleMatchingIds = new Set(eligibleMatchings.map(row => Number(row.id)));
   const eligibleEvaluations = (evaluations.data || []).filter(row => eligibleMatchingIds.has(Number(row.matching_id)));
+  const cycleScores = buildScores(eligibleEvaluations, adjustments.data || [], settingsResult.data, eligibleMatchings);
+  applyRelativeGrades(cycleScores, users.data || [], archives.data || []);
+  const cyclesById = new Map((cycles.data || []).map(cycle => [Number(cycle.id), cycle]));
+  const currentFinalResults = (finalResults.data || []).filter(row =>
+    Number(row.result_version) === Number(cyclesById.get(Number(row.cycle_id))?.result_version || 0)
+  );
+  applyImmutableFinalResults(cycleScores, currentFinalResults, cyclesById);
   return {
-    settings: settingsResult.data, goals: goalsResult.data || [], all_goals: allGoals.data || [],
-    matchings: matchings.data || [], archives: archives.data || [],
-    cycle_scores: buildScores(eligibleEvaluations, adjustments.data || [], settingsResult.data, eligibleMatchings)
+    settings: settingsResult.data, goals: goalsResult.data || [],
+    ...(profile.sys_role === ROLES.admin ? { all_goals: allGoals.data || [] } : {}),
+    // Executive GET is deliberately summary-only: raw assignments and
+    // individual answer rows are not needed for final score/close views.
+    matchings: profile.sys_role === ROLES.admin ? (matchings.data || []) : [],
+    archives: archives.data || [], cycle_scores: cycleScores,
+    final_results: currentFinalResults
   };
 }
 
-async function closeCycle(service, cycleId, authUser, profile) {
+async function closeCycle(service, rpcService, cycleId, authUser) {
   const [cycle, users, matchings, scores, adjustments, settings] = await Promise.all([
     service.from('evaluation_cycles').select('*').eq('id', cycleId).single(),
-    service.from('users').select('id,name,company,dept,role,can_evaluate,is_evaluatee').eq('active', true),
+    service.from('users').select('id,name,company,dept,workplace,role,type,can_evaluate,is_evaluatee').eq('active', true),
     service.from('matchings').select('id,evaluator_id,target_id').eq('cycle_id', cycleId),
     service.from('evaluations').select('matching_id,cycle_id,target_id,perf_score,collab_score,growth_score,harmony_score').eq('cycle_id', cycleId),
     service.from('evaluation_result_adjustments').select('*').eq('cycle_id', cycleId),
@@ -166,24 +303,45 @@ async function closeCycle(service, cycleId, authUser, profile) {
   if (missingCount > 0) {
     throw Object.assign(new Error(`미제출 평가 ${missingCount}건이 남아 있어 마감할 수 없습니다.`), { status: 409 });
   }
+  if ((adjustments.data || []).some(row => row.status === 'active' && row.workflow_status !== 'second_stage_adjusted')) {
+    throw Object.assign(new Error('2차 조정이 완료되지 않은 활성 조정이 있어 마감할 수 없습니다.'), { status: 409 });
+  }
   const scoreMap = buildScores(scores.data || [], adjustments.data || [], settings.data, activeMatchings)[String(cycleId)] || {};
-  const snapshot = (users.data || []).filter(user => user.is_evaluatee !== false && scoreMap[user.id]).map(user => ({
+  const finalUsers = (users.data || []).filter(user => user.is_evaluatee !== false && scoreMap[user.id]);
+  const gradePlan = buildRelativeGradePlan(finalUsers.map(user => ({
+    targetId: user.id,
+    cohortKey: cohortKeyForUser(user),
+    rawScore: scoreMap[user.id].raw,
+    effectiveFinalScore: scoreMap[user.id].final
+  })));
+  const snapshot = finalUsers.map(user => ({
     id: user.id, name: user.name, company: user.company, dept: user.dept, role: user.role,
     score: scoreMap[user.id]?.final ?? null, raw_score: scoreMap[user.id]?.raw ?? null,
-    grade: scoreMap[user.id]?.grade ?? null, is_adjusted: scoreMap[user.id]?.is_adjusted || false
+    grade: gradePlan.gradesByTargetId.get(Number(user.id)) || null, is_adjusted: scoreMap[user.id]?.is_adjusted || false
   }));
   if (!snapshot.length) throw Object.assign(new Error('보관할 완료 평가 결과가 없습니다.'), { status: 409 });
-  const now = new Date().toISOString();
-  const archive = await service.from('evaluation_archives').upsert({
-    cycle_id: cycleId, cycle_name: cycle.data.name, closed_by: authUser.id,
-    closed_by_name: `${profile.name} (${profile.role || profile.sys_role})`, closed_at: now, snapshot
-  }, { onConflict: 'cycle_id' }).select().single();
-  if (archive.error) throw archive.error;
-  const updated = await service.from('evaluation_cycles').update({
-    status: '마감/보관됨', closed_by: authUser.id, closed_at: now, updated_at: now
-  }).eq('id', cycleId).select().single();
-  if (updated.error) throw updated.error;
-  return archive.data;
+  const finalResults = finalUsers.map(user => ({
+    target_id: user.id, cohort_key: cohortKeyForUser(user), raw_score: scoreMap[user.id].raw,
+    effective_score: scoreMap[user.id].final, relative_grade: gradePlan.gradesByTargetId.get(Number(user.id)),
+    category_labels: TRACK_CATEGORIES[targetTrack(user)] || TRACK_CATEGORIES.headquarters_member
+  }));
+  const cohortSnapshots = finalUsers.map(user => ({
+    target_id: user.id, cohort_key: cohortKeyForUser(user), company: user.company || null, dept: user.dept || null,
+    workplace: user.workplace || null, role: user.role || null, employee_type: user.type || null,
+    profile_snapshot: { company: user.company, dept: user.dept, workplace: user.workplace, role: user.role, type: user.type }
+  }));
+  const allocations = gradePlan.allocations.map(row => ({
+    cohort_key: row.cohortKey, grade: row.grade, allocation_count: row.allocation_count, allocation_ratio: row.allocation_ratio
+  }));
+  // The database owns the immutable snapshot: it locks the cycle and computes
+  // scores, cohorts, quota grades, labels, and archive atomically.  No client
+  // supplied score/grade payload may cross this boundary.
+  const finalization = await rpcService.rpc('governance_finalize_cycle', {
+    p_cycle_id: cycleId,
+    p_actor_id: authUser.id
+  });
+  if (finalization.error) throw Object.assign(new Error(finalization.error.message), { status: 409 });
+  return finalization.data;
 }
 
 export default async function handler(req, res) {
@@ -193,6 +351,7 @@ export default async function handler(req, res) {
     if (req.method === 'GET') return send(res, 200, await readState(service, profile));
     if (req.method !== 'POST') return send(res, 405, { error: '지원하지 않는 요청입니다.' });
     const action = String(req.body?.action || '');
+    if (profile.sys_role === ROLES.executive && !EXECUTIVE_ALLOWED.has(action)) return send(res, 403, { error: '임원은 점수 집계 및 마감 이력 작업만 수행할 수 있습니다.' });
     if (action === 'goal_create') {
       const title = String(req.body?.title || '').trim();
       const category = String(req.body?.category || '').trim();
@@ -208,6 +367,7 @@ export default async function handler(req, res) {
     }
     if (!PRIVILEGED.has(profile.sys_role)) return send(res, 403, { error: '관리자 권한이 필요합니다.' });
     if (action === 'goal_status') {
+      if (profile.sys_role !== ROLES.admin) return send(res, 403, { error: 'Administrator role required.' });
       const status = String(req.body?.status || '');
       if (!['approved','rejected'].includes(status)) return send(res, 400, { error: '승인 또는 반려 상태가 필요합니다.' });
       const now = new Date().toISOString();
@@ -218,9 +378,15 @@ export default async function handler(req, res) {
       if (goal.error) throw goal.error;
       return send(res, 200, { data: goal.data });
     }
-    if (ADMIN_ONLY.has(action) && profile.sys_role !== '관리자') return send(res, 403, { error: '인사관리자 전용 기능입니다.' });
+    if (ADMIN_ONLY.has(action) && profile.sys_role !== ROLES.admin) return send(res, 403, { error: '인사관리자 전용 기능입니다.' });
+    const guardedCycleId = Number(req.body?.cycle_id || req.body?.cycleId || req.body?.id);
+    if (['cycle_update', 'cycle_delete', 'cycle_activate', 'question_create', 'question_update', 'question_delete', 'matching_toggle', 'matching_replace', 'matching_generate'].includes(action)) {
+      const questionCycleId = action.startsWith('question_') ? Number(req.body?.cycle_id || req.body?.cycleId) : guardedCycleId;
+      if (questionCycleId) await assertCycleMutable(service, questionCycleId);
+    }
     let result;
     if (action === 'settings_update') {
+      await assertGlobalConfigurationMutable(service);
       const weights = req.body?.weights || {};
       const payload = {
         performance_weight: Number(weights.perf), collaboration_weight: Number(weights.collab),
@@ -240,16 +406,9 @@ export default async function handler(req, res) {
     } else if (action === 'cycle_update') {
       const cycleId = Number(req.body.id);
       const payload = cyclePayload(req.body);
-      if (payload.status === '진행중') {
-        payload.status = '초안';
-        const saved = await service.from('evaluation_cycles').update(payload).eq('id', cycleId).select().single();
-        if (saved.error) throw saved.error;
-        const activated = await service.rpc('activate_evaluation_cycle', { p_cycle_id: cycleId });
-        if (activated.error) throw Object.assign(new Error(activated.error.message), { status: 409 });
-        result = { data: { ...saved.data, status: '진행중', validation: activated.data }, error: null };
-      } else {
-        result = await service.from('evaluation_cycles').update(payload).eq('id', cycleId).select().single();
-      }
+      // Activation is cycle_activate and closing is cycle_close. Do not offer
+      // a status-bearing generic edit path that bypasses lifecycle checks.
+      result = await service.from('evaluation_cycles').update(payload).eq('id', cycleId).select().single();
     } else if (action === 'cycle_validate') {
       result = await service.rpc('validate_evaluation_cycle', { p_cycle_id: Number(req.body.cycle_id) });
     } else if (action === 'cycle_activate') {
@@ -264,8 +423,18 @@ export default async function handler(req, res) {
     } else if (action === 'question_create') {
       result = await service.from('evaluation_questions').insert(questionPayload(req.body)).select().single();
     } else if (action === 'question_update') {
+      const existingQuestion = await service.from('evaluation_questions').select('cycle_id').eq('id', Number(req.body.id)).single();
+      if (existingQuestion.error) throw existingQuestion.error;
+      await assertCycleMutable(service, existingQuestion.data.cycle_id);
+      const requestedCycleId = Number(req.body?.cycle_id || req.body?.cycleId);
+      if (requestedCycleId && requestedCycleId !== Number(existingQuestion.data.cycle_id)) {
+        await assertCycleMutable(service, requestedCycleId);
+      }
       result = await service.from('evaluation_questions').update(questionPayload(req.body)).eq('id', Number(req.body.id)).select().single();
     } else if (action === 'question_delete') {
+      const existingQuestion = await service.from('evaluation_questions').select('cycle_id').eq('id', Number(req.body.id)).single();
+      if (existingQuestion.error) throw existingQuestion.error;
+      await assertCycleMutable(service, existingQuestion.data.cycle_id);
       const used = await service.from('evaluation_answers').select('id', { count: 'exact', head: true }).eq('question_id', Number(req.body.id));
       if (used.error) throw used.error;
       if (used.count > 0) return send(res, 409, { error: '제출 답변이 연결된 질문은 삭제할 수 없습니다.' });
@@ -286,9 +455,12 @@ export default async function handler(req, res) {
         if (submitted.error) throw submitted.error;
         if (submitted.count > 0) return send(res, 409, { error: '이미 제출된 평가 배정은 삭제할 수 없습니다.' });
       }
+      const people = await service.from('users').select('id,dept,workplace,role,type,company').in('id', [evaluatorId, targetId]);
+      if (people.error) throw people.error;
+      const personById = new Map((people.data || []).map(row => [Number(row.id), row]));
       result = existing.data
         ? await service.from('matchings').delete().eq('id', existing.data.id)
-        : await service.from('matchings').insert({ cycle_id: cycleId, evaluator_id: evaluatorId, target_id: targetId, type: '관리자 수동 지정', updated_at: new Date().toISOString() }).select().single();
+        : await service.from('matchings').insert({ cycle_id: cycleId, evaluator_id: evaluatorId, target_id: targetId, type: '관리자 수동 지정', relationship_type: relationshipType(personById.get(evaluatorId), personById.get(targetId)), updated_at: new Date().toISOString() }).select().single();
     } else if (action === 'matching_replace') {
       const cycleId = Number(req.body.cycle_id), evaluatorId = Number(req.body.evaluator_id);
       const targetIds = [...new Set((req.body.target_ids || []).map(Number).filter(id => id && id !== evaluatorId))];
@@ -304,16 +476,32 @@ export default async function handler(req, res) {
       for (const targetId of protectedTargetIds) if (!targetIds.includes(targetId)) targetIds.push(targetId);
       const removable = (existing.data || []).filter(row => !protectedTargetIds.has(Number(row.target_id))).map(row => row.id);
       if (removable.length) { const removed = await service.from('matchings').delete().in('id', removable); if (removed.error) throw removed.error; }
-      const rows = targetIds.filter(targetId => !protectedTargetIds.has(targetId)).map(targetId => ({
-        cycle_id: cycleId, evaluator_id: evaluatorId, target_id: targetId, type: '관리자 수동 지정', updated_at: new Date().toISOString()
-      }));
-      if (rows.length) { const inserted = await service.from('matchings').upsert(rows, { onConflict: 'cycle_id,evaluator_id,target_id' }); if (inserted.error) throw inserted.error; }
+      const targetIdsToInsert = targetIds.filter(targetId => !protectedTargetIds.has(targetId));
+      if (targetIdsToInsert.length) {
+        const people = await service.from('users')
+          .select('id,dept,workplace,role,type,company')
+          .in('id', [evaluatorId, ...targetIdsToInsert]);
+        if (people.error) throw people.error;
+
+        const peopleById = new Map((people.data || []).map(row => [Number(row.id), row]));
+        const evaluator = peopleById.get(evaluatorId);
+        const rows = targetIdsToInsert.map(targetId => ({
+          cycle_id: cycleId,
+          evaluator_id: evaluatorId,
+          target_id: targetId,
+          type: '관리자 수동 지정',
+          relationship_type: relationshipType(evaluator, peopleById.get(targetId)),
+          updated_at: new Date().toISOString()
+        }));
+        const inserted = await service.from('matchings').upsert(rows, { onConflict: 'cycle_id,evaluator_id,target_id' });
+        if (inserted.error) throw inserted.error;
+      }
       result = { data: { protected_target_ids: [...protectedTargetIds] }, error: null };
     } else if (action === 'matching_generate') {
       const cycleId = Number(req.body.cycle_id);
       if (!cycleId) return send(res, 400, { error: '평가 주기가 필요합니다.' });
       const [users, existing, submitted] = await Promise.all([
-        service.from('users').select('id,company,dept,workplace,can_evaluate,is_evaluatee,active').eq('active', true),
+        service.from('users').select('id,company,dept,workplace,role,type,can_evaluate,is_evaluatee,active').eq('active', true),
         service.from('matchings').select('id,evaluator_id,target_id,type').eq('cycle_id', cycleId),
         service.from('evaluations').select('matching_id').eq('cycle_id', cycleId)
       ]);
@@ -331,7 +519,7 @@ export default async function handler(req, res) {
             : !targetIsBranch;
           if (eligible) desired.set(`${evaluator.id}:${target.id}`, {
             cycle_id: cycleId, evaluator_id: evaluator.id, target_id: target.id,
-            type: '알고리즘 자동 지정', updated_at: new Date().toISOString()
+            type: '알고리즘 자동 지정', relationship_type: relationshipType(evaluator, target), updated_at: new Date().toISOString()
           });
         }
       }
@@ -353,9 +541,10 @@ export default async function handler(req, res) {
       }
       result = { data: { inserted: rows.length, removed: obsoleteIds.length, desired: desired.size }, error: null };
     } else if (action === 'cycle_close') {
-      return send(res, 200, { archive: await closeCycle(service, Number(req.body.cycle_id), authUser, profile) });
+      const accessToken = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+      return send(res, 200, { archive: await closeCycle(service, authenticatedRpcClient(accessToken), Number(req.body.cycle_id), authUser) });
     } else if (action === 'archive_delete') {
-      result = await service.from('evaluation_archives').delete().eq('cycle_id', Number(req.body.cycle_id));
+      return send(res, 409, { error: '마감된 평가 이력은 삭제할 수 없습니다.' });
     } else {
       return send(res, 400, { error: '알 수 없는 관리 작업입니다.' });
     }
