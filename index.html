@@ -106,58 +106,30 @@
       transform-style: preserve-3d;
     }
 
-    /* Glittering Shimmer Glow Animation for Diamond (S) & Gold (A) Grades */
-    @keyframes diamondGlitter {
-      0%, 100% {
-        box-shadow: 0 0 25px rgba(6, 182, 212, 0.5), 0 0 50px rgba(6, 182, 212, 0.3), inset 0 0 15px rgba(255, 255, 255, 0.2);
-        border-color: rgba(6, 182, 212, 0.9);
-      }
-      50% {
-        box-shadow: 0 0 45px rgba(168, 85, 247, 0.8), 0 0 85px rgba(6, 182, 212, 0.7), inset 0 0 30px rgba(255, 255, 255, 0.6);
-        border-color: rgba(236, 72, 153, 0.9);
-      }
-    }
+    /* White-theme grade surfaces: preserve grade identity without washing out text. */
     .glitter-diamond {
-      animation: diamondGlitter 2.2s infinite ease-in-out;
-      background: linear-gradient(135deg, rgba(6,182,212,0.25) 0%, rgba(59,130,246,0.3) 50%, rgba(168,85,247,0.25) 100%);
+      animation: none;
+      background: #ECFEFF;
+      border-color: #0891B2 !important;
+      box-shadow: 0 2px 10px rgba(8, 145, 178, 0.16) !important;
     }
 
-    @keyframes goldGlitter {
-      0%, 100% {
-        box-shadow: 0 0 25px rgba(245, 158, 11, 0.5), 0 0 50px rgba(245, 158, 11, 0.3), inset 0 0 15px rgba(255, 255, 255, 0.2);
-        border-color: rgba(245, 158, 11, 0.9);
-      }
-      50% {
-        box-shadow: 0 0 45px rgba(251, 191, 36, 0.9), 0 0 85px rgba(245, 158, 11, 0.7), inset 0 0 30px rgba(255, 255, 255, 0.6);
-        border-color: rgba(251, 191, 36, 1);
-      }
-    }
     .glitter-gold {
-      animation: goldGlitter 2.2s infinite ease-in-out;
-      background: linear-gradient(135deg, rgba(245,158,11,0.25) 0%, rgba(217,119,6,0.3) 50%, rgba(251,191,36,0.25) 100%);
+      animation: none;
+      background: #FFFBEB;
+      border-color: #D97706 !important;
+      box-shadow: 0 2px 10px rgba(217, 119, 6, 0.16) !important;
     }
 
-    /* ANOTHER LEVEL (100 Points Perfect Score) Soft Elegant Aura Animation */
-    @keyframes radiantSunGlow {
-      0%, 100% {
-        box-shadow: 0 0 18px rgba(245, 158, 11, 0.45), 0 0 35px rgba(236, 72, 153, 0.3), inset 0 0 10px rgba(255, 255, 255, 0.2);
-        border-color: rgba(251, 191, 36, 0.8);
-      }
-      50% {
-        box-shadow: 0 0 28px rgba(245, 158, 11, 0.65), 0 0 50px rgba(168, 85, 247, 0.45), inset 0 0 18px rgba(255, 255, 255, 0.35);
-        border-color: rgba(251, 191, 36, 1);
-      }
-    }
-    @keyframes rainbowGradient {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
     .glitter-another-level {
-      background: linear-gradient(135deg, rgba(245,158,11,0.2) 0%, rgba(236,72,153,0.2) 35%, rgba(168,85,247,0.2) 70%, rgba(6,182,212,0.2) 100%);
-      background-size: 200% 200%;
-      animation: radiantSunGlow 3.0s infinite ease-in-out, rainbowGradient 5.0s infinite linear;
+      animation: none;
+      background: #FFF7ED;
+      border-color: #D97706 !important;
+      box-shadow: 0 3px 12px rgba(217, 119, 6, 0.2) !important;
     }
+    .grade-label-ex { color: #78350F !important; }
+    .grade-label-s { color: #155E75 !important; }
+    .grade-label-a { color: #92400E !important; }
 
     /* Dynamic Smooth Progress Fill Animation */
     .bar-grow-animated {
@@ -847,7 +819,7 @@
           </div>
           <div>
             <span class="block text-[10px] uppercase font-bold text-slate-300 tracking-wider">최종 인사평가 등급</span>
-            <strong id="my-grade-title" class="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-blue-200 to-purple-300">S Grade (💎 Diamond)</strong>
+            <strong id="my-grade-title" class="text-xl font-black grade-label-s">S Grade (💎 Diamond)</strong>
           </div>
         </div>
       </div>
@@ -2811,9 +2783,9 @@
 
         let rowsHtml = archive.snapshot.map(s => {
           let badge = `<span class="bg-slate-800 text-slate-300 font-bold px-2 py-0.5 rounded text-[10px]">${s.grade} Grade</span>`;
-          if (s.grade === 'EX') badge = `<span class="glitter-another-level border border-amber-300/80 text-amber-200 font-bold px-2 py-0.5 rounded text-[10px]">🪽 EX (ANOTHER LEVEL)</span>`;
-          else if (s.grade === 'S') badge = `<span class="glitter-diamond border border-cyan-400/80 text-cyan-200 font-bold px-2 py-0.5 rounded text-[10px]">💎 S Grade</span>`;
-          else if (s.grade === 'A') badge = `<span class="glitter-gold border border-amber-500/80 text-amber-300 font-bold px-2 py-0.5 rounded text-[10px]">🥇 A Grade</span>`;
+          if (s.grade === 'EX') badge = `<span class="glitter-another-level grade-label-ex border px-2 py-0.5 rounded text-[10px] font-bold">🪽 EX (ANOTHER LEVEL)</span>`;
+          else if (s.grade === 'S') badge = `<span class="glitter-diamond grade-label-s border px-2 py-0.5 rounded text-[10px] font-bold">💎 S Grade</span>`;
+          else if (s.grade === 'A') badge = `<span class="glitter-gold grade-label-a border px-2 py-0.5 rounded text-[10px] font-bold">🥇 A Grade</span>`;
 
           return `
             <tr class="border-b border-slate-800/60 hover:bg-slate-800/40">
@@ -2940,17 +2912,17 @@
         if (grade === 'EX') {
           cardEl.className = "glitter-another-level border-2 px-6 py-4 rounded-2xl text-center flex items-center gap-4 transition-all shadow-2xl relative overflow-hidden";
           medalEl.innerHTML = `<span class="text-4xl animate-bounce">🪽</span>`;
-          titleEl.className = "text-xl font-black text-amber-200";
+          titleEl.className = "text-xl font-black grade-label-ex";
           titleEl.innerText = `EX Grade (ANOTHER LEVEL)`;
         } else if (grade === 'S') {
           cardEl.className = "glitter-diamond border px-6 py-3 rounded-2xl text-center flex items-center gap-4 transition-all shadow-2xl";
           medalEl.innerHTML = `<i class="fa-solid fa-gem text-cyan-300 text-3xl"></i>`;
-          titleEl.className = "text-xl font-black text-cyan-200";
+          titleEl.className = "text-xl font-black grade-label-s";
           titleEl.innerText = `S Grade (Diamond)`;
         } else if (grade === 'A') {
           cardEl.className = "glitter-gold border px-6 py-3 rounded-2xl text-center flex items-center gap-4 transition-all shadow-2xl";
           medalEl.innerHTML = `<i class="fa-solid fa-award text-amber-300 text-3xl"></i>`;
-          titleEl.className = "text-xl font-black text-amber-300";
+          titleEl.className = "text-xl font-black grade-label-a";
           titleEl.innerText = `A Grade (Gold)`;
         } else {
           cardEl.className = "bg-slate-800/90 border border-slate-700 px-6 py-3 rounded-2xl text-center flex items-center gap-4 transition-all shadow-xl";
@@ -3627,7 +3599,7 @@
       else if (total >= 70) grade = 'B';
       else if (total >= 60) grade = 'C';
       if (cardEl) cardEl.className = grade === 'S' ? 'glitter-diamond border px-6 py-3 rounded-2xl text-center flex items-center gap-4 transition-all shadow-2xl' : grade === 'A' ? 'glitter-gold border px-6 py-3 rounded-2xl text-center flex items-center gap-4 transition-all shadow-2xl' : 'bg-slate-800/90 border border-slate-700 px-6 py-3 rounded-2xl text-center flex items-center gap-4 transition-all shadow-xl';
-      if (titleEl) { titleEl.className = grade === 'S' ? 'text-xl font-black text-cyan-200' : grade === 'A' ? 'text-xl font-black text-amber-300' : 'text-xl font-black text-slate-200'; titleEl.textContent = `${grade} Grade`; }
+      if (titleEl) { titleEl.className = grade === 'S' ? 'text-xl font-black grade-label-s' : grade === 'A' ? 'text-xl font-black grade-label-a' : grade === 'EX' ? 'text-xl font-black grade-label-ex' : 'text-xl font-black text-slate-200'; titleEl.textContent = `${grade} Grade`; }
       if (medalEl) medalEl.innerHTML = grade === 'S' ? '<i class="fa-solid fa-gem text-cyan-300 text-3xl animate-spin3d"></i>' : grade === 'A' ? '<i class="fa-solid fa-award text-amber-300 text-3xl animate-spin3d"></i>' : grade === 'B' ? '<i class="fa-solid fa-medal text-slate-300 text-3xl animate-spin3d"></i>' : grade === 'C' ? '<i class="fa-solid fa-shield text-amber-500 text-3xl animate-spin3d"></i>' : grade === 'D' ? '<i class="fa-solid fa-cube text-stone-300 text-3xl animate-spin3d"></i>' : '<span class="text-4xl animate-bounce">🪽</span>';
       mapping.forEach(([prefix, value]) => {
         const valueEl = document.getElementById(`my-${prefix}-val`);
@@ -3654,17 +3626,17 @@
       const gradeUi = {
         EX: {
           card: 'glitter-another-level border-2 px-6 py-4 rounded-2xl text-center flex items-center gap-4 transition-all shadow-2xl relative overflow-hidden',
-          title: 'text-xl font-black text-white',
+          title: 'text-xl font-black grade-label-ex',
           icon: '<span class="text-4xl animate-bounce">🪽</span>'
         },
         S: {
           card: 'glitter-diamond border px-6 py-3 rounded-2xl text-center flex items-center gap-4 transition-all shadow-2xl',
-          title: 'text-xl font-black text-cyan-200',
+          title: 'text-xl font-black grade-label-s',
           icon: '<i class="fa-solid fa-gem text-cyan-300 text-3xl animate-spin3d"></i>'
         },
         A: {
           card: 'glitter-gold border px-6 py-3 rounded-2xl text-center flex items-center gap-4 transition-all shadow-2xl',
-          title: 'text-xl font-black text-amber-300',
+          title: 'text-xl font-black grade-label-a',
           icon: '<i class="fa-solid fa-award text-amber-300 text-3xl animate-spin3d"></i>'
         },
         B: {
@@ -5440,21 +5412,21 @@
             gradeBadgeHtml = `
               <div class="relative inline-flex items-center gap-1.5 glitter-another-level border border-amber-300/90 px-3 py-1 rounded-xl shadow-xl shadow-amber-900/50">
                 <span class="text-base animate-bounce">🪽</span>
-                <span class="font-black text-xs text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-pink-200 to-cyan-200">EX (ANOTHER LEVEL)</span>
+                <span class="font-black text-xs grade-label-ex">EX (ANOTHER LEVEL)</span>
               </div>
             `;
           } else if (g === 'S') {
             gradeBadgeHtml = `
               <div class="relative inline-flex items-center gap-1.5 glitter-diamond border border-cyan-400/80 px-3 py-1 rounded-xl shadow-lg shadow-cyan-900/40">
                 <i class="fa-solid fa-gem text-cyan-300 text-sm animate-spin3d"></i>
-                <span class="font-black text-xs text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-blue-200 to-purple-300">S Grade</span>
+                <span class="font-black text-xs grade-label-s">S Grade</span>
               </div>
             `;
           } else if (g === 'A') {
             gradeBadgeHtml = `
               <div class="inline-flex items-center gap-1.5 glitter-gold border border-amber-500/80 px-2.5 py-1 rounded-xl shadow-md">
                 <i class="fa-solid fa-award text-amber-300 text-sm animate-spin3d"></i>
-                <span class="font-black text-xs text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-500">A Grade</span>
+                <span class="font-black text-xs grade-label-a">A Grade</span>
               </div>
             `;
           } else if (g === 'B') {
