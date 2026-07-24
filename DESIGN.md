@@ -55,10 +55,10 @@
 - Reduced motion and sensory considerations: `prefers-reduced-motion` 유지, 대형 광원 애니메이션 금지
 
 ## Responsive behavior
-- Wide desktop layout: use the available viewport up to 1840px so management tables, filters, status badges, and matching cards remain legible without unnecessary wrapping.
+- Wide desktop layout: use the available viewport up to 1880px with only minimal outer gutters so management tables, filters, status badges, and matching cards remain legible without unnecessary wrapping.
 - Wrapping policy: keep action buttons and desktop table cells on one line; allow mobile table cells and explicitly marked long-form cells to wrap.
 - Supported breakpoints/devices: 데스크톱 우선, 640px 이하 모바일
-- Layout adaptations: 기존 고정 하단 탐색과 반응형 표/카드를 유지하며 글자 확대 시 카드 최소 폭을 넓히고 열 수를 자동 축소. 매칭 화면은 넓은 데스크톱에서 평가자 폴더·배정 가능 인원·현재 배정 인원의 3열 구조를 사용하고, 작은 화면에서만 세로로 전환
+- Layout adaptations: 기존 고정 하단 탐색과 반응형 표/카드를 유지하며 글자 확대 시 카드 최소 폭을 넓히고 열 수를 자동 축소. 매칭 화면은 넓은 데스크톱에서 평가자 폴더·배정 가능 인원·현재 배정 인원의 3열 구조를 사용하고, 검색·필터는 두 인원 열 상단 전체에 걸쳐 배치하여 두 드롭 영역의 시작선과 높이를 일치시킴. 작은 화면에서만 세로로 전환
 - Touch/hover differences: 데스크톱은 드래그앤드롭, 모바일·키보드는 배정·해제 버튼을 제공하며 핵심 동작은 hover에 의존하지 않음
 
 ## Interaction states

@@ -285,6 +285,16 @@
       gap: 1rem;
       align-items: start;
     }
+    #directory-toolbar-matchingTargets {
+      grid-column: 1 / -1;
+      margin-bottom: 0 !important;
+    }
+    .matching-target-panel {
+      display: grid;
+      grid-template-rows: auto minmax(480px, 1fr);
+      min-width: 0;
+      align-self: stretch;
+    }
     .matching-save-action {
       background: #0F766E !important;
       border-color: #115E59 !important;
@@ -310,7 +320,8 @@
       line-height: 1.5;
     }
     .app-shell {
-      width: min(100%, 1840px);
+      width: calc(100% - 1rem);
+      max-width: 1880px;
       margin-inline: auto;
     }
     button,
@@ -1818,7 +1829,8 @@
               </div>
 
               <div class="matching-target-columns">
-                <section>
+                <div id="matching-target-toolbar-anchor" class="hidden" aria-hidden="true"></div>
+                <section class="matching-target-panel">
                   <div class="flex items-center justify-between mb-2">
                     <h5 class="text-xs font-black text-slate-700"><i class="fa-solid fa-users mr-1 text-blue-600"></i>배정 가능한 인원</h5>
                     <span id="matching-available-count" class="text-[11px] font-bold text-blue-700">0명</span>
@@ -1828,7 +1840,7 @@
                     <!-- Dynamically rendered unassigned people -->
                   </div>
                 </section>
-                <section>
+                <section class="matching-target-panel">
                   <div class="flex items-center justify-between mb-2">
                     <h5 class="text-xs font-black text-slate-700"><i class="fa-solid fa-folder-check mr-1 text-teal-600"></i>현재 배정된 인원</h5>
                     <span id="selected-evaluator-match-count" class="text-[11px] font-bold text-teal-700">0명</span>
@@ -3632,6 +3644,7 @@
     function renderInteractiveTargetTags() {
       const availableGrid = document.getElementById('interactive-target-tags-grid');
       const assignedGrid = document.getElementById('interactive-assigned-targets-grid');
+      const toolbarAnchor = document.getElementById('matching-target-toolbar-anchor');
       const headerInfo = document.getElementById('interactive-selected-evaluator-info');
       const matchCountEl = document.getElementById('selected-evaluator-match-count');
       const availableCountEl = document.getElementById('matching-available-count');
@@ -3658,7 +3671,7 @@
       const targetCandidates = usersDb.filter(target => target.id !== selectedEvaluatorForMatching && target.is_evaluatee !== false);
       const candidateIds = new Set(targetCandidates.map(target => Number(target.id)));
       selectedMatchingTargetIds = new Set([...selectedMatchingTargetIds].filter(id => candidateIds.has(Number(id))));
-      ensureDirectoryToolbar('matchingTargets', availableGrid, targetCandidates, {
+      ensureDirectoryToolbar('matchingTargets', toolbarAnchor || availableGrid, targetCandidates, {
         render: renderInteractiveTargetTags, placeholder: '피평가자 이름·소속·부서·직급 검색', sortKey: 'matched',
         companyValue: target => target.company, deptValue: target => target.dept,
         statusLabel: '전체 연결 상태', statusValue: target => activeTargetIds.has(target.id) ? 'matched' : 'unmatched',
