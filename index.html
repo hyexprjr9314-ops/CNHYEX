@@ -250,6 +250,14 @@
       --text-muted: #64748B;
       --brand: #0D9488;
     }
+    .app-section-hero {
+      background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 55%, #ECFDF5 100%) !important;
+      border-color: #64748B !important;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08) !important;
+    }
+    .app-section-hero--amber {
+      background: linear-gradient(135deg, #F8FAFC 0%, #FFFBEB 100%) !important;
+    }
     html, body, main, footer {
       background: var(--page-bg) !important;
     }
@@ -577,7 +585,7 @@
 
     <!-- VIEW 2: EMPLOYEE LIST -->
     <section id="view-list" class="hidden space-y-6">
-      <div class="glass-card rounded-2xl p-6 border border-slate-800 relative overflow-hidden bg-gradient-to-r from-brandNavy to-slate-900">
+      <div class="app-section-hero glass-card rounded-2xl p-6 border relative overflow-hidden">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative z-10">
           <div>
             <div class="flex items-center gap-2 mb-1">
@@ -710,7 +718,7 @@
 
     <!-- VIEW 4: EMPLOYEE EVALUATION GUIDE -->
     <section id="view-guide" class="hidden space-y-6">
-      <div class="glass-card rounded-2xl p-6 md:p-8 border border-brandTeal/30 bg-gradient-to-r from-slate-900 via-slate-900 to-teal-950/40">
+      <div class="app-section-hero glass-card rounded-2xl p-6 md:p-8 border">
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
           <div>
             <div class="flex items-center gap-2 mb-2">
@@ -922,7 +930,7 @@
 
     <!-- VIEW 6: ADMIN DASHBOARD (사용자 일괄 등록 & 계정 관리) -->
     <section id="view-admin" class="hidden space-y-6">
-      <div class="glass-card rounded-2xl p-6 border border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gradient-to-r from-slate-900 to-brandNavy">
+      <div class="app-section-hero glass-card rounded-2xl p-6 border flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div class="flex items-center gap-2 mb-1">
             <span class="bg-amber-500/20 text-brandGold border border-brandGold/30 text-[11px] font-bold px-2.5 py-0.5 rounded-full">ADMINISTRATOR CONTROL</span>
@@ -1063,7 +1071,7 @@
 
     <!-- VIEW 7: EVALUATION MANAGEMENT (평가 관리 - 5개 관리 서브탭 모음) -->
     <section id="view-evalmanage" class="hidden space-y-6">
-      <div class="glass-card rounded-2xl p-6 border border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gradient-to-r from-slate-900 via-slate-900 to-teal-950/40">
+      <div class="app-section-hero glass-card rounded-2xl p-6 border flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div class="flex items-center gap-2 mb-1">
             <span class="bg-teal-500/20 text-teal-300 border border-teal-500/30 text-[11px] font-bold px-2.5 py-0.5 rounded-full">EVALUATION MANAGEMENT</span>
@@ -1644,7 +1652,7 @@
 
       <!-- ADMIN SUB-TAB 6: EVALUATION CLOSING & PAST HISTORY ARCHIVE -->
       <div id="admin-subtab-history" class="hidden space-y-6">
-        <div class="glass-card rounded-2xl p-6 border border-slate-800 space-y-6 bg-gradient-to-br from-slate-900 via-slate-900/90 to-amber-950/20">
+        <div class="app-section-hero app-section-hero--amber glass-card rounded-2xl p-6 border space-y-6">
           <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-800 pb-4">
             <div>
               <div class="flex items-center gap-2 mb-1">
@@ -4182,7 +4190,7 @@
 
       // Update Top Track Info Badge Header
       const trackBadge = document.createElement('div');
-      trackBadge.className = 'p-3.5 bg-gradient-to-r from-slate-900 via-slate-900 to-teal-950/40 rounded-xl border border-teal-500/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-xs mb-4';
+      trackBadge.className = 'app-section-hero p-3.5 rounded-xl border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-xs mb-4';
       trackBadge.innerHTML = `
         <div class="flex items-center gap-2">
           <span class="bg-brandTeal/20 text-brandTeal border border-brandTeal/40 px-2.5 py-0.5 rounded-full font-bold text-[10px]">SMART DYNAMIC MATCH</span>
