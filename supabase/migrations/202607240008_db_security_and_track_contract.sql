@@ -146,8 +146,11 @@ begin
     when 'headquarters_leader' then array['리더십', '팀원 육성', '소통', '전략적 사고']
     when 'branch_employee' then array['비상대응', '소통 협력', '솔선 수범', '갈등 해소']
     when 'mechanic' then array['역량 개발', '정비 능력', '책임/주인의식', '안전의식']
-    else raise exception 'Unknown question track'
+    else null
   end;
+  if v_categories is null then
+    raise exception 'Unknown question track';
+  end if;
 
   if exists (
     select 1 from unnest(v_categories) category_name
