@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 const PRIVILEGED = new Set(['관리자', '임원']);
 const ADMIN_ONLY = new Set([
   'cycle_create', 'cycle_update', 'cycle_delete', 'cycle_validate', 'cycle_activate', 'question_create', 'question_update',
-  'question_delete', 'matching_toggle', 'matching_replace', 'auto_generate', 'permission_update', 'settings_update'
+  'question_delete', 'matching_toggle', 'matching_replace', 'matching_generate', 'permission_update', 'settings_update'
 ]);
 const send = (res, status, payload) => res.status(status).json(payload);
 
@@ -309,7 +309,7 @@ export default async function handler(req, res) {
       }));
       if (rows.length) { const inserted = await service.from('matchings').upsert(rows, { onConflict: 'cycle_id,evaluator_id,target_id' }); if (inserted.error) throw inserted.error; }
       result = { data: { protected_target_ids: [...protectedTargetIds] }, error: null };
-    } else if (action === 'auto_generate') {
+    } else if (action === 'matching_generate') {
       const cycleId = Number(req.body.cycle_id);
       if (!cycleId) return send(res, 400, { error: '평가 주기가 필요합니다.' });
       const [users, existing, submitted] = await Promise.all([
