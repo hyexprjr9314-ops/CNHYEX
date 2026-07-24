@@ -306,14 +306,17 @@
     html {
       font-size: 16px;
       --matching-card-min: 12.5rem;
+      --matching-evaluator-column: 22rem;
     }
     html[data-font-scale="large"] {
       font-size: 18.4px;
       --matching-card-min: 13.5rem;
+      --matching-evaluator-column: 24rem;
     }
     html[data-font-scale="xlarge"] {
       font-size: 20.8px;
       --matching-card-min: 14.5rem;
+      --matching-evaluator-column: 26rem;
     }
     body {
       font-size: 0.9375rem;
@@ -378,9 +381,29 @@
       min-width: 0;
       width: 100%;
     }
+    .matching-evaluator-card {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 0.625rem;
+    }
+    .matching-evaluator-card__identity,
+    .matching-evaluator-card__meta {
+      min-width: 0;
+    }
+    .matching-evaluator-card__identity,
+    .matching-evaluator-card__meta-text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .matching-evaluator-card__count {
+      flex: 0 0 auto;
+      white-space: nowrap;
+    }
     @media (min-width: 1280px) {
       .matching-workspace-grid {
-        grid-template-columns: minmax(17.5rem, 20rem) minmax(0, 1fr);
+        grid-template-columns: var(--matching-evaluator-column) minmax(0, 1fr);
       }
       .matching-target-columns {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3603,24 +3626,31 @@
       visibleEvaluators.forEach(u => {
         const matchesCount = cycleMatchings.filter(m => m.evaluatorId === u.id).length;
         const isSelected = selectedEvaluatorForMatching === u.id;
+        const evaluatorName = String(u.name || '');
+        const evaluatorRole = String(u.role || '');
+        const evaluatorCompany = String(u.company || '');
+        const evaluatorDept = String(u.dept || '');
+        const evaluatorWorkplace = String(u.workplace || '');
+        const evaluatorSummary = `${evaluatorCompany} · ${evaluatorDept} · ${evaluatorWorkplace}`;
 
         const card = document.createElement('div');
         card.onclick = () => selectEvaluatorForInteractiveMatching(u.id);
-        card.className = `p-2 rounded-lg border transition cursor-pointer flex justify-between items-center gap-1 ${
+        card.title = `${evaluatorName} ${evaluatorRole} / ${evaluatorSummary} / ${matchesCount}명 매칭`;
+        card.className = `matching-evaluator-card p-2.5 rounded-lg border transition cursor-pointer ${
           isSelected
             ? 'bg-brandTeal/20 border-brandTeal text-white shadow-lg ring-1 ring-brandTeal'
             : 'bg-slate-950/70 border-slate-800 text-slate-300 hover:border-slate-700'
         }`;
 
         card.innerHTML = `
-          <div>
-            <div class="flex items-center gap-1.5">
-              <span class="text-[10px] font-bold px-1.5 py-0.5 rounded ${u.company.includes('한양') ? 'bg-blue-500/20 text-blue-300' : 'bg-orange-500/20 text-orange-300'}">${u.company}</span>
-              <strong class="text-xs font-bold ${isSelected ? 'text-white' : 'text-slate-200'}">${u.name} ${u.role}</strong>
+          <div class="matching-evaluator-card__identity">
+            <strong class="block text-xs font-bold truncate ${isSelected ? 'text-white' : 'text-slate-200'}">${escapeHtml(evaluatorName)} ${escapeHtml(evaluatorRole)}</strong>
+            <div class="matching-evaluator-card__meta mt-1 flex items-center gap-1.5">
+              <span class="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded ${evaluatorCompany.includes('한양') ? 'bg-blue-500/20 text-blue-300' : 'bg-orange-500/20 text-orange-300'}">${escapeHtml(evaluatorCompany)}</span>
+              <span class="matching-evaluator-card__meta-text text-[11px] text-slate-400">${escapeHtml(evaluatorDept)} · ${escapeHtml(evaluatorWorkplace)}</span>
             </div>
-            <p class="text-[11px] text-slate-400 mt-0.5">${u.dept} • ${u.workplace}</p>
           </div>
-          <span class="text-[11px] font-bold px-2 py-0.5 rounded-full ${matchesCount > 0 ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' : 'bg-slate-800 text-slate-500'}">
+          <span class="matching-evaluator-card__count text-[11px] font-bold px-2 py-0.5 rounded-full ${matchesCount > 0 ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' : 'bg-slate-800 text-slate-500'}">
             ${matchesCount}명 매칭
           </span>
         `;
