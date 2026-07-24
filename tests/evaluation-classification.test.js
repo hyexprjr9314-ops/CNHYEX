@@ -1,5 +1,5 @@
 import test from 'node:test'; import assert from 'node:assert/strict';
-import { isLeader, normalizeTrack, normalizedCategory, relationshipType, targetTrack, TRACKS, TRACK_CATEGORIES } from './evaluation-classification.js';
+import { isLeader, normalizeTrack, normalizedCategory, relationshipType, targetTrack, TRACKS, TRACK_CATEGORIES } from '../api/evaluation-classification.js';
 test('classification covers tracks and relationship precedence', () => {
   assert.equal(targetTrack({ dept: '정비팀' }), TRACKS.mechanic);
   assert.equal(targetTrack({ workplace: '부산영업소' }), TRACKS.branch_employee);

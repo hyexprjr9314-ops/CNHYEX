@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ROLES, allowedAdminSubtabs, canUseAdminAction } from './role-policy.js';
+import { ROLES, allowedAdminSubtabs, canUseAdminAction } from '../api/role-policy.js';
 test('role matrix separates regular, executive, and admin actions', () => {
   assert.equal(canUseAdminAction('', 'adjust'), false);
   assert.equal(canUseAdminAction(ROLES.admin, 'adjust'), true);

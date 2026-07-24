@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildRelativeGradePlan, cohortKeyForUser, largestRemainderAllocation } from './relative-grading.js';
+import { buildRelativeGradePlan, cohortKeyForUser, largestRemainderAllocation } from '../api/relative-grading.js';
 
 test('largest remainder exactly allocates every cohort member', () => {
   const allocation = largestRemainderAllocation(17);

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { canSendGradeNotice, mailIdempotencyKey, passwordResetIdempotencyBucket, summarizeDispatch } from './mail-delivery.js';
+import { canSendGradeNotice, mailIdempotencyKey, passwordResetIdempotencyBucket, summarizeDispatch } from '../api/mail-delivery.js';
 
 test('mail idempotency and grade eligibility are deterministic and gated', () => {
   assert.equal(mailIdempotencyKey({ kind: 'grade_notice', cycleId: 3, targetId: 7 }), mailIdempotencyKey({ kind: 'grade_notice', cycleId: 3, targetId: 7 }));

@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
-import { hasUnresolvedActiveAdjustment, secondStageFinalScore } from './result-state.js';
+import { hasUnresolvedActiveAdjustment, secondStageFinalScore } from '../api/result-state.js';
 
-const resultStateUrl = new URL('./result-state.js', import.meta.url);
+const resultStateUrl = new URL('../api/result-state.js', import.meta.url);
 
 test('approval readiness ignores cancelled adjustments and requires stage 2 for active adjustments', () => {
   assert.equal(hasUnresolvedActiveAdjustment([]), false);

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { assertQuestionCyclesMutable, normalizeQuestionRows } from './questions.js';
+import { assertQuestionCyclesMutable, normalizeQuestionRows } from '../api/questions.js';
 
 function cycleService(cycles) {
   return {

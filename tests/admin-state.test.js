@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
-import { applyImmutableFinalResults, applyRelativeGrades, assertGlobalConfigurationMutable } from './admin-state.js';
+import { applyImmutableFinalResults, applyRelativeGrades, assertGlobalConfigurationMutable } from '../api/admin-state.js';
 
 function score(finalScore) {
   return {
@@ -58,7 +58,7 @@ test('current immutable final result overwrites live scores only for its matchin
 });
 
 test('cycle finalization sends only the authenticated cycle and actor to the DB-owned finalizer', async () => {
-  const source = await readFile(new URL('./admin-state.js', import.meta.url), 'utf8');
+  const source = await readFile(new URL('../api/admin-state.js', import.meta.url), 'utf8');
   assert.match(source, /rpc\('governance_finalize_cycle', \{\s*p_cycle_id: cycleId,\s*p_actor_id: authUser\.id\s*\}\)/s);
   assert.doesNotMatch(source, /p_final_results:/);
   assert.doesNotMatch(source, /p_snapshot:/);

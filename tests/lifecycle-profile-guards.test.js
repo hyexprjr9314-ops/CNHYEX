@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
-import { assertGlobalConfigurationMutable, isCurrentGovernanceCycle } from './admin-state.js';
-import { assertPersonnelClassificationMutable, hasClassificationChange } from './users.js';
+import { assertGlobalConfigurationMutable, isCurrentGovernanceCycle } from '../api/admin-state.js';
+import { assertPersonnelClassificationMutable, hasClassificationChange } from '../api/users.js';
 
 function cycleService(cycles) {
   return {
@@ -15,7 +15,7 @@ function cycleService(cycles) {
 
 test('generic cycle editing is data-only and lifecycle transitions stay dedicated', async () => {
   const [api, index] = await Promise.all([
-    readFile(new URL('./admin-state.js', import.meta.url), 'utf8'),
+    readFile(new URL('../api/admin-state.js', import.meta.url), 'utf8'),
     readFile(new URL('../index.html', import.meta.url), 'utf8')
   ]);
   const updateBranch = api.match(/action === 'cycle_update'[\s\S]*?action === 'cycle_validate'/)?.[0] ?? '';
