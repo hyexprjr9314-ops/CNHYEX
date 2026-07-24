@@ -10,13 +10,22 @@ test('project 1 removes retired AI DOM references and throttles focus refresh', 
   assert.match(index, /Date\.now\(\) - lastCentralLoadAt > 30000/);
 });
 
-test('project 2 bulk permission activation is a single administrator API action', async () => {
-  const [index, api] = await Promise.all([read('../index.html'), read('../api/admin-state.js')]);
-  assert.match(index, /bulkActivatePermissions\('both'\)/);
+test('project 2 bulk permission changes use one administrator API action', async () => {
+  const [index, api, migration] = await Promise.all([
+    read('../index.html'),
+    read('../api/admin-state.js'),
+    read('../supabase/migrations/202607250001_fix_cycle_enum_permission_guards.sql')
+  ]);
+  assert.match(index, /bulkSetPermissions\('both', true\)/);
+  assert.match(index, /bulkSetPermissions\('both', false\)/);
+  assert.match(index, /일괄 비활성화/);
   assert.match(index, /action: 'permission_bulk_update'/);
   assert.match(api, /permission_bulk_update/);
   assert.match(api, /\.in\('id', userIds\)/);
-  assert.match(api, /일괄 작업은 권한 활성화만 지원합니다/);
+  assert.match(api, /typeof req\.body\.can_evaluate === 'boolean'/);
+  assert.match(api, /typeof req\.body\.is_evaluatee === 'boolean'/);
+  assert.match(migration, /c\.status <> '마감\/보관됨'/);
+  assert.doesNotMatch(migration, /'closed'|'cancelled'|'archived'/);
 });
 
 test('project 3 uses scoped light-theme contrast classes', async () => {

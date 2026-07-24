@@ -568,10 +568,10 @@ export default async function handler(req, res) {
       const userIds = [...new Set((req.body.user_ids || []).map(Number).filter(Number.isInteger))].slice(0, 500);
       if (!userIds.length) return send(res, 400, { error: '변경할 사용자를 선택해 주세요.' });
       const changes = { updated_at: new Date().toISOString() };
-      if (req.body.can_evaluate === true) changes.can_evaluate = true;
-      if (req.body.is_evaluatee === true) changes.is_evaluatee = true;
-      if (changes.can_evaluate !== true && changes.is_evaluatee !== true) {
-        return send(res, 400, { error: '일괄 작업은 권한 활성화만 지원합니다.' });
+      if (typeof req.body.can_evaluate === 'boolean') changes.can_evaluate = req.body.can_evaluate;
+      if (typeof req.body.is_evaluatee === 'boolean') changes.is_evaluatee = req.body.is_evaluatee;
+      if (!Object.hasOwn(changes, 'can_evaluate') && !Object.hasOwn(changes, 'is_evaluatee')) {
+        return send(res, 400, { error: '변경할 권한 상태가 필요합니다.' });
       }
       result = await service.from('users').update(changes).in('id', userIds).select('id');
     } else if (action === 'matching_toggle') {

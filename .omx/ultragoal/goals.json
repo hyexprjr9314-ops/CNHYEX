@@ -1,7 +1,7 @@
 {
   "version": 1,
   "createdAt": "2026-07-24T08:31:34.637Z",
-  "updatedAt": "2026-07-24T14:47:44.164Z",
+  "updatedAt": "2026-07-24T15:02:35.198Z",
   "briefPath": ".omx/ultragoal/brief.md",
   "goalsPath": ".omx/ultragoal/goals.json",
   "ledgerPath": ".omx/ultragoal/ledger.jsonl",
@@ -98,6 +98,16 @@
       "createdAt": "2026-07-24T14:47:44.164Z",
       "updatedAt": "2026-07-24T14:47:44.164Z",
       "evidence": "사용자 요청: 최고관리자만큼은 완전삭제 기능이 필요함"
+    },
+    {
+      "id": "G009-cycle-enum",
+      "title": "권한 일괄 비활성화와 cycle enum 오류 수정",
+      "objective": "cycle_status_type enum에 존재하지 않는 상태 비교를 제거해 권한 변경 오류를 해소하고, 최고관리자가 현재 검색·필터 결과에 대해 평가작성·피평가·두 권한을 안전하게 일괄 비활성화할 수 있게 한다.",
+      "status": "pending",
+      "attempt": 0,
+      "createdAt": "2026-07-24T15:02:35.198Z",
+      "updatedAt": "2026-07-24T15:02:35.198Z",
+      "evidence": "사용자 요청: Project 1 계속 실행"
     }
   ],
   "codexObjective": "Complete the durable ultragoal plan in .omx/ultragoal/goals.json, including later accepted/appended stories, under the original brief constraints; use .omx/ultragoal/ledger.jsonl as the audit trail.",

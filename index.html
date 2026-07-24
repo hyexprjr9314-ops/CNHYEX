@@ -1823,9 +1823,13 @@
           </div>
           <div class="flex flex-wrap items-center gap-2 rounded-xl border border-slate-300 bg-white p-3">
             <span class="text-xs font-bold text-slate-700">현재 검색·필터 결과:</span>
-            <button id="bulk-permission-evaluator-btn" type="button" onclick="bulkActivatePermissions('evaluator')" class="rounded-lg bg-teal-600 px-3 py-2 text-xs font-bold text-white hover:bg-teal-700"><i class="fa-solid fa-user-check mr-1"></i>평가 작성 권한 일괄 활성</button>
-            <button type="button" onclick="bulkActivatePermissions('evaluatee')" class="rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white hover:bg-blue-700">피평가 대상 일괄 활성</button>
-            <button id="bulk-permission-both-btn" type="button" onclick="bulkActivatePermissions('both')" class="rounded-lg bg-violet-600 px-3 py-2 text-xs font-bold text-white hover:bg-violet-700"><i class="fa-solid fa-user-shield mr-1"></i>두 권한 모두 활성</button>
+            <button id="bulk-permission-evaluator-btn" type="button" onclick="bulkSetPermissions('evaluator', true)" class="rounded-lg bg-teal-600 px-3 py-2 text-xs font-bold text-white hover:bg-teal-700"><i class="fa-solid fa-user-check mr-1"></i>평가 작성 일괄 활성</button>
+            <button type="button" onclick="bulkSetPermissions('evaluatee', true)" class="rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white hover:bg-blue-700">피평가 대상 일괄 활성</button>
+            <button id="bulk-permission-both-btn" type="button" onclick="bulkSetPermissions('both', true)" class="rounded-lg bg-violet-600 px-3 py-2 text-xs font-bold text-white hover:bg-violet-700"><i class="fa-solid fa-user-shield mr-1"></i>두 권한 모두 활성</button>
+            <span class="mx-1 h-6 border-l border-slate-300"></span>
+            <button type="button" onclick="bulkSetPermissions('evaluator', false)" class="rounded-lg bg-rose-600 px-3 py-2 text-xs font-bold text-white hover:bg-rose-700">평가 작성 일괄 비활성</button>
+            <button type="button" onclick="bulkSetPermissions('evaluatee', false)" class="rounded-lg bg-orange-600 px-3 py-2 text-xs font-bold text-white hover:bg-orange-700">피평가 대상 일괄 비활성</button>
+            <button type="button" onclick="bulkSetPermissions('both', false)" class="rounded-lg bg-slate-700 px-3 py-2 text-xs font-bold text-white hover:bg-slate-800">두 권한 모두 비활성</button>
           </div>
 
           <div class="overflow-x-auto">
@@ -6563,24 +6567,26 @@
       }
     }
 
-    async function bulkActivatePermissions(mode) {
+    async function bulkSetPermissions(mode, enabled) {
       const visibleUsers = filterDirectoryItems('permissions', usersDb);
       if (!visibleUsers.length) return alert('현재 검색·필터 결과에 사용자가 없습니다.');
       const label = mode === 'evaluator' ? '평가 작성 권한' : mode === 'evaluatee' ? '피평가 대상 권한' : '평가 작성 및 피평가 대상 권한';
-      if (!confirm(`현재 표시된 ${visibleUsers.length}명에게 ${label}을 활성화하시겠습니까?`)) return;
+      const changeLabel = enabled ? '활성화' : '비활성화';
+      if (!confirm(`현재 표시된 ${visibleUsers.length}명의 ${label}을 일괄 ${changeLabel}하시겠습니까?`)) return;
+      if (!enabled && prompt('확인을 위해 "일괄 비활성화"를 입력해 주세요.') !== '일괄 비활성화') return;
       try {
         await callAdminStateApi({
           action: 'permission_bulk_update',
           user_ids: visibleUsers.map(user => Number(user.id)),
-          can_evaluate: mode === 'evaluator' || mode === 'both',
-          is_evaluatee: mode === 'evaluatee' || mode === 'both'
+          ...(mode === 'evaluator' || mode === 'both' ? { can_evaluate: enabled } : {}),
+          ...(mode === 'evaluatee' || mode === 'both' ? { is_evaluatee: enabled } : {})
         });
         announceCentralChange();
         await loadFromServer();
         renderPermissionsTable();
-        alert(`${visibleUsers.length}명의 ${label}이 활성화되었습니다.`);
+        alert(`${visibleUsers.length}명의 ${label}이 ${changeLabel}되었습니다.`);
       } catch (error) {
-        alert(`권한 일괄 활성화 실패: ${error.message}`);
+        alert(`권한 일괄 ${changeLabel} 실패: ${error.message}`);
       }
     }
 
