@@ -11,10 +11,18 @@ test('management UI keeps executive and administrator controls separated', async
   assert.match(index, /if \(roleInfo\.isExecutive\) \{\s*if \(scoreData\.workflow_status === 'first_stage_adjusted'\)/);
   assert.match(index, /if \(!roleInfo\.isAdmin\) return ''/);
   assert.match(index, /action: selectedAdjustmentMode === 'executive' \? 'approve_adjustment' : 'adjust'/);
-  assert.match(index, /adminNavTab\.classList\.remove\('hidden'\)/);
-  assert.match(index, /if \(roleInfo\.isAdmin\) \{\s*adminNavTab\.classList\.remove\('hidden'\)/);
   assert.match(index, /updatePublishControlVisibility/);
   assert.match(index, /gradeStatusHeader/);
+  assert.match(index, /function applyRoleBasedNavigationVisibility\(\)/);
+  assert.match(index, /const systemRole = user\.sysRole \?\? user\.sys_role \?\? ''/);
+  assert.match(index, /const isExecutive = systemRole === '임원'/);
+  assert.match(index, /myresults: canCurrentUserViewResults\(\)/);
+  assert.match(index, /return cyclesDb\.some\(cycle => cycle\.results_published === true\)/);
+  assert.match(index, /admin: roleInfo\.isAdmin/);
+  assert.match(index, /function replaceNavTabClasses\(tab, classes\)/);
+  assert.match(index, /replaceNavTabClasses\(btn, "px-4 py-2 rounded-xl transition text-slate-400/);
+  assert.match(index, /if \(viewId === 'myresults' && !canCurrentUserViewResults\(\)\)/);
+  assert.doesNotMatch(index, /tab\.className = "px-4 py-2 rounded-xl transition text-slate-400/);
 });
 
 test('question editor emits canonical tracks and resolves leaders before job-area tracks', async () => {

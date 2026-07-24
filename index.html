@@ -2732,7 +2732,7 @@
     let finalResultsByCycle = {};
     let goalsDb = [];
     let allGoalsDb = [];
-    let isResultPublished = true;
+    let isResultPublished = false;
     let selectedAdjustId = null;
     let selectedAdjustmentMode = 'admin';
 
@@ -2873,6 +2873,10 @@
         }
 
         const profile = profileResult.data[0];
+        evaluationHistoryDb = [];
+        cycleScoresDb = {};
+        finalResultsByCycle = {};
+        allGoalsDb = [];
         currentLoggedInUser = {
           ...profile,
           sysRole: profile.sys_role,
@@ -2937,6 +2941,7 @@
           is_default: q.is_default
         }));
         await loadCentralState();
+        applyRoleBasedNavigationVisibility();
         return true;
       } catch (e) {
         console.error('Secure cloud load failed:', e);
@@ -3537,13 +3542,13 @@
         const el = document.getElementById(`admin-subtab-${st}`);
         const btn = document.getElementById(`admin-tab-${st}`);
         if (el) el.classList.add('hidden');
-        if (btn) btn.className = "px-4 py-2 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-2 font-bold";
+        replaceNavTabClasses(btn, "px-4 py-2 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-2 font-bold");
       });
 
       const targetEl = document.getElementById(`admin-subtab-${subtab}`);
       const targetBtn = document.getElementById(`admin-tab-${subtab}`);
       if (targetEl) targetEl.classList.remove('hidden');
-      if (targetBtn) targetBtn.className = "px-4 py-2 rounded-xl transition bg-brandTeal text-white shadow-lg flex items-center gap-2 font-bold";
+      replaceNavTabClasses(targetBtn, "px-4 py-2 rounded-xl transition bg-brandTeal text-white shadow-lg flex items-center gap-2 font-bold");
 
       currentActiveSubtab = subtab;
       saveUiPreferences();
@@ -4062,23 +4067,45 @@
         return { isAdmin: false, isExecutive: false, isPrivileged: false };
       }
 
-      // 1. Master System Admin Condition: sysRole MUST explicitly be '관리자' (유종열 대리 / admin)
-      const isAdmin = user.sysRole === '관리자';
+      const systemRole = user.sysRole ?? user.sys_role ?? '';
 
-      // 2. Executive Approver Condition: type is '임원급' OR role contains executive keywords AND sysRole is NOT '관리자'
-      const isExecutive = user.type === '임원급' || 
-                          (user.role && (
-                            user.role.includes('임원') || 
-                            user.role.includes('이사') || 
-                            user.role.includes('상무') || 
-                            user.role.includes('전무') || 
-                            user.role.includes('대표')
-                          ));
+      // 1. Master System Admin Condition: sysRole MUST explicitly be '관리자' (유종열 대리 / admin)
+      const isAdmin = systemRole === '관리자';
+
+      // 2. Executive access is granted only by the server-managed system role.
+      const isExecutive = systemRole === '임원';
 
       // 3. Privileged User Condition for evaluation management (Admin or Executive)
       const isPrivileged = isAdmin || isExecutive;
 
       return { isAdmin, isExecutive, isPrivileged };
+    }
+
+    function canCurrentUserViewResults() {
+      const roleInfo = checkUserRole(currentLoggedInUser);
+      if (roleInfo.isPrivileged) return true;
+      return cyclesDb.some(cycle => cycle.results_published === true);
+    }
+
+    function applyRoleBasedNavigationVisibility() {
+      const roleInfo = checkUserRole(currentLoggedInUser);
+      const visibility = {
+        myresults: canCurrentUserViewResults(),
+        evalmanage: roleInfo.isPrivileged,
+        admin: roleInfo.isAdmin
+      };
+
+      Object.entries(visibility).forEach(([viewId, visible]) => {
+        const tab = document.getElementById(`nav-tab-${viewId}`);
+        if (tab) tab.classList.toggle('hidden', !visible);
+      });
+    }
+
+    function replaceNavTabClasses(tab, classes) {
+      if (!tab) return;
+      const mustRemainHidden = tab.classList.contains('hidden');
+      tab.className = classes;
+      if (mustRemainHidden) tab.classList.add('hidden');
     }
 
     let currentLoggedInUser = null;
@@ -4410,11 +4437,7 @@
       const badge = document.getElementById('current-user-badge');
       if (badge) badge.innerText = `${currentLoggedInUser.name} (${currentLoggedInUser.email})`;
 
-      const roleInfo = checkUserRole(currentLoggedInUser);
-      const evalManageNavTab = document.getElementById('nav-tab-evalmanage');
-      const adminNavTab = document.getElementById('nav-tab-admin');
-      if (evalManageNavTab) evalManageNavTab.classList.toggle('hidden', !roleInfo.isPrivileged);
-      if (adminNavTab) adminNavTab.classList.toggle('hidden', !roleInfo.isAdmin);
+      applyRoleBasedNavigationVisibility();
 
       populateCycleSelects();
       setupCentralStateSync();
@@ -5891,6 +5914,10 @@
       localStorage.removeItem('cnhy_current_user');
       localStorage.removeItem('cnhy_last_view');
       currentLoggedInUser = null;
+      evaluationHistoryDb = [];
+      cycleScoresDb = {};
+      finalResultsByCycle = {};
+      allGoalsDb = [];
       
       const headerUserInfo = document.getElementById('header-user-info');
       const mainNavTabs = document.getElementById('main-nav-tabs');
@@ -5926,22 +5953,7 @@
         if (badge) badge.innerText = `${currentLoggedInUser.name} (${currentLoggedInUser.email})`;
 
         const roleInfo = checkUserRole(currentLoggedInUser);
-        const evalManageNavTab = document.getElementById('nav-tab-evalmanage');
-        const adminNavTab = document.getElementById('nav-tab-admin');
-        if (evalManageNavTab) {
-          if (roleInfo.isPrivileged) {
-            evalManageNavTab.classList.remove('hidden');
-          } else {
-            evalManageNavTab.classList.add('hidden');
-          }
-        }
-        if (adminNavTab) {
-          if (roleInfo.isAdmin) {
-            adminNavTab.classList.remove('hidden');
-          } else {
-            adminNavTab.classList.add('hidden');
-          }
-        }
+        applyRoleBasedNavigationVisibility();
 
         populateCycleSelects();
         setupCentralStateSync();
@@ -6556,12 +6568,16 @@
       if (viewId === 'goals') viewId = 'guide';
 
       // Dynamic Permission Guard for Admin/Management Pages
+      const roleInfo = checkUserRole(currentLoggedInUser);
       if (viewId === 'evalmanage' || viewId === 'admin') {
-        const roleInfo = checkUserRole(currentLoggedInUser);
-        if (!roleInfo.isPrivileged) {
+        const allowed = viewId === 'admin' ? roleInfo.isAdmin : roleInfo.isPrivileged;
+        if (!allowed) {
           alert('접근 권한이 없습니다. 관리자 및 임원 전용 메뉴입니다.');
           viewId = 'list';
         }
+      }
+      if (viewId === 'myresults' && !canCurrentUserViewResults()) {
+        viewId = 'list';
       }
 
       currentActiveView = viewId;
@@ -6575,7 +6591,7 @@
         
         const tab = document.getElementById(`nav-tab-${v}`);
         if (tab) {
-          tab.className = "px-4 py-2 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-2";
+          replaceNavTabClasses(tab, "px-4 py-2 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-2");
         }
       });
 
@@ -6593,11 +6609,11 @@
       const activeTab = document.getElementById(`nav-tab-${viewId}`);
       if (activeTab) {
         if (viewId === 'evalmanage') {
-          activeTab.className = "px-4 py-2 rounded-xl transition bg-brandTeal text-white shadow-lg flex items-center gap-2 border border-brandTeal/30";
+          replaceNavTabClasses(activeTab, "px-4 py-2 rounded-xl transition bg-brandTeal text-white shadow-lg flex items-center gap-2 border border-brandTeal/30");
         } else if (viewId === 'admin') {
-          activeTab.className = "px-4 py-2 rounded-xl transition bg-brandGold text-white shadow-lg flex items-center gap-2 border border-brandGold/30";
+          replaceNavTabClasses(activeTab, "px-4 py-2 rounded-xl transition bg-brandGold text-white shadow-lg flex items-center gap-2 border border-brandGold/30");
         } else {
-          activeTab.className = "px-4 py-2 rounded-xl transition bg-brandTeal text-white shadow-lg flex items-center gap-2";
+          replaceNavTabClasses(activeTab, "px-4 py-2 rounded-xl transition bg-brandTeal text-white shadow-lg flex items-center gap-2");
         }
       }
 
