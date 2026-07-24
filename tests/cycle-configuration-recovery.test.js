@@ -26,6 +26,7 @@ test('question creation requires an explicit evaluation cycle', () => {
 test('existing users can be promoted to the executive system role', () => {
   assert.match(index, /id="edit-user-sysrole"[\s\S]*option value="임원"/);
   assert.match(index, /type: user\.type, sys_role: user\.sysRole/);
+  assert.match(index, /u\.sysRole === '임원'[\s\S]*⚖️ 임원/);
 });
 
 test('hard delete has a transaction-local trigger bypass', () => {

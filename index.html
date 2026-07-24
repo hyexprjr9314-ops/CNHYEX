@@ -5690,6 +5690,8 @@
           ? `<span class="bg-purple-500/20 text-purple-200 border border-purple-500/40 px-2 py-0.5 rounded font-bold text-[10px]">🛡️ 최고관리자</span>`
           : u.sysRole === '관리자'
           ? `<span class="bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded font-bold text-[10px]">👑 관리자</span>`
+          : u.sysRole === '임원'
+          ? `<span class="bg-indigo-500/20 text-indigo-700 border border-indigo-500/40 px-2 py-0.5 rounded font-bold text-[10px]">⚖️ 임원</span>`
           : `<span class="bg-slate-800 text-slate-400 px-2 py-0.5 rounded font-bold text-[10px]">👤 일반사용자</span>`;
         const activeButton = isSuperAdmin
           ? `<span class="text-[10px] font-bold px-2 py-1 rounded border border-purple-500/30 text-purple-300 bg-purple-500/10">보호됨</span>`
