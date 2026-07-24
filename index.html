@@ -1325,7 +1325,7 @@
                   <th class="py-2.5 px-3">시스템 권한</th>
                   <th class="py-2.5 px-3">입사일자</th>
                   <th class="py-2.5 px-3">전화번호</th>
-                  <th class="py-2.5 px-3 font-bold">초기 비밀번호</th>
+                  <th class="py-2.5 px-3 font-bold">Auth 상태</th>
                   <th class="py-2.5 px-3 text-center">관리 (수정/삭제)</th>
                 </tr>
               </thead>
@@ -1362,6 +1362,7 @@
             <i class="fa-solid fa-globe"></i>
             <span id="admin-publish-status-text">🌐 결과 공개 중 (클릭 시 비공개)</span>
           </button>
+          <div id="internal-approval-controls" class="text-xs text-slate-300 flex items-center gap-2"></div>
           
         </div>
       </div>
@@ -1537,12 +1538,22 @@
 
               <div>
                 <label class="block text-xs font-bold text-slate-300 mb-1">적용 대상 직군 🎯</label>
-                <select id="q-track-in" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-amber-300 font-bold">
-                  <option value="기본 필수질문">📌 기본 필수질문 (전사)</option>
-                  <option value="본사 팀원급">🏢 본사 팀원급</option>
-                  <option value="팀장/부서장급">👔 팀장/부서장급</option>
-                  <option value="영업소">🚌 영업소</option>
-                  <option value="정비사">🔧 정비사</option>
+                <select id="q-track-in" onchange="syncQuestionCategoryOptions('create')" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-amber-300 font-bold">
+                  <option value="all">📌 기본 필수질문 (전사)</option>
+                  <option value="headquarters_member">🏢 본사 팀원급</option>
+                  <option value="headquarters_leader">👔 팀장/부서장급</option>
+                  <option value="branch_employee">🚌 영업소</option>
+                  <option value="mechanic">🔧 정비사</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-300 mb-1">평가 관계</label>
+                <select id="q-audience-in" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-violet-200 font-bold">
+                  <option value="all">전체 관계 공통</option>
+                  <option value="internal">내부 부서 평가</option>
+                  <option value="exchange">부서 간 교류 평가</option>
+                  <option value="leadership">리더십 평가</option>
                 </select>
               </div>
 
@@ -2053,7 +2064,7 @@
           <i class="fa-solid fa-sliders text-lg"></i>
         </div>
         <div>
-          <h3 class="text-base font-bold text-white">⚙️ 2차 점수 조정 (관리자)</h3>
+          <h3 id="adjust-modal-title" class="text-base font-bold text-white">⚙️ 1차 점수 조정 (관리자)</h3>
           <p class="text-xs text-slate-400" id="adjust-emp-name">피평가자 점수 보정</p>
         </div>
       </div>
@@ -2068,7 +2079,7 @@
           <textarea id="adjust-reason-input" rows="3" maxlength="1000" placeholder="객관적인 조정 근거를 입력해 주세요." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-brandGold"></textarea>
           <p class="mt-1 text-[10px] text-slate-500">조정 전후 점수, 조정자 및 시각과 함께 감사 이력으로 서버에 보관됩니다.</p>
         </div>
-        <button onclick="saveScoreAdjustment()" class="w-full bg-brandGold hover:bg-amber-600 text-white font-bold py-2.5 rounded-xl transition text-sm">
+        <button id="adjust-save-button" onclick="saveScoreAdjustment()" class="w-full bg-brandGold hover:bg-amber-600 text-white font-bold py-2.5 rounded-xl transition text-sm">
           조정 점수 저장
         </button>
       </div>
@@ -2306,14 +2317,8 @@
             <label class="block text-xs font-bold text-slate-300 mb-1">평가 마감일</label>
             <input type="date" id="edit-cycle-deadline" required class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white">
           </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-300 mb-1">상태</label>
-            <select id="edit-cycle-status" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white font-bold">
-              <option value="초안">초안</option>
-              <option value="진행중">진행중 · 저장 시 통합 점검</option>
-              <option value="일시정지">일시정지</option>
-              <option value="마감/보관됨">마감/보관됨</option>
-            </select>
+          <div class="rounded-xl border border-slate-700 bg-slate-900/60 p-2.5 text-xs text-slate-300 leading-relaxed">
+            상태 변경은 목록의 <strong class="text-brandTeal">검증 후 시작</strong> 또는 <strong class="text-brandGold">평가 마감</strong> 절차에서만 할 수 있습니다.
           </div>
         </div>
         <div class="pt-2 flex gap-2">
@@ -2520,12 +2525,22 @@
 
           <div>
             <label class="block text-xs font-bold text-slate-300 mb-1">적용 대상 직군 🎯</label>
-            <select id="edit-q-track" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-amber-300 font-bold">
-              <option value="기본 필수질문">📌 기본 필수질문</option>
-              <option value="본사 팀원급">🏢 본사 팀원급</option>
-              <option value="팀장/부서장급">👔 팀장/부서장급</option>
-              <option value="영업소">🚌 영업소</option>
-              <option value="정비사">🔧 정비사</option>
+            <select id="edit-q-track" onchange="syncQuestionCategoryOptions('edit')" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-amber-300 font-bold">
+              <option value="all">📌 기본 필수질문</option>
+              <option value="headquarters_member">🏢 본사 팀원급</option>
+              <option value="headquarters_leader">👔 팀장/부서장급</option>
+              <option value="branch_employee">🚌 영업소</option>
+              <option value="mechanic">🔧 정비사</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1">평가 관계</label>
+            <select id="edit-q-audience" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-violet-200 font-bold">
+              <option value="all">전체 관계 공통</option>
+              <option value="internal">내부 부서 평가</option>
+              <option value="exchange">부서 간 교류 평가</option>
+              <option value="leadership">리더십 평가</option>
             </select>
           </div>
 
@@ -2713,9 +2728,57 @@
     let customQuestionsDb = [];
     let evaluationHistoryDb = [];
     let cycleScoresDb = {};
+    // Immutable server-finalized rows are kept separate from live aggregation.
+    let finalResultsByCycle = {};
     let goalsDb = [];
     let allGoalsDb = [];
     let isResultPublished = true;
+    let selectedAdjustId = null;
+    let selectedAdjustmentMode = 'admin';
+
+    const QUESTION_TRACKS = Object.freeze({
+      all: { key: 'all', label: '전사 공통', categories: ['성과', '협업', '성장', '조화'] },
+      headquarters_member: { key: 'headquarters_member', label: '본사 팀원급', categories: ['성과', '협업', '성장', '조화'] },
+      headquarters_leader: { key: 'headquarters_leader', label: '팀장/부서장급', categories: ['리더십', '팀원 육성', '소통', '전략적 사고'] },
+      branch_employee: { key: 'branch_employee', label: '영업소 직원', categories: ['비상대응', '소통 협력', '솔선 수범', '갈등 해소'] },
+      mechanic: { key: 'mechanic', label: '정비사', categories: ['역량 개발', '정비 능력', '책임/주인의식', '안전의식'] }
+    });
+    const QUESTION_TRACK_ALIASES = Object.freeze({
+      all: 'all', '기본 필수질문': 'all', '전사 공통': 'all',
+      headquarters_member: 'headquarters_member', '본사 팀원급': 'headquarters_member',
+      headquarters_leader: 'headquarters_leader', '팀장/부서장급': 'headquarters_leader', '팀장·부서장급': 'headquarters_leader',
+      branch_employee: 'branch_employee', '영업소': 'branch_employee', '영업소 직원': 'branch_employee',
+      mechanic: 'mechanic', '정비사': 'mechanic'
+    });
+    function normalizeQuestionTrack(track) {
+      return QUESTION_TRACK_ALIASES[String(track || '').trim()] || 'all';
+    }
+    function questionTrackLabel(track) {
+      return QUESTION_TRACKS[normalizeQuestionTrack(track)].label;
+    }
+    function questionTrackForTarget(target = {}) {
+      const dept = String(target.dept || '');
+      const workplace = String(target.workplace || '');
+      const role = String(target.role || '');
+      const type = String(target.type || '');
+      if (['팀장급', '부서실장급', '임원급'].includes(type) || /(팀장|부장|실장|본부장|소장|지점장|센터장|이사|상무|전무|대표|임원)/.test(role)) return QUESTION_TRACKS.headquarters_leader;
+      if (dept.includes('정비')) return QUESTION_TRACKS.mechanic;
+      if (workplace.includes('영업소') || dept.includes('영업소')) return QUESTION_TRACKS.branch_employee;
+      return QUESTION_TRACKS.headquarters_member;
+    }
+    function syncQuestionCategoryOptions(mode, selectedCategory = null) {
+      const isEdit = mode === 'edit';
+      const trackEl = document.getElementById(isEdit ? 'edit-q-track' : 'q-track-in');
+      const categoryEl = document.getElementById(isEdit ? 'edit-q-category' : 'q-category-in');
+      if (!trackEl || !categoryEl) return;
+      const canonicalTrack = normalizeQuestionTrack(trackEl.value);
+      if (trackEl.value !== canonicalTrack) trackEl.value = canonicalTrack;
+      const categories = QUESTION_TRACKS[canonicalTrack].categories;
+      const keep = selectedCategory || categoryEl.value;
+      categoryEl.innerHTML = categories.map(category => `<option value="${category}">${category}</option>`).join('');
+      if (keep && !categories.includes(keep)) categoryEl.insertAdjacentHTML('beforeend', `<option value="${keep}">${keep} (기존 항목)</option>`);
+      categoryEl.value = keep && [...categoryEl.options].some(option => option.value === keep) ? keep : categories[0];
+    }
 
     // The browser keeps navigation preferences only. All HR data lives in Supabase.
     let currentActiveView = 'list';
@@ -2820,7 +2883,11 @@
         const roleInfo = checkUserRole(currentLoggedInUser);
         const [assignedResult, peopleResult] = await Promise.all([
           supabaseClient.rpc('my_assigned_targets'),
-          roleInfo.isPrivileged ? supabaseClient.rpc('admin_list_users') : Promise.resolve(null)
+          roleInfo.isAdmin
+            ? supabaseClient.rpc('admin_list_users')
+            : roleInfo.isExecutive
+              ? supabaseClient.rpc('executive_list_users')
+              : Promise.resolve(null)
         ]);
         if (assignedResult.error) throw assignedResult.error;
         if (peopleResult?.error) throw peopleResult.error;
@@ -2834,6 +2901,7 @@
           role: target.role,
           type: target.employee_type,
           company: target.company,
+          relationshipType: target.relationship_type || 'internal',
           active: true,
           completed: target.submitted ? 1 : 0,
           total: 1
@@ -2865,6 +2933,7 @@
           cycleId: q.cycle_id,
           targetTrack: q.target_track,
           targetDept: q.target_dept,
+          audience: q.audience || 'all',
           is_default: q.is_default
         }));
         await loadCentralState();
@@ -2898,7 +2967,7 @@
         renderCurrentCentralViews();
         alert('브라우저 임시값을 사용하지 않고 Supabase의 최신 상태를 다시 불러왔습니다.');
       } catch (error) {
-        alert(`서버 새로고침 실패: ${error.message}`);
+        alert(`서버 새로고침 실패: ${escapeHtml(error.message)}`);
       }
     }
 
@@ -3133,9 +3202,9 @@
 
           return `
             <tr class="border-b border-slate-800/60 hover:bg-slate-800/40">
-              <td class="py-2.5 px-3 font-bold text-white">${s.name}</td>
-              <td class="py-2.5 px-3 text-slate-400">${s.company} • ${s.dept}</td>
-              <td class="py-2.5 px-3 text-slate-400">${s.role}</td>
+              <td class="py-2.5 px-3 font-bold text-white">${escapeHtml(s.name)}</td>
+              <td class="py-2.5 px-3 text-slate-400">${escapeHtml(s.company)} • ${escapeHtml(s.dept)}</td>
+              <td class="py-2.5 px-3 text-slate-400">${escapeHtml(s.role)}</td>
               <td class="py-2.5 px-3 font-mono font-bold text-brandTeal">${s.score.toFixed(1)}점</td>
               <td class="py-2.5 px-3">${badge}</td>
             </tr>
@@ -3149,7 +3218,7 @@
                 <span class="bg-brandTeal/20 text-brandTeal border border-brandTeal/30 px-2 py-0.5 rounded text-[10px] font-bold">Closed</span>
                 <span class="text-xs text-slate-400 font-bold">마감일: ${archive.closedAt}</span>
               </div>
-              <h3 class="text-base font-bold text-white">${archive.cycleName}</h3>
+              <h3 class="text-base font-bold text-white">${escapeHtml(archive.cycleName)}</h3>
               <p class="text-xs text-slate-400 mt-1">🔒 최종 확정자: ${archive.closedBy}</p>
             </div>
             <button onclick="deleteArchivedHistory(${archive.cycleId})" class="bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white px-2.5 py-1 rounded text-[11px] font-bold border border-rose-500/20 transition">이력삭제</button>
@@ -4121,6 +4190,14 @@
       if (payload.cycle_scores && typeof payload.cycle_scores === 'object') {
         cycleScoresDb = payload.cycle_scores;
       }
+      if (Array.isArray(payload.final_results)) {
+        finalResultsByCycle = payload.final_results.reduce((byCycle, row) => {
+          const cycleId = Number(row.cycle_id);
+          if (!cycleId) return byCycle;
+          (byCycle[cycleId] ||= {})[Number(row.target_id)] = row;
+          return byCycle;
+        }, {});
+      }
       if (Array.isArray(payload.goals)) goalsDb = payload.goals;
       if (Array.isArray(payload.all_goals)) allGoalsDb = payload.all_goals;
     }
@@ -4217,6 +4294,7 @@
       const titleEl = document.getElementById('my-grade-title');
       const medalEl = document.getElementById('my-medal-container');
       if (totalEl) totalEl.textContent = `${total.toFixed(1)}점`;
+      const relativeGrade = scores.relative_grade || scores.grade;
       const grade = ['S', 'A', 'B', 'C', 'D'].includes(String(relativeGrade).toUpperCase())
         ? String(relativeGrade).toUpperCase()
         : null;
@@ -4392,22 +4470,6 @@
 
       alert('비밀번호가 안전하게 변경되었습니다.');
       closeChangePasswordModal();
-    }
-
-    async function handleLogout() {
-      if (supabaseClient) await supabaseClient.auth.signOut();
-      sessionStorage.removeItem('cnhy_session_user');
-      sessionStorage.removeItem('cnhy_session_view');
-      localStorage.removeItem('cnhy_current_user');
-      localStorage.removeItem('cnhy_last_view');
-      currentLoggedInUser = null;
-      
-      const headerUserInfo = document.getElementById('header-user-info');
-      const mainNavTabs = document.getElementById('main-nav-tabs');
-      if (headerUserInfo) headerUserInfo.classList.add('hidden');
-      if (mainNavTabs) mainNavTabs.classList.add('hidden');
-
-      navigateTo('login');
     }
 
     // Employee Track Filter State for Admin/Executive
@@ -4826,7 +4888,7 @@
               </div>
               <span class="text-[10px] text-slate-400">정성 참고용 문항</span>
             </div>
-            <p class="text-xs font-bold text-white pt-1">Q${idx + 1}. (서술형) ${q.text}</p>
+            <p class="text-xs font-bold text-white pt-1">Q${idx + 1}. (서술형) ${escapeHtml(q.text)}</p>
             <p class="text-[11px] text-slate-400 italic">※ 이 문항에 대한 의견은 하단 [서술형 종합 피드백] 란에 함께 기재해 주세요.</p>
           `;
         } else {
@@ -4838,7 +4900,7 @@
               </div>
               <span class="text-[10px] text-slate-400">가중치 ${q.weight}%</span>
             </div>
-            <p class="text-xs font-bold text-white pt-0.5">Q${idx + 1}. ${q.text}</p>
+            <p class="text-xs font-bold text-white pt-0.5">Q${idx + 1}. ${escapeHtml(q.text)}</p>
             <div class="flex items-center gap-3 pt-1">
               ${[1, 2, 3, 4, 5].map(num => `
                 <label class="flex items-center gap-1.5 cursor-pointer bg-slate-950/40 px-2.5 py-1 rounded-lg border border-slate-800 hover:border-brandTeal transition">
@@ -4993,9 +5055,9 @@
             : `<button onclick="setUserActive(${u.id}, true)" class="bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white px-2 py-1 rounded text-[11px] font-bold transition flex items-center gap-1 border border-emerald-500/30"><i class="fa-solid fa-user-check"></i> 활성화</button>`;
 
         tr.innerHTML = `
-          <td class="py-2.5 px-3 font-bold text-white">${u.name}</td>
+          <td class="py-2.5 px-3 font-bold text-white">${escapeHtml(u.name)}</td>
           <td class="py-2.5 px-3"><span class="text-[10px] font-bold px-2 py-0.5 rounded ${u.company.includes('한양') ? 'bg-blue-500/20 text-blue-300' : 'bg-orange-500/20 text-orange-300'}">${u.company}</span></td>
-          <td class="py-2.5 px-3 font-mono text-teal-300">${u.email}</td>
+          <td class="py-2.5 px-3 font-mono text-teal-300">${escapeHtml(u.email)}</td>
           <td class="py-2.5 px-3">${u.dept} • ${u.workplace}</td>
           <td class="py-2.5 px-3 text-slate-400">${u.role}</td>
           <td class="py-2.5 px-3"><span class="bg-slate-800 text-slate-300 px-2 py-0.5 rounded font-bold">${u.type}</span></td>
@@ -5175,7 +5237,7 @@
     }
 
     function downloadCSVTemplate() {
-      const header = "성명,이메일,소속사,부서,근무지,직급,입사일자,사원구분,전화번호,시스템권한,임시비밀번호(선택)\n";
+      const header = "성명,이메일,소속사,부서,근무지,직급,입사일자,사원구분,전화번호,시스템권한\n";
       const sample = "홍길동,hong@hanyang.com,(주)한양고속,경리,본사,과장,2020-03-01,팀원급,010-1234-5678,일반사용자,\n";
       const content = "\uFEFF" + header + sample;
 
@@ -5212,8 +5274,8 @@
 
     function downloadImportResults(results) {
       const escape = value => `"${String(value ?? '').replace(/"/g, '""')}"`;
-      const lines = ['성명,이메일,처리결과,임시비밀번호,메시지', ...results.map(r =>
-        [r.name, r.email, r.status, r.temporary_password, r.message].map(escape).join(','))];
+      const lines = ['성명,이메일,처리결과,메시지', ...results.map(r =>
+        [r.name, r.email, r.status, r.message].map(escape).join(','))];
       const blob = new Blob(['\uFEFF' + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -5232,8 +5294,7 @@
           const users = rows.slice(1).map(cols => ({
             name: cols[0], email: (cols[1] || '').toLowerCase(), company: cols[2],
             dept: cols[3], workplace: cols[4], role: cols[5], joindate: cols[6],
-            type: cols[7], phone: cols[8], sys_role: cols[9] || '일반사용자',
-            temporary_password: cols[10] || ''
+            type: cols[7], phone: cols[8], sys_role: cols[9] || '일반사용자'
           }));
           if (!users.length) throw new Error('등록할 사용자 행이 없습니다.');
           const payload = await callUsersApi('POST', { users });
@@ -5330,8 +5391,6 @@
       document.getElementById('edit-cycle-start').value = cycle.start;
       document.getElementById('edit-cycle-end').value = cycle.end;
       document.getElementById('edit-cycle-deadline').value = cycle.deadline;
-      document.getElementById('edit-cycle-status').value = cycle.status;
-
       document.getElementById('modal-edit-cycle').classList.remove('hidden');
     }
 
@@ -5350,8 +5409,7 @@
         description: document.getElementById('edit-cycle-desc').value.trim(),
         start_date: document.getElementById('edit-cycle-start').value,
         end_date: document.getElementById('edit-cycle-end').value,
-        deadline: document.getElementById('edit-cycle-deadline').value,
-        status: document.getElementById('edit-cycle-status').value
+        deadline: document.getElementById('edit-cycle-deadline').value
       };
       try {
         await callAdminStateApi(payload);
@@ -5520,15 +5578,16 @@
       }
 
       filteredQuestions.forEach((q, idx) => {
-        const targetTrack = q.targetTrack || '기본 필수질문';
+        const targetTrack = normalizeQuestionTrack(q.targetTrack);
+        const targetTrackLabel = questionTrackLabel(targetTrack);
         const targetDept = q.targetDept || '전체';
 
         let trackBadgeStyle = "bg-slate-800 text-slate-300 border border-slate-700";
-        if (targetTrack.includes('본사')) trackBadgeStyle = "bg-blue-500/20 text-blue-300 border border-blue-500/30";
-        else if (targetTrack.includes('팀장')) trackBadgeStyle = "bg-amber-500/20 text-amber-300 border border-amber-500/30";
-        else if (targetTrack.includes('영업소')) trackBadgeStyle = "bg-orange-500/20 text-orange-300 border border-orange-500/30";
-        else if (targetTrack.includes('정비사')) trackBadgeStyle = "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
-        else if (targetTrack.includes('기본')) trackBadgeStyle = "bg-purple-500/20 text-purple-300 border border-purple-500/30";
+        if (targetTrack === 'headquarters_member') trackBadgeStyle = "bg-blue-500/20 text-blue-300 border border-blue-500/30";
+        else if (targetTrack === 'headquarters_leader') trackBadgeStyle = "bg-amber-500/20 text-amber-300 border border-amber-500/30";
+        else if (targetTrack === 'branch_employee') trackBadgeStyle = "bg-orange-500/20 text-orange-300 border border-orange-500/30";
+        else if (targetTrack === 'mechanic') trackBadgeStyle = "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
+        else trackBadgeStyle = "bg-purple-500/20 text-purple-300 border border-purple-500/30";
 
         const div = document.createElement('div');
         div.className = 'bg-slate-900/80 p-4 rounded-xl border border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 hover:border-slate-700 transition';
@@ -5536,13 +5595,13 @@
           <div class="space-y-1">
             <div class="flex flex-wrap items-center gap-1.5">
               <span class="bg-brandTeal/20 text-brandTeal text-[10px] font-bold px-2 py-0.5 rounded border border-brandTeal/30">${q.category}</span>
-              <span class="text-[10px] font-bold px-2 py-0.5 rounded ${trackBadgeStyle}">🎯 ${targetTrack}</span>
-              <span class="bg-cyan-500/20 text-cyan-300 text-[10px] font-bold px-2 py-0.5 rounded border border-cyan-500/30">🏢 ${targetDept === '전체' ? '전체 부서 공통' : targetDept + '부'}</span>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded ${trackBadgeStyle}">🎯 ${escapeHtml(targetTrackLabel)}</span>
+              <span class="bg-cyan-500/20 text-cyan-300 text-[10px] font-bold px-2 py-0.5 rounded border border-cyan-500/30">🏢 ${escapeHtml(targetDept === '전체' ? '전체 부서 공통' : targetDept)}</span>
               <span class="bg-slate-800 text-slate-300 text-[10px] font-bold px-2 py-0.5 rounded">${q.type}</span>
               ${q.required ? '<span class="bg-rose-500/20 text-rose-300 text-[10px] font-bold px-1.5 py-0.5 rounded">필수</span>' : ''}
               ${q.is_default ? '<span class="bg-amber-500/20 text-amber-300 text-[10px] font-bold px-1.5 py-0.5 rounded">기본질문</span>' : ''}
             </div>
-            <h4 class="text-xs font-bold text-white pt-0.5">Q${idx + 1}. ${q.text}</h4>
+            <h4 class="text-xs font-bold text-white pt-0.5">Q${idx + 1}. ${escapeHtml(q.text)}</h4>
             <p class="text-[10px] text-slate-400">가중치 반영: <strong class="text-brandGold">${q.weight}%</strong> | 척도: <strong class="text-slate-200">${q.max_score || 5}점 만점</strong></p>
           </div>
 
@@ -5565,8 +5624,9 @@
       const questionSelect = document.getElementById('question-cycle-select');
       const cycleId = questionSelect ? parseInt(questionSelect.value) : 1;
       const category = document.getElementById('q-category-in').value;
-      const targetTrack = document.getElementById('q-track-in').value;
+      const targetTrack = normalizeQuestionTrack(document.getElementById('q-track-in').value);
       const targetDept = document.getElementById('q-dept-in').value;
+      const audience = document.getElementById('q-audience-in').value;
       const type = document.getElementById('q-type-in').value;
       const weight = parseFloat(document.getElementById('q-weight-in').value) || 0;
       const text = document.getElementById('q-text-in').value.trim();
@@ -5576,7 +5636,7 @@
       try {
         await callAdminStateApi({
           action: 'question_create', cycle_id: cycleId, category, target_track: targetTrack,
-          target_dept: targetDept, type, weight, max_score: 5, text, required, is_default
+          target_dept: targetDept, audience, type, weight, max_score: 5, text, required, is_default
         });
         announceCentralChange();
         await loadFromServer();
@@ -5876,7 +5936,7 @@
           }
         }
         if (adminNavTab) {
-          if (roleInfo.isPrivileged) {
+          if (roleInfo.isAdmin) {
             adminNavTab.classList.remove('hidden');
           } else {
             adminNavTab.classList.add('hidden');
@@ -6023,6 +6083,8 @@
       }
       const selectedCycle = cyclesDb.find(cycle => Number(cycle.id) === Number(currentSelectedSummaryCycleId));
       isResultPublished = selectedCycle?.results_published === true;
+      updatePublishControlVisibility(selectedCycle);
+      renderInternalApprovalControls();
 
       const tbody = document.getElementById('admin-table-body');
       if (!tbody) return;
@@ -6203,15 +6265,28 @@
       document.getElementById('modal-detail-evaluation').classList.add('hidden');
     }
 
-    function openScoreAdjustmentModal(emp, empScoreData) {
+    function openScoreAdjustmentModal(emp, empScoreData, mode = 'admin') {
       if (!emp || !empScoreData?.complete) {
         alert('모든 배정 평가가 완료된 피평가자만 점수를 조정할 수 있습니다.');
         return;
       }
+      if (mode === 'executive' && empScoreData.workflow_status !== 'first_stage_adjusted') {
+        alert('임원 2차 조정은 인사담당자의 1차 조정이 완료된 건에만 가능합니다.');
+        return;
+      }
       selectedAdjustId = emp.id;
+      selectedAdjustmentMode = mode;
       const curScore = empScoreData.final;
       document.getElementById('adjust-emp-name').innerText = `${emp.name} ${emp.role} (선택된 주기 점수: ${curScore}점)`;
       document.getElementById('adjust-score-input').value = curScore;
+      document.getElementById('adjust-reason-input').value = '';
+      const isExecutiveReview = mode === 'executive';
+      document.getElementById('adjust-modal-title').innerText = isExecutiveReview
+        ? '⚖️ 2차 점수 조정/확정 (임원)'
+        : '⚙️ 1차 점수 조정 (관리자)';
+      document.getElementById('adjust-save-button').innerText = isExecutiveReview
+        ? '2차 조정/확정 저장'
+        : '조정 점수 저장';
       document.getElementById('modal-score-adjustment').classList.remove('hidden');
       setTimeout(() => {
         const input = document.getElementById('adjust-score-input');
@@ -6251,7 +6326,8 @@
       const emp = usersDb.find(e => String(e.id) === String(selectedAdjustId));
       try {
         await callResultStateApi('POST', {
-          action: 'adjust', cycle_id: Number(currentSelectedSummaryCycleId),
+          action: selectedAdjustmentMode === 'executive' ? 'approve_adjustment' : 'adjust',
+          cycle_id: Number(currentSelectedSummaryCycleId),
           target_id: Number(selectedAdjustId), final_score: val, reason
         });
         document.getElementById('modal-score-adjustment').classList.add('hidden');
@@ -6259,7 +6335,8 @@
         announceCentralChange();
         await loadCentralState();
         renderAdminSummaryTable();
-        alert(`[${emp ? emp.name : '피평가자'}] 조정이 서버에 기록되었습니다.`);
+        const label = selectedAdjustmentMode === 'executive' ? '2차 조정/확정' : '1차 조정';
+        alert(`[${emp ? emp.name : '피평가자'}] ${label}이 서버에 기록되었습니다.`);
       } catch (error) {
         alert(`점수 조정 저장 실패: ${error.message}`);
       }
@@ -6316,22 +6393,78 @@
       }
     }
 
+    function updatePublishControlVisibility(selectedCycle = null) {
+      const button = document.getElementById('admin-publish-toggle-btn');
+      const label = document.getElementById('admin-publish-status-text');
+      if (!button || !label) return;
+      const isExecutive = checkUserRole(currentLoggedInUser).isExecutive;
+      button.classList.toggle('hidden', !isExecutive);
+      if (!isExecutive) return;
+      const cycle = selectedCycle || cyclesDb.find(row => Number(row.id) === Number(currentSelectedSummaryCycleId));
+      const canPublish = isResultPublished || (
+        cycle?.status === '마감/보관됨'
+        && cycle?.internal_approval_status === 'approved'
+        && cycle?.result_gate_open === true
+      );
+      button.disabled = !canPublish;
+      button.classList.toggle('cursor-not-allowed', !canPublish);
+      button.classList.toggle('opacity-50', !canPublish);
+      if (!canPublish) label.innerText = '🔒 전자결재 승인·결과 게이트 대기';
+    }
+
+    function renderInternalApprovalControls() {
+      const el = document.getElementById('internal-approval-controls');
+      const cycle = cyclesDb.find(row => Number(row.id) === Number(currentSelectedSummaryCycleId));
+      if (!el || !cycle) return;
+      const role = currentLoggedInUser?.sys_role;
+      const status = cycle.internal_approval_status || 'not_requested';
+      const label = { not_requested: '전자결재 미요청', requested: '전자결재 요청됨', approved: '전자결재 승인됨', rejected: '전자결재 반려됨' }[status] || status;
+      let actions = '';
+      if (role === '관리자' && status !== 'approved') actions = '<button onclick="requestInternalApproval()" class="px-2 py-1 rounded bg-amber-600 text-white">전자결재 요청</button>';
+      if (role === '임원' && status === 'requested') actions = '<button onclick="decideInternalApproval(true)" class="px-2 py-1 rounded bg-emerald-600 text-white">승인</button><button onclick="decideInternalApproval(false)" class="px-2 py-1 rounded bg-rose-700 text-white">반려</button>';
+      el.innerHTML = `<span>${label}${cycle.result_gate_open ? ' · 결과 게이트 열림' : ''}</span>${actions}`;
+    }
+    async function requestInternalApproval() {
+      await callResultStateApi('POST', { action: 'request_internal_approval', cycle_id: Number(currentSelectedSummaryCycleId) });
+      await loadCentralState();
+      renderInternalApprovalControls();
+    }
+    async function decideInternalApproval(approved) {
+      await callResultStateApi('POST', { action: 'decide_internal_approval', cycle_id: Number(currentSelectedSummaryCycleId), approved });
+      await loadCentralState();
+      renderInternalApprovalControls();
+    }
+
     function downloadCSVReport() {
-      const csvHeader = "이름,이메일,부서,근무지,직급,구분,최종점수,평가등급,조정여부,원점수,평가횟수,성과,협업,성장,조화\n";
+      const gradeStatusHeader = "이름,이메일,부서,근무지,직급,구분,최종점수,평가등급,등급상태,조정여부,원점수,평가횟수,평가영역1,영역1점수,평가영역2,영역2점수,평가영역3,영역3점수,평가영역4,영역4점수\n";
       const scores = cycleScoresDb[currentSelectedSummaryCycleId] || {};
+      const finalized = finalResultsByCycle[currentSelectedSummaryCycleId] || {};
       const escapeCsv = value => `"${String(value ?? '').replace(/"/g, '""')}"`;
-      const csvRows = usersDb.filter(user => scores[user.id]).map(user => {
-        const score = scores[user.id];
-        return [
+      const csvRows = usersDb.filter(user => scores[user.id] || finalized[user.id]).map(user => {
+        const score = scores[user.id] || {};
+        const finalResult = finalized[user.id] || null;
+        const categoryLabels = Array.isArray(finalResult?.category_labels)
+          ? finalResult.category_labels
+          : (Array.isArray(score.category_labels) ? score.category_labels : ['성과', '협업', '성장', '조화']);
+        const categoryScores = finalResult?.category_scores && typeof finalResult.category_scores === 'object'
+          ? ['performance', 'collaboration', 'growth', 'harmony'].map(key => finalResult.category_scores[key])
+          : (finalResult ? ['', '', '', ''] : [score.performance, score.collaboration, score.growth, score.harmony]);
+        const values = [
           user.name,user.email,user.dept,user.workplace,user.role,user.type,
-          Number(score.final).toFixed(1),score.grade || '',score.is_adjusted ? '조정됨' : '미조정',
-          Number(score.raw).toFixed(1),score.completed,
-          Number(score.performance).toFixed(1),Number(score.collaboration).toFixed(1),
-          Number(score.growth).toFixed(1),Number(score.harmony).toFixed(1)
-        ].map(escapeCsv).join(',');
+          Number(finalResult?.effective_score ?? score.final ?? 0).toFixed(1),
+          finalResult?.relative_grade || score.grade || '',
+          finalResult ? '최종' : (score.grade_status === 'provisional' ? '예상' : ''),
+          score.is_adjusted ? '조정됨' : '미조정',
+          Number(finalResult?.raw_score ?? score.raw ?? 0).toFixed(1), score.completed || '',
+          categoryLabels[0] || '', categoryScores[0] === '' ? '' : Number(categoryScores[0] || 0).toFixed(1),
+          categoryLabels[1] || '', categoryScores[1] === '' ? '' : Number(categoryScores[1] || 0).toFixed(1),
+          categoryLabels[2] || '', categoryScores[2] === '' ? '' : Number(categoryScores[2] || 0).toFixed(1),
+          categoryLabels[3] || '', categoryScores[3] === '' ? '' : Number(categoryScores[3] || 0).toFixed(1)
+        ];
+        return values.map(escapeCsv).join(',');
       }).join("\n");
 
-      const csvContent = "\uFEFF" + csvHeader + csvRows;
+      const csvContent = "\uFEFF" + gradeStatusHeader + csvRows;
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
