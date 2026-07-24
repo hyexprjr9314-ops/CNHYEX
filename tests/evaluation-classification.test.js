@@ -1,0 +1,22 @@
+import test from 'node:test'; import assert from 'node:assert/strict';
+import { isLeader, normalizeTrack, normalizedCategory, relationshipType, targetTrack, TRACKS, TRACK_CATEGORIES } from '../api/evaluation-classification.js';
+test('classification covers tracks and relationship precedence', () => {
+  assert.equal(targetTrack({ dept: '정비팀' }), TRACKS.mechanic);
+  assert.equal(targetTrack({ workplace: '부산영업소' }), TRACKS.branch_employee);
+  assert.equal(targetTrack({ role: '부장' }), TRACKS.headquarters_leader);
+  assert.equal(targetTrack({ role: '대리' }), TRACKS.headquarters_member);
+  assert.equal(targetTrack({ role: '과장' }), TRACKS.headquarters_member);
+  assert.equal(targetTrack({ workplace: '영업소', role: '소장' }), TRACKS.headquarters_leader);
+  assert.equal(targetTrack({ dept: '정비부', role: '팀장' }), TRACKS.headquarters_leader);
+  assert.equal(isLeader({ type: '부서실장급' }), true);
+  assert.equal(isLeader({ type: '임원급' }), true);
+  assert.equal(isLeader({ role: '대리' }), false);
+  assert.equal(relationshipType({ role: '부장', dept: '인사' }, { role: '부장', dept: '영업' }), 'exchange');
+  assert.equal(relationshipType({}, { role: '부장', dept: '인사' }), 'leadership');
+  assert.equal(normalizedCategory('소통 / 협력'), '소통 협력');
+  assert.equal(normalizeTrack('기본 필수질문'), 'all');
+  assert.equal(normalizeTrack('팀장·부서장급'), TRACKS.headquarters_leader);
+  assert.equal(normalizeTrack('영업소 직원'), TRACKS.branch_employee);
+  assert.equal(normalizeTrack('unrecognized'), 'all');
+  assert.deepEqual(TRACK_CATEGORIES.mechanic, ['역량 개발', '정비 능력', '책임/주인의식', '안전의식']);
+});

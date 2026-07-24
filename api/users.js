@@ -1,11 +1,33 @@
 import crypto from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
+import { ROLES } from './role-policy.js';
+import { canonicalPasswordResetRedirect } from './mail-delivery.js';
+import { isMutableDraftCycle } from './questions.js';
 
 const REQUIRED = ['name', 'email', 'company', 'dept', 'workplace', 'role', 'type', 'sys_role'];
 const ALLOWED_TYPES = new Set(['팀원급', '팀장급', '부서실장급', '임원급']);
 const ALLOWED_ROLES = new Set(['일반사용자', '관리자', '임원']);
 const ALLOWED_COMPANIES = new Set(['(주)한양고속', '(주)충남고속']);
 const SUPER_ADMIN_EMAIL = 'admin@cnhyex.com';
+const CLASSIFICATION_FIELDS = Object.freeze(['company', 'dept', 'workplace', 'role', 'type']);
+
+function isClosedHistoricalCycle(cycle = {}) {
+  return ['마감/보관됨', 'closed', 'archived'].includes(String(cycle.status || '').trim());
+}
+
+export function hasClassificationChange(existing = {}, next = {}) {
+  return CLASSIFICATION_FIELDS.some(field => String(existing[field] ?? '').trim() !== String(next[field] ?? '').trim());
+}
+
+export async function assertPersonnelClassificationMutable(service, existing, next) {
+  if (!hasClassificationChange(existing, next)) return;
+  const cycles = await service.from('evaluation_cycles').select('id,status,internal_approval_status');
+  if (cycles.error) throw cycles.error;
+  const locked = (cycles.data || []).some(cycle => !isMutableDraftCycle(cycle) && !isClosedHistoricalCycle(cycle));
+  if (locked) {
+    throw Object.assign(new Error('진행 중이거나 승인 절차 중인 평가 주기가 있어 소속·부서·근무지·직급·사원구분은 바꿀 수 없습니다.'), { status: 409 });
+  }
+}
 function normalizeCompany(value) {
   const normalized = String(value || '')
     .normalize('NFKC')
@@ -33,8 +55,7 @@ function normalize(row) {
     joindate: row.joindate ? String(row.joindate).trim() : null,
     type: String(row.type || '').trim(),
     phone: String(row.phone || '010-0000-0000').trim(),
-    sys_role: String(row.sys_role || '일반사용자').trim(),
-    temporary_password: String(row.temporary_password || '').trim()
+    sys_role: String(row.sys_role || '일반사용자').trim()
   };
 }
 
@@ -45,7 +66,6 @@ function validate(row) {
   if (!ALLOWED_TYPES.has(row.type)) return `허용되지 않은 사원구분: ${row.type}`;
   if (!ALLOWED_ROLES.has(row.sys_role)) return `허용되지 않은 시스템권한: ${row.sys_role}`;
   if (!ALLOWED_COMPANIES.has(row.company)) return `허용되지 않은 소속사: ${row.company}`;
-  if (row.temporary_password && row.temporary_password.length < 8) return '임시비밀번호는 8자 이상이어야 합니다';
   return null;
 }
 
@@ -56,7 +76,7 @@ async function authorize(req, service) {
   if (error || !data.user) throw new Error('유효하지 않은 로그인입니다.');
   const { data: profile, error: profileError } = await service
     .from('users').select('id,sys_role,active').eq('auth_user_id', data.user.id).maybeSingle();
-  if (profileError || !profile || profile.active !== true || !['관리자', '임원'].includes(profile.sys_role)) {
+  if (profileError || !profile || profile.active !== true || profile.sys_role !== ROLES.admin) {
     throw new Error('관리자 권한이 필요합니다.');
   }
   return { authUser: data.user, profile };
@@ -90,8 +110,11 @@ export default async function handler(req, res) {
       const row = normalize(req.body || {});
       const invalid = validate(row);
       if (!id || invalid) return send(res, 400, { error: invalid || '사용자 ID가 필요합니다.' });
-      const { temporary_password, ...profile } = row;
-      const { data: existing } = await service.from('users').select('auth_user_id,email').eq('id', id).single();
+      const profile = row;
+      const { data: existing, error: existingError } = await service.from('users')
+        .select('auth_user_id,email,company,dept,workplace,role,type').eq('id', id).single();
+      if (existingError) throw existingError;
+      await assertPersonnelClassificationMutable(service, existing, profile);
       const isSuperAdmin = existing?.email?.toLowerCase() === SUPER_ADMIN_EMAIL;
       if (isSuperAdmin) {
         profile.email = SUPER_ADMIN_EMAIL;
@@ -99,9 +122,9 @@ export default async function handler(req, res) {
         profile.active = true;
       }
       if (existing?.auth_user_id) {
-        const attrs = { email: isSuperAdmin ? SUPER_ADMIN_EMAIL : row.email };
-        if (temporary_password) attrs.password = temporary_password;
-        const { error: authError } = await service.auth.admin.updateUserById(existing.auth_user_id, attrs);
+        const { error: authError } = await service.auth.admin.updateUserById(existing.auth_user_id, {
+          email: isSuperAdmin ? SUPER_ADMIN_EMAIL : row.email
+        });
         if (authError) throw authError;
       }
       const { data, error } = await service.from('users').update({ ...profile, updated_at: new Date().toISOString() }).eq('id', id).select().single();
@@ -140,9 +163,7 @@ export default async function handler(req, res) {
         return send(res, 400, { error: '실제로 수신할 수 있는 이메일 주소가 필요합니다.' });
       }
 
-      const productionHost = process.env.VERCEL_PROJECT_PRODUCTION_URL || req.headers.host;
-      const redirectTo = process.env.PASSWORD_RESET_REDIRECT_URL
-        || `https://${productionHost}/?password_recovery=1`;
+      const redirectTo = canonicalPasswordResetRedirect(process.env.PASSWORD_RESET_REDIRECT_URL);
       const requestedAt = new Date().toISOString();
       const { error: resetError } = await service.auth.resetPasswordForEmail(target.email, { redirectTo });
       const audit = await service.from('password_reset_email_audit').insert({
@@ -171,30 +192,30 @@ export default async function handler(req, res) {
       if (invalid) { results.push({ email: row.email, status: 'failed', message: invalid }); continue; }
       try {
         let authUser = await findAuthUser(service, row.email);
-        let generatedPassword = '';
         if (!authUser) {
-          generatedPassword = row.temporary_password || `${crypto.randomBytes(12).toString('base64url')}Aa1!`;
+          const generatedPassword = `${crypto.randomBytes(12).toString('base64url')}Aa1!`;
           const created = await service.auth.admin.createUser({
             email: row.email, password: generatedPassword, email_confirm: true,
             user_metadata: { name: row.name }
           });
           if (created.error) throw created.error;
           authUser = created.data.user;
-        } else if (row.temporary_password) {
-          const updated = await service.auth.admin.updateUserById(authUser.id, { password: row.temporary_password });
-          if (updated.error) throw updated.error;
-          generatedPassword = row.temporary_password;
         }
-        const { temporary_password, ...profile } = row;
-        const { data: existing, error: findError } = await service.from('users').select('id').eq('email', row.email).maybeSingle();
+        const profile = row;
+        const { data: existing, error: findError } = await service.from('users')
+          .select('id,company,dept,workplace,role,type').eq('email', row.email).maybeSingle();
         if (findError) throw findError;
+        // CSV upsert must obey the same lifecycle classification guard as the
+        // single-profile editor. New profiles are allowed; only a change to an
+        // existing person's evaluation classification is blocked.
+        if (existing) await assertPersonnelClassificationMutable(service, existing, row);
         if (row.email === SUPER_ADMIN_EMAIL) profile.sys_role = '관리자';
         const payload = { ...profile, auth_user_id: authUser.id, active: true, updated_at: new Date().toISOString() };
         const write = existing
           ? await service.from('users').update(payload).eq('id', existing.id)
           : await service.from('users').insert(payload);
         if (write.error) throw write.error;
-        results.push({ email: row.email, name: row.name, status: 'success', temporary_password: generatedPassword, message: existing ? 'updated' : 'created' });
+        results.push({ email: row.email, name: row.name, status: 'success', message: existing ? 'updated' : 'created' });
       } catch (error) {
         results.push({ email: row.email, name: row.name, status: 'failed', message: error.message });
       }
