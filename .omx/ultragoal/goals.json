@@ -1,7 +1,7 @@
 {
   "version": 1,
   "createdAt": "2026-07-24T08:31:34.637Z",
-  "updatedAt": "2026-07-24T09:11:08.998Z",
+  "updatedAt": "2026-07-24T14:47:44.164Z",
   "briefPath": ".omx/ultragoal/brief.md",
   "goalsPath": ".omx/ultragoal/goals.json",
   "ledgerPath": ".omx/ultragoal/ledger.jsonl",
@@ -88,6 +88,16 @@
       "createdAt": "2026-07-24T08:31:34.637Z",
       "updatedAt": "2026-07-24T09:11:08.998Z",
       "startedAt": "2026-07-24T09:11:08.998Z"
+    },
+    {
+      "id": "G008",
+      "title": "최고관리자 사후 평가주기 완전삭제",
+      "objective": "최고관리자만 강제 종료·취소·마감된 평가주기를 명시적 확인과 사유 입력 후 완전삭제할 수 있게 하고, 삭제 전 감사기록을 보존하며 일반 관리자·임원은 접근할 수 없도록 한다.",
+      "status": "pending",
+      "attempt": 0,
+      "createdAt": "2026-07-24T14:47:44.164Z",
+      "updatedAt": "2026-07-24T14:47:44.164Z",
+      "evidence": "사용자 요청: 최고관리자만큼은 완전삭제 기능이 필요함"
     }
   ],
   "codexObjective": "Complete the durable ultragoal plan in .omx/ultragoal/goals.json, including later accepted/appended stories, under the original brief constraints; use .omx/ultragoal/ledger.jsonl as the audit trail.",

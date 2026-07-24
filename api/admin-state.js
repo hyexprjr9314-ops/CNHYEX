@@ -9,7 +9,7 @@ const SUPER_ADMIN_EMAIL = 'admin@cnhyex.com';
 const ADMIN_ONLY = new Set([
   'cycle_create', 'cycle_update', 'cycle_delete', 'cycle_validate', 'cycle_activate', 'question_create', 'question_update',
   'question_delete', 'matching_toggle', 'matching_replace', 'matching_generate', 'permission_update', 'permission_bulk_update', 'settings_update',
-  'goal_status', 'cycle_close', 'cycle_pause', 'cycle_resume', 'cycle_force_close', 'cycle_cancel'
+  'goal_status', 'cycle_close', 'cycle_pause', 'cycle_resume', 'cycle_force_close', 'cycle_cancel', 'cycle_hard_delete'
 ]);
 const EXECUTIVE_ALLOWED = new Set();
 const send = (res, status, payload) => res.status(status).json(payload);
@@ -514,13 +514,14 @@ export default async function handler(req, res) {
     } else if (action === 'cycle_activate') {
       result = await service.rpc('activate_evaluation_cycle', { p_cycle_id: Number(req.body.cycle_id) });
       if (result.error) throw Object.assign(new Error(result.error.message), { status: 409 });
-    } else if (['cycle_pause', 'cycle_resume', 'cycle_force_close', 'cycle_cancel'].includes(action)) {
-      if (['cycle_force_close', 'cycle_cancel'].includes(action)) assertSuperAdmin(authUser);
+    } else if (['cycle_pause', 'cycle_resume', 'cycle_force_close', 'cycle_cancel', 'cycle_hard_delete'].includes(action)) {
+      if (['cycle_force_close', 'cycle_cancel', 'cycle_hard_delete'].includes(action)) assertSuperAdmin(authUser);
       const rpcNames = {
         cycle_pause: 'governance_pause_cycle',
         cycle_resume: 'governance_resume_cycle',
         cycle_force_close: 'governance_force_close_cycle',
-        cycle_cancel: 'governance_cancel_cycle'
+        cycle_cancel: 'governance_cancel_cycle',
+        cycle_hard_delete: 'governance_hard_delete_cycle'
       };
       const accessToken = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
       const args = {
@@ -529,6 +530,7 @@ export default async function handler(req, res) {
         p_actor_id: authUser.id
       };
       if (action === 'cycle_cancel') args.p_hard_delete = req.body.hard_delete === true;
+      if (action === 'cycle_hard_delete') args.p_confirmation = String(req.body.confirmation || '');
       result = await authenticatedRpcClient(accessToken).rpc(rpcNames[action], args);
       if (result.error) throw Object.assign(new Error(result.error.message), { status: 409 });
     } else if (action === 'cycle_delete') {

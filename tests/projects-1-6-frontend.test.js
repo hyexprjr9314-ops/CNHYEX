@@ -43,8 +43,8 @@ test('cycle cards expose bounded pause and super-admin emergency actions', async
     assert.match(index, new RegExp(action));
   }
   assert.match(index, /isAdmin && String\(user\.email \|\| ''\)\.toLowerCase\(\) === 'admin@cnhyex\.com'/);
-  assert.match(index, /runEmergencyCycleAction\(\$\{c\.id\}, 'cycle_cancel', true\)/);
-  assert.match(index, /hard_delete: hardDelete/);
+  assert.match(index, /runEmergencyCycleAction\(\$\{c\.id\}, 'cycle_hard_delete'\)/);
+  assert.match(index, /confirmation/);
   assert.match(index, /status: cycle\.status/);
   assert.doesNotMatch(index, /status: cycle\.status === '진행중' \? '진행 중'/);
   assert.match(index, /확인을 위해/);
