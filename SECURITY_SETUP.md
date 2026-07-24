@@ -14,6 +14,7 @@ Required Vercel environment variables:
 
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY` (server-only; never prefix with `NEXT_PUBLIC_` or expose it in HTML)
+- `SUPABASE_PUBLISHABLE_KEY` or `SUPABASE_ANON_KEY` (public project key used by server functions when an authenticated governance RPC must preserve the caller's JWT)
 - `PASSWORD_RESET_REDIRECT_URL` (optional)
 - `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` (required for final-grade notices; never expose these values in the browser)
 
