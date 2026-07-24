@@ -4048,8 +4048,9 @@
         return;
       }
       try {
-        await callAdminStateApi({ action: 'matching_mode_update', cycle_id: cycleId, enabled: nextValue, reason });
-        isAutoMatchingEnabled = nextValue;
+        const response = await callAdminStateApi({ action: 'matching_mode_update', cycle_id: cycleId, enabled: nextValue, reason });
+        cycle.auto_matching_enabled = response.data?.auto_matching_enabled !== false;
+        isAutoMatchingEnabled = cycle.auto_matching_enabled;
         announceCentralChange();
         await loadCentralState();
         renderManualMatchingTable();
