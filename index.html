@@ -237,6 +237,22 @@
       font-size: 0.9375rem;
       line-height: 1.5;
     }
+    .app-shell {
+      width: min(100%, 1840px);
+      margin-inline: auto;
+    }
+    button,
+    [role="button"] {
+      white-space: nowrap;
+    }
+    table th,
+    table td {
+      white-space: nowrap;
+    }
+    table td[data-wrap="true"],
+    table th[data-wrap="true"] {
+      white-space: normal;
+    }
     [class~="text-[8px]"],
     [class~="text-[9px]"],
     [class~="text-[10px]"],
@@ -287,6 +303,10 @@
     @media (max-width: 767px) {
       #font-scale-control {
         display: none;
+      }
+      table th,
+      table td {
+        white-space: normal;
       }
     }
 
@@ -651,7 +671,7 @@
   </header>
 
   <!-- Main Container -->
-  <main id="main-content" tabindex="-1" class="flex-grow flex flex-col p-4 md:p-8 max-w-[1600px] w-full mx-auto space-y-6">
+  <main id="main-content" tabindex="-1" class="app-shell flex-grow flex flex-col p-3 sm:p-4 xl:px-5 xl:py-8 space-y-6">
 
     <!-- Top Navigation Tabs -->
     <nav class="flex items-center gap-2 border-b border-slate-800 pb-3 overflow-x-auto text-sm font-bold hidden" id="main-nav-tabs">
