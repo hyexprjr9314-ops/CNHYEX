@@ -3172,9 +3172,9 @@
         if (assignedResult.error) throw assignedResult.error;
         if (peopleResult?.error) throw peopleResult.error;
         evaluationTargetsDb = (assignedResult.data || []).map(target => ({
-          id: target.target_id,
-          matchingId: target.matching_id,
-          cycleId: target.cycle_id,
+          id: Number(target.target_id),
+          matchingId: Number(target.matching_id),
+          cycleId: Number(target.cycle_id),
           name: target.name,
           dept: target.dept,
           workplace: target.workplace,
@@ -3188,13 +3188,13 @@
         }));
         usersDb = roleInfo.isPrivileged
           ? (peopleResult?.data || []).map(u => ({
-              ...u, sysRole: u.sys_role, completed: 0, total: 0
+              ...u, id: Number(u.id), sysRole: u.sys_role, completed: 0, total: 0
             }))
           : evaluationTargetsDb;
         customManualMatchingsDb = evaluationTargetsDb.map(target => ({
           id: target.matchingId,
           cycleId: target.cycleId,
-          evaluatorId: currentLoggedInUser.id,
+          evaluatorId: Number(currentLoggedInUser.id),
           targetId: target.id,
           type: '서버 배정'
         }));
@@ -3958,7 +3958,7 @@
 
     function getServerMatchingTargetIds(evaluatorId = selectedEvaluatorForMatching, cycleId = getSelectedMatchingCycleId()) {
       return customManualMatchingsDb
-        .filter(m => m.evaluatorId === evaluatorId && Number(m.cycleId) === Number(cycleId))
+        .filter(m => Number(m.evaluatorId) === Number(evaluatorId) && Number(m.cycleId) === Number(cycleId))
         .map(m => Number(m.targetId));
     }
 
@@ -3976,7 +3976,7 @@
       const cycleId = getSelectedMatchingCycleId();
       if (
         stagedMatchingTargetIds === null ||
-        stagedMatchingEvaluatorId !== selectedEvaluatorForMatching ||
+        Number(stagedMatchingEvaluatorId) !== Number(selectedEvaluatorForMatching) ||
         Number(stagedMatchingCycleId) !== Number(cycleId)
       ) {
         stagedMatchingEvaluatorId = selectedEvaluatorForMatching;
@@ -4391,7 +4391,8 @@
     async function saveStagedMatchingChanges() {
       if (!selectedEvaluatorForMatching || !hasStagedMatchingChanges() || isAutoMatchingEnabled) return;
       const cycleId = getSelectedMatchingCycleId();
-      const targetIds = [...ensureStagedMatchingState()];
+      const evaluatorId = Number(selectedEvaluatorForMatching);
+      const targetIds = [...ensureStagedMatchingState()].map(Number).sort((a, b) => a - b);
       const cycle = cyclesDb.find(row => Number(row.id) === Number(cycleId));
       const reason = cycle?.status === '일시정지'
         ? String(prompt('일시정지 중 매칭 변경 사유를 5자 이상 입력해 주세요.') || '').trim()
@@ -4409,13 +4410,21 @@
         const payload = await callAdminStateApi({
           action: 'matching_replace',
           cycle_id: cycleId,
-          evaluator_id: selectedEvaluatorForMatching,
+          evaluator_id: evaluatorId,
           target_ids: targetIds,
           reason
         });
         announceCentralChange();
-        resetStagedMatchingState();
         await loadCentralState();
+        const expectedIds = [...new Set([
+          ...targetIds,
+          ...(payload.data?.protected_target_ids || []).map(Number)
+        ])].sort((a, b) => a - b);
+        const savedIds = getServerMatchingTargetIds(evaluatorId, cycleId).sort((a, b) => a - b);
+        if (expectedIds.length !== savedIds.length || expectedIds.some((id, index) => id !== savedIds[index])) {
+          throw new Error('서버 저장 결과를 확인하지 못했습니다. 변경사항은 화면에 유지됩니다.');
+        }
+        resetStagedMatchingState();
         renderManualMatchingTable();
         renderEmployeeGrid();
         if (payload.data?.protected_target_ids?.length) {
@@ -4539,7 +4548,10 @@
     async function callUsersApi(method, body) {
       if (!supabaseClient) throw new Error('Supabase 연결이 없습니다.');
       const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
-      if (sessionError || !sessionData.session) throw new Error('로그인이 필요합니다.');
+      if (sessionError || !sessionData.session) {
+        await handleLogout();
+        throw new Error('로그인이 만료되었습니다. 다시 로그인해 주세요.');
+      }
       const response = await fetch('/api/users', {
         method,
         headers: {
@@ -4549,6 +4561,10 @@
         body: body === undefined ? undefined : JSON.stringify(body)
       });
       const payload = await response.json().catch(() => ({}));
+      if (response.status === 401) {
+        await handleLogout();
+        throw new Error('로그인이 만료되었습니다. 다시 로그인해 주세요.');
+      }
       if (!response.ok) throw new Error(payload.error || '사용자 처리 요청에 실패했습니다.');
       if (method !== 'GET') announceCentralChange();
       return payload;
@@ -4562,7 +4578,10 @@
     async function callAdminStateApi(body, method = 'POST') {
       if (!supabaseClient) throw new Error('Supabase 연결이 없습니다.');
       const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
-      if (sessionError || !sessionData.session) throw new Error('로그인이 필요합니다.');
+      if (sessionError || !sessionData.session) {
+        await handleLogout();
+        throw new Error('로그인이 만료되었습니다. 다시 로그인해 주세요.');
+      }
       const response = await fetch('/api/admin-state', {
         method,
         cache: method === 'GET' ? 'no-store' : 'default',
@@ -4573,6 +4592,10 @@
         body: method === 'GET' ? undefined : JSON.stringify(body || {})
       });
       const payload = await response.json().catch(() => ({}));
+      if (response.status === 401) {
+        await handleLogout();
+        throw new Error('로그인이 만료되었습니다. 다시 로그인해 주세요.');
+      }
       if (!response.ok) throw new Error(payload.error || '중앙 서버 상태 처리에 실패했습니다.');
       return payload;
     }
@@ -4596,8 +4619,8 @@
       }
       if (Array.isArray(payload.matchings)) {
         customManualMatchingsDb = payload.matchings.map(row => ({
-          id: row.id, cycleId: row.cycle_id, evaluatorId: row.evaluator_id,
-          targetId: row.target_id, type: row.type
+          id: Number(row.id), cycleId: Number(row.cycle_id), evaluatorId: Number(row.evaluator_id),
+          targetId: Number(row.target_id), type: row.type
         }));
       }
       submittedMatchingIds = new Set((payload.submitted_matching_ids || []).map(Number));
@@ -4919,7 +4942,7 @@
 
     async function refreshAdminUsers() {
       const payload = await callUsersApi('GET');
-      usersDb = (payload.users || []).map(u => ({ ...u, sysRole: u.sys_role, completed: 0, total: 0 }));
+      usersDb = (payload.users || []).map(u => ({ ...u, id: Number(u.id), sysRole: u.sys_role, completed: 0, total: 0 }));
       renderUsersTable();
       renderEmployeeGrid();
       renderAdminSummaryTable();

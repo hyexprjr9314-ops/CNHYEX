@@ -34,3 +34,13 @@ test('question editor emits canonical tracks and resolves leaders before job-are
   assert.ok(resolver.indexOf('QUESTION_TRACKS.headquarters_leader') < resolver.indexOf('QUESTION_TRACKS.mechanic'));
   assert.match(index, /function normalizeQuestionTrack\(track\)/);
 });
+
+test('manual matching keeps staged cards until the server confirms normalized ids', async () => {
+  const index = await readFile(indexUrl, 'utf8');
+  const saveFlow = index.match(/async function saveStagedMatchingChanges\(\) \{[\s\S]*?\n    \}/)?.[0] ?? '';
+
+  assert.match(index, /\.filter\(m => Number\(m\.evaluatorId\) === Number\(evaluatorId\)/);
+  assert.match(index, /evaluatorId: Number\(row\.evaluator_id\)/);
+  assert.ok(saveFlow.indexOf('await loadCentralState()') < saveFlow.indexOf('resetStagedMatchingState()'));
+  assert.match(saveFlow, /expectedIds\.some\(\(id, index\) => id !== savedIds\[index\]\)/);
+});
