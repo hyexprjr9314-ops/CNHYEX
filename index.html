@@ -17,6 +17,13 @@
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
+    try {
+      const savedFontScale = localStorage.getItem('cnhy_font_scale');
+      if (['default', 'large', 'xlarge'].includes(savedFontScale)) {
+        document.documentElement.dataset.fontScale = savedFontScale;
+      }
+    } catch (_) {}
+
     tailwind.config = {
       darkMode: 'class',
       theme: {
@@ -207,6 +214,74 @@
     }
     .matching-save-action:hover {
       background: #115E59 !important;
+    }
+    html {
+      font-size: 16px;
+      --matching-card-min: 12.5rem;
+    }
+    html[data-font-scale="large"] {
+      font-size: 18.4px;
+      --matching-card-min: 13.5rem;
+    }
+    html[data-font-scale="xlarge"] {
+      font-size: 20.8px;
+      --matching-card-min: 14.5rem;
+    }
+    body {
+      font-size: 0.9375rem;
+      line-height: 1.5;
+    }
+    [class~="text-[8px]"],
+    [class~="text-[9px]"],
+    [class~="text-[10px]"],
+    [class~="text-[11px]"] {
+      font-size: 0.8125rem !important;
+      line-height: 1.25rem !important;
+    }
+    .text-xs {
+      font-size: 0.875rem !important;
+      line-height: 1.35rem !important;
+    }
+    .text-sm {
+      font-size: 0.9375rem !important;
+      line-height: 1.45rem !important;
+    }
+    button, input, select, textarea {
+      min-height: 2.625rem;
+    }
+    .matching-workspace-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 1rem;
+    }
+    .matching-card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--matching-card-min)), 1fr));
+      gap: 0.5rem;
+      align-content: start;
+    }
+    #directory-toolbar-matchingEvaluators {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+      padding: 0.625rem !important;
+    }
+    #directory-toolbar-matchingEvaluators > label,
+    #directory-toolbar-matchingEvaluators > :last-child {
+      grid-column: 1 / -1 !important;
+    }
+    #directory-toolbar-matchingEvaluators select,
+    #directory-toolbar-matchingEvaluators input {
+      min-width: 0;
+      width: 100%;
+    }
+    @media (min-width: 1280px) {
+      .matching-workspace-grid {
+        grid-template-columns: minmax(17.5rem, 20rem) minmax(0, 1fr);
+      }
+    }
+    @media (max-width: 767px) {
+      #font-scale-control {
+        display: none;
+      }
     }
 
     /* Dynamic Smooth Progress Fill Animation */
@@ -537,7 +612,16 @@
     </div>
 
     <!-- Right Header User Info & Live Auto Sync Badge -->
-    <div class="flex items-center gap-2.5 hidden" id="header-user-info">
+    <div class="flex items-center justify-end flex-wrap gap-2.5 hidden" id="header-user-info">
+      <label id="font-scale-control" class="flex items-center gap-1.5 rounded-xl border border-slate-400 bg-white px-2 py-1 text-slate-700">
+        <i class="fa-solid fa-text-height text-brandTeal" aria-hidden="true"></i>
+        <span class="text-xs font-bold whitespace-nowrap">글자 크기</span>
+        <select id="font-scale-select" onchange="applyFontScale(this.value)" class="min-h-0 rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs font-bold text-slate-800" aria-label="글자 크기 선택">
+          <option value="default">기본 100%</option>
+          <option value="large">크게 115%</option>
+          <option value="xlarge">매우 크게 130%</option>
+        </select>
+      </label>
       <!-- 24H Live Auto Sync Badge -->
       <div title="24시간 실시간 무자각 자동 클라우드 동기화 활성화됨" class="text-xs bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 shadow-lg shadow-emerald-950/20">
         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
@@ -1603,8 +1687,8 @@
           </div>
 
           <!-- 3-column evaluator folder / available people / assigned people workspace -->
-          <div class="grid grid-cols-1 xl:grid-cols-12 gap-4">
-            <div class="xl:col-span-2 bg-slate-900/90 p-3 rounded-2xl border border-slate-800 space-y-3">
+          <div class="matching-workspace-grid">
+            <div class="bg-slate-900/90 p-3 rounded-2xl border border-slate-800 space-y-3 min-w-0">
               <h4 class="text-xs font-bold text-white flex items-center justify-between border-b border-slate-800 pb-2">
                 <span class="flex items-center gap-1.5">
                   <i class="fa-solid fa-folder-open text-brandTeal"></i>
@@ -1617,7 +1701,7 @@
               </div>
             </div>
 
-            <div class="xl:col-span-10 bg-slate-900/90 p-4 rounded-2xl border border-slate-800 space-y-4">
+            <div class="bg-slate-900/90 p-4 rounded-2xl border border-slate-800 space-y-4 min-w-0">
               <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-800 pb-3">
                 <div>
                   <h4 class="text-xs font-bold text-white flex items-center gap-2">
@@ -1638,7 +1722,7 @@
                     <h5 class="text-xs font-black text-slate-700"><i class="fa-solid fa-users mr-1 text-blue-600"></i>배정 가능한 인원</h5>
                     <span id="matching-available-count" class="text-[11px] font-bold text-blue-700">0명</span>
                   </div>
-                  <div id="interactive-target-tags-grid" class="matching-dropzone rounded-xl p-2 grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-2 content-start max-h-[600px] overflow-y-auto custom-scrollbar"
+                  <div id="interactive-target-tags-grid" class="matching-dropzone matching-card-grid rounded-xl p-2 max-h-[600px] overflow-y-auto custom-scrollbar"
                     onpointerdown="handleMatchingMarqueeStart(event)" ondragover="handleMatchingDragOver(event)" ondragleave="handleMatchingDragLeave(event)" ondrop="handleMatchingDrop(event, false)">
                     <!-- Dynamically rendered unassigned people -->
                   </div>
@@ -1648,7 +1732,7 @@
                     <h5 class="text-xs font-black text-slate-700"><i class="fa-solid fa-folder-check mr-1 text-teal-600"></i>현재 배정된 인원</h5>
                     <span id="selected-evaluator-match-count" class="text-[11px] font-bold text-teal-700">0명</span>
                   </div>
-                  <div id="interactive-assigned-targets-grid" class="matching-dropzone rounded-xl p-2 grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-2 content-start max-h-[600px] overflow-y-auto custom-scrollbar"
+                  <div id="interactive-assigned-targets-grid" class="matching-dropzone matching-card-grid rounded-xl p-2 max-h-[600px] overflow-y-auto custom-scrollbar"
                     onpointerdown="handleMatchingMarqueeStart(event)" ondragover="handleMatchingDragOver(event)" ondragleave="handleMatchingDragLeave(event)" ondrop="handleMatchingDrop(event, true)">
                     <!-- Dynamically rendered assigned people -->
                   </div>
@@ -2509,6 +2593,29 @@
       } catch (e) {
         console.error('UI preference write failed:', e);
       }
+    }
+
+    function applyFontScale(scale, persist = true) {
+      const allowedScales = ['default', 'large', 'xlarge'];
+      const resolvedScale = allowedScales.includes(scale) ? scale : 'default';
+      document.documentElement.dataset.fontScale = resolvedScale;
+      const select = document.getElementById('font-scale-select');
+      if (select && select.value !== resolvedScale) select.value = resolvedScale;
+      if (persist) {
+        try {
+          localStorage.setItem('cnhy_font_scale', resolvedScale);
+        } catch (error) {
+          console.error('Font scale preference write failed:', error);
+        }
+      }
+    }
+
+    function initializeFontScaleControl() {
+      let savedScale = 'default';
+      try {
+        savedScale = localStorage.getItem('cnhy_font_scale') || 'default';
+      } catch (_) {}
+      applyFontScale(savedScale, false);
     }
 
     function escapeHtml(value) {
@@ -5591,6 +5698,7 @@
 
     // Default Initialization (브라우저 탭 닫기 전까지는 F5 새로고침시 세션 유지, 탭 닫고 다시 올땐 로그인 창)
     window.addEventListener('DOMContentLoaded', async () => {
+      initializeFontScaleControl();
       await loadFromServer();
 
       const lastSubtab = sessionStorage.getItem('cnhy_last_subtab') || 'users';
