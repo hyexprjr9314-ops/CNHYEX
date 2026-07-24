@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const migrationUrl = new URL('../supabase/migrations/202607240013_paused_matching_and_approval_lines.sql', import.meta.url);
+const matchingStatusRepairUrl = new URL('../supabase/migrations/202607250002_fix_matching_status_unicode.sql', import.meta.url);
 const adminStateUrl = new URL('../api/admin-state.js', import.meta.url);
 const resultStateUrl = new URL('../api/result-state.js', import.meta.url);
 const indexUrl = new URL('../index.html', import.meta.url);
@@ -23,6 +24,14 @@ test('paused matching edits use guarded governance RPCs and preserve submitted a
   assert.match(sql, /length\(trim\(reason\)\) >= 5/);
   assert.match(index, /일시정지 중 매칭 변경 사유를 5자 이상 입력해 주세요/);
   assert.match(index, /target_ids: targetIds,\s*reason/);
+});
+
+test('matching lifecycle status repair restores the canonical Korean enum values', async () => {
+  const sql = await readFile(matchingStatusRepairUrl, 'utf8');
+  assert.match(sql, /v_status = '초안'/);
+  assert.match(sql, /v_status = '일시정지'/);
+  assert.match(sql, /v_cycle\.status::text <> '일시정지'/);
+  assert.match(sql, /'관리자 수동 지정'/);
 });
 
 test('approval line is sequential, bounded to executives, recallable only before a decision', async () => {
