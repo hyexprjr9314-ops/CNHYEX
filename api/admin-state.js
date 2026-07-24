@@ -8,7 +8,7 @@ const PRIVILEGED = new Set([ROLES.admin, ROLES.executive]);
 const SUPER_ADMIN_EMAIL = 'admin@cnhyex.com';
 const ADMIN_ONLY = new Set([
   'cycle_create', 'cycle_update', 'cycle_delete', 'cycle_validate', 'cycle_activate', 'question_create', 'question_update',
-  'question_delete', 'matching_toggle', 'matching_replace', 'matching_generate', 'permission_update', 'permission_bulk_update', 'settings_update',
+  'question_delete', 'matching_toggle', 'matching_replace', 'matching_generate', 'matching_mode_update', 'permission_update', 'permission_bulk_update', 'settings_update',
   'goal_status', 'cycle_close', 'cycle_pause', 'cycle_resume', 'cycle_force_close', 'cycle_cancel', 'cycle_hard_delete'
 ]);
 const EXECUTIVE_ALLOWED = new Set();
@@ -197,6 +197,49 @@ export async function assertGlobalConfigurationMutable(service) {
   if (hasLockedCurrentCycle) {
     throw Object.assign(new Error('진행 중이거나 승인 절차가 시작된 평가 주기가 있어 전체 가중치를 변경할 수 없습니다.'), { status: 409 });
   }
+}
+
+async function generateAutoMatchings(service, cycleId) {
+  const [users, existing, submitted] = await Promise.all([
+    service.from('users').select('id,company,dept,workplace,role,type,can_evaluate,is_evaluatee,active').eq('active', true),
+    service.from('matchings').select('id,evaluator_id,target_id,type').eq('cycle_id', cycleId),
+    service.from('evaluations').select('matching_id').eq('cycle_id', cycleId)
+  ]);
+  for (const query of [users, existing, submitted]) if (query.error) return query;
+  const evaluators = (users.data || []).filter(user => user.can_evaluate !== false);
+  const targets = (users.data || []).filter(user => user.is_evaluatee !== false);
+  const desired = new Map();
+  for (const evaluator of evaluators) {
+    const evaluatorIsBranch = String(evaluator.workplace || '').includes('영업소') || String(evaluator.dept || '').includes('영업소');
+    for (const target of targets) {
+      if (evaluator.id === target.id) continue;
+      const targetIsBranch = String(target.workplace || '').includes('영업소') || String(target.dept || '').includes('영업소');
+      const eligible = evaluatorIsBranch ? evaluator.company === target.company : !targetIsBranch;
+      if (eligible) desired.set(`${evaluator.id}:${target.id}`, {
+        cycle_id: cycleId, evaluator_id: evaluator.id, target_id: target.id,
+        type: '알고리즘 자동 지정', relationship_type: relationshipType(evaluator, target), updated_at: new Date().toISOString()
+      });
+    }
+  }
+  const submittedIds = new Set((submitted.data || []).map(row => Number(row.matching_id)));
+  const obsoleteIds = (existing.data || []).filter(row =>
+    row.type === '알고리즘 자동 지정'
+    && !desired.has(`${row.evaluator_id}:${row.target_id}`)
+    && !submittedIds.has(Number(row.id))
+  ).map(row => row.id);
+  if (obsoleteIds.length) {
+    const removed = await service.from('matchings').delete().in('id', obsoleteIds);
+    if (removed.error) return removed;
+  }
+  const rows = [...desired.values()];
+  if (rows.length) {
+    const inserted = await service.from('matchings').upsert(rows, {
+      onConflict: 'cycle_id,evaluator_id,target_id',
+      ignoreDuplicates: true
+    });
+    if (inserted.error) return inserted;
+  }
+  return { data: { inserted: rows.length, removed: obsoleteIds.length, desired: desired.size }, error: null };
 }
 
 export function applyRelativeGrades(cycleScores, users, archives) {
@@ -470,7 +513,7 @@ export default async function handler(req, res) {
       const questionCycleId = action.startsWith('question_') ? Number(req.body?.cycle_id || req.body?.cycleId) : guardedCycleId;
       if (questionCycleId) await assertCycleMutable(service, questionCycleId);
     }
-    if (['matching_toggle', 'matching_replace', 'matching_generate'].includes(action) && guardedCycleId) {
+    if (['matching_toggle', 'matching_replace', 'matching_generate', 'matching_mode_update'].includes(action) && guardedCycleId) {
       matchingMode = await matchingCycleMode(service, guardedCycleId, action, req.body);
     }
     let result;
@@ -661,49 +704,23 @@ export default async function handler(req, res) {
       }
       result = { data: { protected_target_ids: [...protectedTargetIds] }, error: null };
       }
+    } else if (action === 'matching_mode_update') {
+      const cycleId = Number(req.body.cycle_id);
+      const enabled = req.body.enabled !== false;
+      if (!cycleId) return send(res, 400, { error: '평가 주기가 필요합니다.' });
+      if (enabled) {
+        const generated = await generateAutoMatchings(service, cycleId);
+        if (generated.error) throw generated.error;
+      }
+      result = await service.from('evaluation_cycles')
+        .update({ auto_matching_enabled: enabled, updated_at: new Date().toISOString() })
+        .eq('id', cycleId)
+        .select()
+        .single();
     } else if (action === 'matching_generate') {
       const cycleId = Number(req.body.cycle_id);
       if (!cycleId) return send(res, 400, { error: '평가 주기가 필요합니다.' });
-      const [users, existing, submitted] = await Promise.all([
-        service.from('users').select('id,company,dept,workplace,role,type,can_evaluate,is_evaluatee,active').eq('active', true),
-        service.from('matchings').select('id,evaluator_id,target_id,type').eq('cycle_id', cycleId),
-        service.from('evaluations').select('matching_id').eq('cycle_id', cycleId)
-      ]);
-      for (const query of [users, existing, submitted]) if (query.error) throw query.error;
-      const evaluators = (users.data || []).filter(user => user.can_evaluate !== false);
-      const targets = (users.data || []).filter(user => user.is_evaluatee !== false);
-      const desired = new Map();
-      for (const evaluator of evaluators) {
-        const evaluatorIsBranch = String(evaluator.workplace || '').includes('영업소') || String(evaluator.dept || '').includes('영업소');
-        for (const target of targets) {
-          if (evaluator.id === target.id) continue;
-          const targetIsBranch = String(target.workplace || '').includes('영업소') || String(target.dept || '').includes('영업소');
-          const eligible = evaluatorIsBranch
-            ? evaluator.company === target.company
-            : !targetIsBranch;
-          if (eligible) desired.set(`${evaluator.id}:${target.id}`, {
-            cycle_id: cycleId, evaluator_id: evaluator.id, target_id: target.id,
-            type: '알고리즘 자동 지정', relationship_type: relationshipType(evaluator, target), updated_at: new Date().toISOString()
-          });
-        }
-      }
-      const existingMap = new Map((existing.data || []).map(row => [`${row.evaluator_id}:${row.target_id}`, row]));
-      const submittedIds = new Set((submitted.data || []).map(row => Number(row.matching_id)));
-      const obsoleteIds = (existing.data || []).filter(row =>
-        row.type === '알고리즘 자동 지정'
-        && !desired.has(`${row.evaluator_id}:${row.target_id}`)
-        && !submittedIds.has(Number(row.id))
-      ).map(row => row.id);
-      if (obsoleteIds.length) {
-        const removed = await service.from('matchings').delete().in('id', obsoleteIds);
-        if (removed.error) throw removed.error;
-      }
-      const rows = [...desired.entries()].filter(([key]) => !existingMap.has(key)).map(([, row]) => row);
-      if (rows.length) {
-        const inserted = await service.from('matchings').insert(rows).select('id');
-        if (inserted.error) throw inserted.error;
-      }
-      result = { data: { inserted: rows.length, removed: obsoleteIds.length, desired: desired.size }, error: null };
+      result = await generateAutoMatchings(service, cycleId);
     } else if (action === 'cycle_close') {
       const accessToken = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
       return send(res, 200, { archive: await closeCycle(service, authenticatedRpcClient(accessToken), Number(req.body.cycle_id), authUser) });
