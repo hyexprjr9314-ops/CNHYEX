@@ -42,6 +42,7 @@
 - Imagery/iconography: Font Awesome과 의미가 명확한 이모지
 
 ## Components
+- Evaluator folder cards: use a two-line identity layout with name/role on the first line, company/department/workplace on the second line, and a fixed matching-count badge on the right. Preserve readable type size and truncate only overflowing metadata with a native tooltip.
 - Existing components to reuse: glass-card, 관계별 그룹, 표, 필터, 등급 배지
 - New/changed components: 화이트 테마용 EX/S/A 등급 표면, 단색 등급 라벨, 조정 수정·취소 의미형 버튼, 평가자 폴더 기반 드래그앤드롭 매칭 작업대, RTS형 박스 다중 선택과 전체화면 작업 모드
 - Variants and states: EX, S, A, B, C, D, 미평가, 조정됨, 배정 가능, 배정 완료, 배정 예정, 해제 예정, 다중 선택
@@ -55,6 +56,7 @@
 - Reduced motion and sensory considerations: `prefers-reduced-motion` 유지, 대형 광원 애니메이션 금지
 
 ## Responsive behavior
+- Evaluator folder width: 22rem at 100% text scale, 24rem at 115%, and 26rem at 130%; below desktop breakpoints the folder returns to a full-width stacked layout.
 - Wide desktop layout: use the available viewport up to 1880px with only minimal outer gutters so management tables, filters, status badges, and matching cards remain legible without unnecessary wrapping.
 - Wrapping policy: keep action buttons and desktop table cells on one line; allow mobile table cells and explicitly marked long-form cells to wrap.
 - Supported breakpoints/devices: 데스크톱 우선, 640px 이하 모바일
