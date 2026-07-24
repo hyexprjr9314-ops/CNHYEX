@@ -130,6 +130,28 @@
     .grade-label-ex { color: #78350F !important; }
     .grade-label-s { color: #155E75 !important; }
     .grade-label-a { color: #92400E !important; }
+    .adjust-action-edit {
+      background: #FFFBEB !important;
+      border-color: #D97706 !important;
+      color: #92400E !important;
+      box-shadow: 0 1px 3px rgba(146, 64, 14, 0.12);
+    }
+    .adjust-action-edit:hover {
+      background: #B45309 !important;
+      border-color: #92400E !important;
+      color: #FFFFFF !important;
+    }
+    .adjust-action-cancel {
+      background: #FFF1F2 !important;
+      border-color: #E11D48 !important;
+      color: #9F1239 !important;
+      box-shadow: 0 1px 3px rgba(159, 18, 57, 0.12);
+    }
+    .adjust-action-cancel:hover {
+      background: #BE123C !important;
+      border-color: #9F1239 !important;
+      color: #FFFFFF !important;
+    }
 
     /* Dynamic Smooth Progress Fill Animation */
     .bar-grow-animated {
@@ -5459,8 +5481,8 @@
           ? `<button type="button" disabled title="모든 배정 평가가 완료된 뒤 점수를 조정할 수 있습니다." class="bg-slate-900 text-xs px-2.5 py-1 rounded text-slate-500 font-bold border border-slate-800 cursor-not-allowed">평가 미완료</button>`
           : empScoreData.is_adjusted
             ? `
-              <button onclick="event.stopPropagation(); openScoreAdjustmentModal(usersDb.find(u=>u.id===${emp.id}), cycleScoresDb['${currentSelectedSummaryCycleId}']['${emp.id}'])" class="bg-amber-600/20 hover:bg-amber-600 text-xs px-2.5 py-1 rounded text-amber-200 hover:text-white font-bold border border-amber-500/30">조정 수정</button>
-              <button onclick="event.stopPropagation(); openScoreAdjustmentCancelModal(usersDb.find(u=>u.id===${emp.id}), cycleScoresDb['${currentSelectedSummaryCycleId}']['${emp.id}'])" class="bg-rose-600/20 hover:bg-rose-600 text-xs px-2.5 py-1 rounded text-rose-200 hover:text-white font-bold border border-rose-500/30">조정 취소</button>
+              <button onclick="event.stopPropagation(); openScoreAdjustmentModal(usersDb.find(u=>u.id===${emp.id}), cycleScoresDb['${currentSelectedSummaryCycleId}']['${emp.id}'])" class="adjust-action-edit text-xs px-2.5 py-1 rounded font-bold border transition-colors">조정 수정</button>
+              <button onclick="event.stopPropagation(); openScoreAdjustmentCancelModal(usersDb.find(u=>u.id===${emp.id}), cycleScoresDb['${currentSelectedSummaryCycleId}']['${emp.id}'])" class="adjust-action-cancel text-xs px-2.5 py-1 rounded font-bold border transition-colors">조정 취소</button>
             `
             : `<button onclick="event.stopPropagation(); openScoreAdjustmentModal(usersDb.find(u=>u.id===${emp.id}), cycleScoresDb['${currentSelectedSummaryCycleId}'] ? cycleScoresDb['${currentSelectedSummaryCycleId}']['${emp.id}'] : null)" class="bg-slate-800 hover:bg-slate-700 text-xs px-2.5 py-1 rounded text-slate-300 font-bold border border-slate-700">점수 입력/조정</button>`;
 
