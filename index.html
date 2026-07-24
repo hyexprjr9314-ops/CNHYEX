@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>충남한양 인사평가 시스템</title>
+  <meta name="description" content="충남고속·한양고속 임직원을 위한 중앙화된 360도 인사평가 시스템">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="충남한양 인사평가 시스템">
+  <meta property="og:description" content="안전한 평가 배정, 제출, 집계 및 결과 공개를 지원하는 사내 인사평가 시스템">
+  <meta property="og:url" content="https://cnhyex.vercel.app/">
   <!-- HTTP Strict Cache-Control: Force Browser Zero-Cache -->
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
@@ -157,6 +162,79 @@
     /* Dynamic Smooth Progress Fill Animation */
     .bar-grow-animated {
       transition: width 1.8s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+
+    .skip-link {
+      position: fixed;
+      top: 0.75rem;
+      left: 0.75rem;
+      z-index: 100;
+      transform: translateY(-200%);
+      background: #0D9488;
+      color: #FFFFFF;
+      padding: 0.75rem 1rem;
+      border-radius: 0.75rem;
+      font-weight: 800;
+    }
+    .skip-link:focus {
+      transform: translateY(0);
+    }
+    :where(button, a, input, select, textarea):focus-visible {
+      outline: 3px solid #0F766E;
+      outline-offset: 2px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    @media (max-width: 640px) {
+      body {
+        padding-bottom: 5.5rem;
+      }
+      :where(button, input:not([type="checkbox"]):not([type="radio"]), select) {
+        min-height: 48px;
+        font-size: 14px !important;
+      }
+      textarea {
+        font-size: 14px !important;
+      }
+      #main-nav-tabs {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 45;
+        display: grid !important;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 0;
+        padding: 0.5rem max(0.5rem, env(safe-area-inset-right))
+          calc(0.5rem + env(safe-area-inset-bottom))
+          max(0.5rem, env(safe-area-inset-left));
+        border-top: 1px solid #94A3B8 !important;
+        border-bottom: 0 !important;
+        background: rgba(255, 255, 255, 0.98);
+        box-shadow: 0 -4px 18px rgba(15, 23, 42, 0.12);
+        overflow: visible;
+      }
+      #main-nav-tabs.hidden {
+        display: none !important;
+      }
+      #main-nav-tabs > button {
+        min-width: 0;
+        padding: 0.4rem 0.2rem;
+        flex-direction: column;
+        justify-content: center;
+        gap: 0.15rem;
+        border-radius: 0.65rem;
+        font-size: 11px !important;
+        line-height: 1.15;
+      }
     }
 
     /* White Enterprise Theme */
@@ -383,6 +461,7 @@
   </style>
 </head>
 <body class="min-h-screen flex flex-col antialiased selection:bg-brandTeal selection:text-white custom-scrollbar">
+  <a class="skip-link" href="#main-content">본문 바로가기</a>
 
   <!-- Header / Navigation Bar -->
   <header class="bg-brandNavy/95 backdrop-blur-md border-b border-slate-800 sticky top-0 z-40 px-4 md:px-8 py-3.5 flex items-center justify-between shadow-xl">
@@ -424,7 +503,7 @@
   </header>
 
   <!-- Main Container -->
-  <main class="flex-grow flex flex-col p-4 md:p-8 max-w-[1600px] w-full mx-auto space-y-6">
+  <main id="main-content" tabindex="-1" class="flex-grow flex flex-col p-4 md:p-8 max-w-[1600px] w-full mx-auto space-y-6">
 
     <!-- Top Navigation Tabs -->
     <nav class="flex items-center gap-2 border-b border-slate-800 pb-3 overflow-x-auto text-sm font-bold hidden" id="main-nav-tabs">
@@ -584,7 +663,7 @@
             <span>5지선다 문항 기반 자동 점수 환산</span>
           </h3>
           <p class="text-xs text-slate-400 mt-1 leading-relaxed">
-            별도의 점수 슬라이더는 사용하지 않습니다. 모든 5지선다 문항에 직접 답하면 서버가 질문별 가중치로 영역 점수를 계산하고, 아래 카테고리 가중치를 최종 집계에 반영합니다. 서술형 피드백은 점수에 포함하지 않고 코칭·AI 분석 자료로만 사용합니다.
+            별도의 점수 슬라이더는 사용하지 않습니다. 모든 5지선다 문항에 직접 답하면 서버가 질문별 가중치로 영역 점수를 계산하고, 아래 카테고리 가중치를 최종 집계에 반영합니다. 서술형 피드백은 점수에 포함하지 않으며 인사평가 참고자료로만 사용합니다.
           </p>
         </div>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -698,12 +777,12 @@
         <article class="glass-card rounded-2xl p-6 border border-slate-800 space-y-5">
           <div class="flex items-center gap-3">
             <span class="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-300 flex items-center justify-center"><i class="fa-solid fa-shield-halved"></i></span>
-            <div><p class="text-[10px] font-bold text-purple-300 uppercase tracking-wider">PRIVACY & AI</p><h3 class="text-lg font-black text-white">익명성·결과·AI 안내</h3></div>
+            <div><p class="text-[10px] font-bold text-purple-300 uppercase tracking-wider">PRIVACY</p><h3 class="text-lg font-black text-white">익명성·결과 안내</h3></div>
           </div>
           <ul class="space-y-3 text-sm text-slate-300">
             <li class="flex gap-2"><i class="fa-solid fa-user-secret text-purple-300 mt-1"></i><span>피평가자에게는 평가자 신원이 직접 공개되지 않습니다. 다만 인사 운영과 분쟁 대응을 위해 권한이 있는 관리자·임원은 원자료를 확인할 수 있습니다.</span></li>
             <li class="flex gap-2"><i class="fa-solid fa-lock text-purple-300 mt-1"></i><span>평가 결과는 평가 완료, 관리자 검토 및 공개 절차가 끝난 뒤 확인할 수 있습니다.</span></li>
-            <li class="flex gap-2"><i class="fa-solid fa-robot text-purple-300 mt-1"></i><span>AI 리포트는 확정된 평가자료와 익명 의견을 요약한 코칭 참고자료이며, 승진·징계·보상 결정을 자동으로 내리지 않습니다.</span></li>
+            <li class="flex gap-2"><i class="fa-solid fa-file-shield text-purple-300 mt-1"></i><span>확정된 평가자료와 익명 의견은 인사평가 운영 및 감사 목적의 참고자료로만 사용됩니다.</span></li>
             <li class="flex gap-2"><i class="fa-solid fa-triangle-exclamation text-purple-300 mt-1"></i><span>민감한 개인정보, 확인되지 않은 소문, 건강·가족·정치·종교에 관한 추측을 작성하지 마세요.</span></li>
           </ul>
         </article>
@@ -742,9 +821,6 @@
         <div>
           <h2 class="text-2xl font-black text-white flex items-center gap-2">
             <span>📊 내 평가 결과 리포트</span>
-            <button onclick="triggerFireworksAnimation()" class="text-xs bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-lg transition font-bold flex items-center gap-1">
-              <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i> 축하 폭죽 터뜨리기
-            </button>
           </h2>
           <div class="flex items-center gap-3 mt-2">
             <span class="text-xs text-slate-300 font-bold whitespace-nowrap"><i class="fa-solid fa-clock-rotate-left text-brandTeal mr-1"></i>평가 주기/이력 선택:</span>
@@ -841,121 +917,6 @@
           </div>
         </div>
 
-        <!-- AI Deep-Dive Neural HR Analytics Report -->
-        <div id="ai-report-card" class="glass-card rounded-2xl p-6 border border-slate-800 space-y-6">
-          <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-            <h3 class="text-base font-bold text-white flex items-center gap-2">
-              <i class="fa-solid fa-brain text-brandGold animate-pulse"></i>
-              <span>🤖 실제 평가 데이터 기반 AI 코칭 리포트</span>
-            </h3>
-            <span class="text-[10px] bg-brandTeal/20 text-brandTeal border border-brandTeal/30 px-2.5 py-0.5 rounded-full font-bold">관리자 검토 후 공개</span>
-          </div>
-
-          <div id="ai-report-status" class="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-200">
-            <i class="fa-solid fa-hourglass-half mr-2"></i>
-            평가 완료 및 관리자 공개 후 실제 AI 분석 리포트가 표시됩니다.
-          </div>
-
-          <!-- 4 Category Neural Advice Cards -->
-          <div id="ai-report-categories" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4">
-            <!-- 1. 성과 -->
-            <div class="bg-slate-900/90 p-4 rounded-xl border border-slate-800 space-y-2 relative overflow-hidden group hover:border-brandGold/40 transition">
-              <div class="flex justify-between items-center border-b border-slate-800/80 pb-2">
-                <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-                  <i class="fa-solid fa-trophy text-brandGold"></i> 1. [성과] 딥러닝 패턴 분석
-                </span>
-                <span class="text-[11px] font-mono font-bold text-brandGold" id="ai-perf-score-badge">가중치 40.0% | 92.5점</span>
-              </div>
-              <div class="space-y-1 text-xs">
-                <p class="text-slate-400 font-bold text-[11px]"><i class="fa-solid fa-microchip text-teal-400 mr-1"></i>AI 패턴 진단:</p>
-                <p class="text-slate-300 leading-relaxed pl-2 border-l-2 border-brandTeal/50" id="ai-perf-pattern">사칙 기반 고유 직무 역량 및 마감 완결성이 전사 상위 5% 수준으로 매우 안정적입니다.</p>
-              </div>
-              <div class="space-y-1 text-xs pt-1">
-                <p class="text-brandGold font-bold text-[11px]"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i>1:1 딥 어드바이스:</p>
-                <p class="text-slate-200 leading-relaxed font-normal" id="ai-perf-advice">"현재의 탁월한 과업 완결성을 바탕으로 부서 내 실무 매뉴얼을 표준화하면 차기 평가에서 EX Grade(ANOTHER LEVEL) 달성이 유력합니다."</p>
-              </div>
-            </div>
-
-            <!-- 2. 협업 -->
-            <div class="bg-slate-900/90 p-4 rounded-xl border border-slate-800 space-y-2 relative overflow-hidden group hover:border-blue-400/40 transition">
-              <div class="flex justify-between items-center border-b border-slate-800/80 pb-2">
-                <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-                  <i class="fa-solid fa-handshake text-blue-400"></i> 2. [협업] 딥러닝 패턴 분석
-                </span>
-                <span class="text-[11px] font-mono font-bold text-blue-400" id="ai-collab-score-badge">가중치 30.0% | 95.0점</span>
-              </div>
-              <div class="space-y-1 text-xs">
-                <p class="text-slate-400 font-bold text-[11px]"><i class="fa-solid fa-microchip text-blue-400 mr-1"></i>AI 패턴 진단:</p>
-                <p class="text-slate-300 leading-relaxed pl-2 border-l-2 border-blue-500/50" id="ai-collab-pattern">본사 및 영업소 간 요청 사안에 대한 즉각적인 피드백과 높은 신뢰도를 형성하고 있습니다.</p>
-              </div>
-              <div class="space-y-1 text-xs pt-1">
-                <p class="text-blue-300 font-bold text-[11px]"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i>1:1 딥 어드바이스:</p>
-                <p class="text-slate-200 leading-relaxed font-normal" id="ai-collab-advice">"타 부서와의 교차 협업 시 업무 처리 진행 상황을 실시간 공유하면 동료들의 업무 만족도가 더욱 극대화될 것입니다."</p>
-              </div>
-            </div>
-
-            <!-- 3. 성장 -->
-            <div class="bg-slate-900/90 p-4 rounded-xl border border-slate-800 space-y-2 relative overflow-hidden group hover:border-emerald-400/40 transition">
-              <div class="flex justify-between items-center border-b border-slate-800/80 pb-2">
-                <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-                  <i class="fa-solid fa-arrow-trend-up text-emerald-400"></i> 3. [성장] 딥러닝 패턴 분석
-                </span>
-                <span class="text-[11px] font-mono font-bold text-emerald-400" id="ai-growth-score-badge">가중치 20.0% | 88.0점</span>
-              </div>
-              <div class="space-y-1 text-xs">
-                <p class="text-slate-400 font-bold text-[11px]"><i class="fa-solid fa-microchip text-emerald-400 mr-1"></i>AI 패턴 진단:</p>
-                <p class="text-slate-300 leading-relaxed pl-2 border-l-2 border-emerald-500/50" id="ai-growth-pattern">신기술 및 자동화 전산 프로세스 도입 의지가 우수하며 지속적 개선 태도를 보여줍니다.</p>
-              </div>
-              <div class="space-y-1 text-xs pt-1">
-                <p class="text-emerald-300 font-bold text-[11px]"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i>1:1 딥 어드바이스:</p>
-                <p class="text-slate-200 leading-relaxed font-normal" id="ai-growth-advice">"팀 내 미니 스터디 또는 전산 노하우 공유 세미나를 주도하여 사내 전문성과 영향력을 확충하십시오."</p>
-              </div>
-            </div>
-
-            <!-- 4. 조화 -->
-            <div class="bg-slate-900/90 p-4 rounded-xl border border-slate-800 space-y-2 relative overflow-hidden group hover:border-rose-400/40 transition">
-              <div class="flex justify-between items-center border-b border-slate-800/80 pb-2">
-                <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-                  <i class="fa-solid fa-heart text-rose-400"></i> 4. [조화] 딥러닝 패턴 분석
-                </span>
-                <span class="text-[11px] font-mono font-bold text-rose-400" id="ai-harmony-score-badge">가중치 10.0% | 90.0점</span>
-              </div>
-              <div class="space-y-1 text-xs">
-                <p class="text-slate-400 font-bold text-[11px]"><i class="fa-solid fa-microchip text-rose-400 mr-1"></i>AI 패턴 진단:</p>
-                <p class="text-slate-300 leading-relaxed pl-2 border-l-2 border-rose-500/50" id="ai-harmony-pattern">조직 내 존중과 배려의 어투로 화목한 일터 분위기 형성에 긍정적 역할을 수행합니다.</p>
-              </div>
-              <div class="space-y-1 text-xs pt-1">
-                <p class="text-rose-300 font-bold text-[11px]"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i>1:1 딥 어드바이스:</p>
-                <p class="text-slate-200 leading-relaxed font-normal" id="ai-harmony-advice">"신규 입사자 멘토링 프로그램에 참여하여 긍정적인 일터 문화를 전사적으로 확산해 보시길 권장합니다."</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Peer Text Feedback NLP Mentoring Section -->
-          <div id="ai-report-peer-section" class="hidden bg-slate-950/70 p-5 rounded-2xl border border-brandTeal/30 space-y-3">
-            <h4 class="text-xs font-bold text-white flex items-center justify-between">
-              <span class="flex items-center gap-2">
-                <i class="fa-solid fa-comments text-brandTeal"></i>
-                <span>💬 동료 서술형 피드백 NLP 텍스트 분석 & AI 1:1 코칭</span>
-              </span>
-              <span class="text-[10px] text-slate-400">익명성 100% 보장 정성 분석</span>
-            </h4>
-            <div class="bg-slate-900/90 p-4 rounded-xl border border-slate-800 space-y-2">
-              <p class="text-[11px] font-bold text-amber-400"><i class="fa-solid fa-quote-left mr-1"></i>동료들이 남긴 대표 서술형 텍스트 키워드 요약:</p>
-              <p class="text-xs text-slate-200 italic leading-relaxed pl-3 border-l-2 border-amber-400/60" id="ai-peer-text-summary">
-                "월간 업무 지침 준수율이 매우 높고 사고 발생 시 대처 능력이 탁월함. 타 부서원들과의 소통도 원활하여 항상 긍정적인 신뢰를 형성함."
-              </p>
-            </div>
-            <div class="bg-brandDark/80 p-4 rounded-xl border border-brandTeal/40 space-y-2">
-              <p class="text-xs font-bold text-brandTeal flex items-center gap-1.5">
-                <i class="fa-solid fa-user-graduate"></i> AI 멘토의 딥러닝 1:1 맞춤 커리어 코칭 솔루션
-              </p>
-              <p class="text-xs text-slate-200 leading-relaxed font-normal" id="ai-peer-mentor-solution">
-                동료들은 당신의 <strong>'책임감 있는 업무 마무리'</strong>와 <strong>'원활한 정성적 소통'</strong>을 1순위 강점으로 꼽고 있습니다. 동료들의 기대에 부응하여 본인의 실무 노하우를 가이드북 형태로 문서화한다면, 단순 '일 잘하는 동료'를 넘어 '조직의 핵심 리더'로 완전히 자리매김할 수 있습니다!
-              </p>
-            </div>
-          </div>
-        </div>
       </div>
     </section>
 
@@ -1826,7 +1787,7 @@
         </div>
       </div>
       <div class="rounded-xl border border-rose-500/20 bg-rose-950/20 p-3 text-xs text-rose-100 leading-relaxed">
-        취소하면 최종 점수와 등급은 평가 원점수 기준으로 즉시 복원됩니다. 기존 AI 리포트는 무효화되며, 취소 이력은 감사 목적으로 보관됩니다.
+        취소하면 최종 점수와 등급은 평가 원점수 기준으로 즉시 복원되며, 취소 이력은 감사 목적으로 보관됩니다.
       </div>
       <div>
         <label class="block text-xs font-bold text-slate-300 mb-1">취소 사유 (필수, 10자 이상)</label>
@@ -2152,7 +2113,7 @@
             <p class="text-xs text-slate-400">작성자의 개인정보와 작성 내용은 철저히 보호됩니다.</p>
           </div>
           <div class="bg-slate-950/70 p-4 rounded-2xl border border-slate-800 text-xs text-slate-300 space-y-2.5 leading-relaxed">
-            <p><i class="fa-solid fa-shield-halved text-purple-400 mr-1.5"></i><strong>AI 딥러닝 익명 마스킹:</strong> 주관식 코멘트는 AI 멘토 리포트로 가공되어 작성자가 누구인지 추적할 수 없습니다.</p>
+            <p><i class="fa-solid fa-shield-halved text-purple-400 mr-1.5"></i><strong>익명 의견 보호:</strong> 주관식 코멘트는 평가자 식별정보와 분리하여 관리하며 피평가자에게 작성자를 공개하지 않습니다.</p>
             <p><i class="fa-solid fa-pen-to-square text-amber-400 mr-1.5"></i><strong>제출 후 재수정 지원:</strong> 실수로 제출하셨더라도 평가 마감 전이라면 언제든 <span class="text-amber-300 font-bold">[✏️ 제출 내용 수정]</span> 버튼으로 재수정할 수 있습니다.</p>
           </div>
         </div>
@@ -2917,7 +2878,7 @@
         }
       } else {
         // Current-cycle scores are intentionally not read from the administrator cache.
-        // The authenticated AI report API releases them only after completion, approval and publication.
+        // Result details are released only after completion and administrator publication.
         empScoreData = null;
       }
 
@@ -2938,8 +2899,6 @@
       const collabValEl = document.getElementById('my-collab-val');
       const growthValEl = document.getElementById('my-growth-val');
       const harmonyValEl = document.getElementById('my-harmony-val');
-      const aiStrengthEl = document.getElementById('my-ai-strength');
-      const aiGuideEl = document.getElementById('my-ai-guide');
       const pBar = document.getElementById('my-perf-bar');
       const cBar = document.getElementById('my-collab-bar');
       const gBar = document.getElementById('my-growth-bar');
@@ -3006,8 +2965,6 @@
         if (gBar) gBar.style.width = '0%';
         if (hBar) hBar.style.width = '0%';
 
-        if (aiStrengthEl) aiStrengthEl.innerText = '⏳ 해당 평가 주기는 아직 평가가 실시되거나 마감되지 않았습니다.';
-        if (aiGuideEl) aiGuideEl.innerText = '⏳ 다면평가가 완료되면 AI 종합 성과 진단 및 맞춤형 성장 가이드라인이 제공됩니다.';
       } else {
         if (isAdjusted) {
           // HIDE category chart graph when executive adjustment is applied
@@ -3025,21 +2982,12 @@
           if (cBar) cBar.style.width = '0%';
           if (gBar) gBar.style.width = '0%';
           if (hBar) hBar.style.width = '0%';
-          if (aiStrengthEl) aiStrengthEl.innerText = '⏳ 서버에서 평가 완료 여부와 AI 분석 상태를 확인하고 있습니다.';
-          if (aiGuideEl) aiGuideEl.innerText = '⏳ 승인·공개된 서버 리포트가 확인되면 실제 분석 결과가 표시됩니다.';
         }
       }
 
-      // AI report content is always loaded from the authenticated server API.
-      // Historical local snapshots intentionally do not reuse or fabricate AI text.
       if (selectedVal && !selectedVal.startsWith('history_')) {
-        loadServerAiReport(parseInt(selectedVal));
-      } else {
-        setAiReportVisibility(false, '과거 보관 이력에는 승인된 AI 분석 리포트가 연결되어 있지 않습니다.');
+        loadServerResultState(parseInt(selectedVal));
       }
-
-      // Celebrate only when a real score exists.
-      if (hasActualEvaluations) triggerFireworksAnimation();
     }
 
     function downloadPDFReport() {
@@ -3229,7 +3177,7 @@
         await callAdminStateApi({ action: 'settings_update', weights: categoryWeights, auto_matching_enabled: nextValue });
         if (nextValue) {
           const cycleId = Number(document.getElementById('perm-cycle-select')?.value || currentSelectedSummaryCycleId || cyclesDb[0]?.id);
-          await callAdminStateApi({ action: 'auto_generate', cycle_id: cycleId });
+          await callAdminStateApi({ action: 'matching_generate', cycle_id: cycleId });
         }
         isAutoMatchingEnabled = nextValue;
         announceCentralChange();
@@ -3621,7 +3569,7 @@
       centralRealtimeChannel = supabaseClient.channel('cnhy-central-state');
       [
         'users','evaluation_cycles','evaluation_questions','matchings','evaluations',
-        'evaluation_result_adjustments','ai_evaluation_reports','evaluation_settings','evaluation_archives','employee_goals','evaluation_answers'
+        'evaluation_result_adjustments','evaluation_settings','evaluation_archives','employee_goals','evaluation_answers'
       ].forEach(table => {
         centralRealtimeChannel.on('postgres_changes', { event: '*', schema: 'public', table }, scheduleCentralReload);
       });
@@ -3629,14 +3577,14 @@
       window.addEventListener('focus', scheduleCentralReload);
     }
 
-    async function callAiReportApi(method, params = {}) {
+    async function callResultStateApi(method, params = {}) {
       if (!supabaseClient) throw new Error('Supabase 연결이 없습니다.');
       const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
       if (sessionError || !sessionData.session) throw new Error('로그인이 필요합니다.');
       const query = method === 'GET'
         ? `?${new URLSearchParams(params).toString()}`
         : '';
-      const response = await fetch(`/api/ai-report${query}`, {
+      const response = await fetch(`/api/result-state${query}`, {
         method,
         headers: {
           'Content-Type': 'application/json',
@@ -3645,42 +3593,8 @@
         body: method === 'GET' ? undefined : JSON.stringify(params)
       });
       const payload = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(payload.error || 'AI 리포트 요청에 실패했습니다.');
+      if (!response.ok) throw new Error(payload.error || '평가 결과 요청에 실패했습니다.');
       return payload;
-    }
-
-    let latestAiReportRequest = 0;
-
-    function setAiReportVisibility(visible, message, tone = 'amber') {
-      const status = document.getElementById('ai-report-status');
-      const categories = document.getElementById('ai-report-categories');
-      const peer = document.getElementById('ai-report-peer-section');
-      if (categories) categories.classList.toggle('hidden', !visible);
-      if (peer) peer.classList.toggle('hidden', !visible);
-      if (status) {
-        status.classList.toggle('hidden', visible);
-        status.className = `rounded-xl border p-4 text-sm ${tone === 'rose'
-          ? 'border-rose-500/30 bg-rose-500/10 text-rose-200'
-          : tone === 'teal'
-            ? 'border-teal-500/30 bg-teal-500/10 text-teal-200'
-            : 'border-amber-500/30 bg-amber-500/10 text-amber-200'}`;
-        status.textContent = message || '';
-      }
-    }
-
-    function updateAiCategory(prefix, score, data, qualitativeOnly = false, weight = null) {
-      const badge = document.getElementById(`ai-${prefix}-score-badge`);
-      const pattern = document.getElementById(`ai-${prefix}-pattern`);
-      const advice = document.getElementById(`ai-${prefix}-advice`);
-      const weights = { perf: 40, collab: 30, growth: 20, harmony: 10 };
-      const requestedWeight = weight === null || weight === undefined ? NaN : Number(weight);
-      const fallbackWeight = Number(categoryWeights?.[prefix] ?? weights[prefix]);
-      const appliedWeight = Number.isFinite(requestedWeight) ? requestedWeight : fallbackWeight;
-      if (badge) badge.textContent = qualitativeOnly
-        ? '점수 비공개 · 정성 피드백'
-        : `가중치 ${appliedWeight.toFixed(1)}% | ${Number(score).toFixed(1)}점`;
-      if (pattern) pattern.textContent = data?.pattern || '분석 정보가 없습니다.';
-      if (advice) advice.textContent = data?.advice || '코칭 정보가 없습니다.';
     }
 
     function applyPublishedScores(scores) {
@@ -3780,124 +3694,20 @@
       }
     }
 
-    async function loadServerAiReport(cycleId) {
-      const requestId = ++latestAiReportRequest;
-      setAiReportVisibility(false, '서버에서 평가 완료 여부와 AI 분석 상태를 확인하고 있습니다.');
-      try {
-        const payload = await callAiReportApi('GET', { cycle_id: cycleId });
-        if (requestId !== latestAiReportRequest) return;
-        if (payload.adjusted) applyAdjustedResultMode(payload.adjustment?.final_grade || null);
-        if (payload.state === 'in_progress') {
-          setAiReportVisibility(false, `평가 진행 중입니다. 제출 ${payload.submitted_count}/${payload.assigned_count}건`);
-          return;
-        }
-        if (payload.state === 'not_generated') {
-          setAiReportVisibility(false, '평가는 완료되었지만 AI 분석이 아직 생성되지 않았습니다. 관리자에게 문의해 주세요.');
-          return;
-        }
-        if (payload.state === 'awaiting_approval') {
-          setAiReportVisibility(false, 'AI 분석이 생성되어 관리자 검토·승인을 기다리고 있습니다.');
-          return;
-        }
-        if (payload.state === 'not_published') {
-          setAiReportVisibility(false, 'AI 분석이 승인되었지만 평가 결과가 아직 공개되지 않았습니다.');
-          return;
-        }
-        if (payload.state !== 'ready' || !payload.report?.report || (!payload.adjusted && !payload.scores)) {
-          setAiReportVisibility(false, '공개 가능한 AI 분석 리포트가 없습니다.', 'rose');
-          return;
-        }
+    let latestResultStateRequest = 0;
 
-        const report = payload.report.report;
-        const scores = payload.scores;
+    async function loadServerResultState(cycleId) {
+      const requestId = ++latestResultStateRequest;
+      try {
+        const payload = await callResultStateApi('GET', { cycle_id: cycleId });
+        if (requestId !== latestResultStateRequest) return;
         if (payload.adjusted) {
-          updateAiCategory('perf', null, report.categories?.performance, true);
-          updateAiCategory('collab', null, report.categories?.collaboration, true);
-          updateAiCategory('growth', null, report.categories?.growth, true);
-          updateAiCategory('harmony', null, report.categories?.harmony, true);
-        } else {
-          applyPublishedScores(scores);
-          updateAiCategory('perf', scores.performance, report.categories?.performance, false, Number(payload.weights?.performance) * 100);
-          updateAiCategory('collab', scores.collaboration, report.categories?.collaboration, false, Number(payload.weights?.collaboration) * 100);
-          updateAiCategory('growth', scores.growth, report.categories?.growth, false, Number(payload.weights?.growth) * 100);
-          updateAiCategory('harmony', scores.harmony, report.categories?.harmony, false, Number(payload.weights?.harmony) * 100);
+          applyAdjustedResultMode(payload.adjustment?.final_grade || null);
+          return;
         }
-        const peerSummary = document.getElementById('ai-peer-text-summary');
-        const mentorSolution = document.getElementById('ai-peer-mentor-solution');
-        if (peerSummary) peerSummary.textContent = report.peer_feedback_summary || '익명 서술형 의견이 없습니다.';
-        if (mentorSolution) mentorSolution.textContent = [
-          report.summary,
-          ...(report.action_plan || []).map((item, index) => `${index + 1}. ${item}`),
-          report.caution
-        ].filter(Boolean).join('\n');
-        setAiReportVisibility(true, '');
+        if (payload.state === 'ready' && payload.scores) applyPublishedScores(payload.scores);
       } catch (error) {
-        if (requestId !== latestAiReportRequest) return;
-        setAiReportVisibility(false, `AI 리포트를 불러오지 못했습니다: ${error.message}`, 'rose');
-      }
-    }
-    let aiReportJobsDb = {};
-    let aiAutomationLoadingCycle = null;
-    let aiAutomationLoadedCycle = null;
-
-    function aiAutomationStatusHtml(targetId, complete) {
-      if (!complete) return '<span class="text-[10px] font-bold text-slate-500"><i class="fa-solid fa-hourglass-half mr-1"></i>평가 진행 중</span>';
-      const job = aiReportJobsDb[String(targetId)];
-      if (!job) return '<span class="text-[10px] font-bold text-amber-300"><i class="fa-solid fa-clock mr-1"></i>AI 생성 대기</span>';
-      if (job.state === 'analyzing') return '<span class="text-[10px] font-bold text-cyan-300"><i class="fa-solid fa-spinner fa-spin mr-1"></i>AI 분석 중</span>';
-      if (job.state === 'completed') return '<span class="text-[10px] font-bold text-emerald-300"><i class="fa-solid fa-circle-check mr-1"></i>AI 분석 완료</span>';
-      if (job.state === 'stale') return '<span class="text-[10px] font-bold text-amber-300"><i class="fa-solid fa-rotate mr-1"></i>재생성 필요</span>';
-      if (job.state === 'failed') return `<button onclick="event.stopPropagation(); retryAiReportForUser(${targetId})" title="${escapeHtml(job.last_error || 'AI 생성 실패')}" class="bg-rose-600/20 hover:bg-rose-600 text-xs px-2.5 py-1 rounded text-rose-200 hover:text-white font-bold border border-rose-500/30"><i class="fa-solid fa-rotate-right mr-1"></i>생성 실패 · 다시 시도</button>`;
-      return '<span class="text-[10px] font-bold text-amber-300"><i class="fa-solid fa-clock mr-1"></i>AI 생성 대기</span>';
-    }
-
-    async function loadAiAutomationOverview(cycleId, backfill = true) {
-      if (!cycleId || aiAutomationLoadingCycle === cycleId) return;
-      aiAutomationLoadingCycle = cycleId;
-      try {
-        const overview = await callAiReportApi('GET', { cycle_id: cycleId, overview: 1 });
-        aiReportJobsDb = Object.fromEntries((overview.jobs || []).map(job => [String(job.target_id), job]));
-        aiAutomationLoadedCycle = cycleId;
-        if (backfill) {
-          const scores = cycleScoresDb[cycleId] || {};
-          const missingTargets = Object.entries(scores)
-            .filter(([, score]) => score?.complete)
-            .map(([targetId]) => Number(targetId))
-            .filter(targetId => !aiReportJobsDb[String(targetId)]);
-          for (const targetId of missingTargets) {
-            try {
-              await callAiReportApi('POST', { action: 'auto_generate', cycle_id: cycleId, target_id: targetId });
-            } catch (error) {
-              console.warn('기존 완료 평가 AI 자동 생성 실패:', targetId, error);
-            }
-          }
-          if (missingTargets.length) {
-            const refreshed = await callAiReportApi('GET', { cycle_id: cycleId, overview: 1 });
-            aiReportJobsDb = Object.fromEntries((refreshed.jobs || []).map(job => [String(job.target_id), job]));
-          }
-        }
-      } catch (error) {
-        console.warn('AI 자동화 상태 조회 실패:', error);
-      } finally {
-        aiAutomationLoadingCycle = null;
-        if (Number(currentSelectedSummaryCycleId) === Number(cycleId)) renderAdminSummaryTable();
-      }
-    }
-
-    function ensureAiAutomationForSummary(cycleId) {
-      if (aiAutomationLoadedCycle !== cycleId && aiAutomationLoadingCycle !== cycleId) {
-        void loadAiAutomationOverview(cycleId, true);
-      }
-    }
-
-    async function retryAiReportForUser(targetId) {
-      try {
-        const cycleId = Number(currentSelectedSummaryCycleId);
-        await callAiReportApi('POST', { action: 'retry', cycle_id: cycleId, target_id: targetId });
-        await loadAiAutomationOverview(cycleId, false);
-      } catch (error) {
-        alert(`AI 분석 재시도 실패: ${error.message}`);
-        await loadAiAutomationOverview(Number(currentSelectedSummaryCycleId), false);
+        console.warn('평가 결과를 불러오지 못했습니다:', error);
       }
     }
 
@@ -4531,12 +4341,6 @@
           alert(evaluationSubmitErrorMessage(submitError));
           return;
         }
-        // The last completed assignment triggers one server-side report generation.
-        // Failure never rolls back the evaluation; administrators can retry from the summary screen.
-        void callAiReportApi('POST', {
-          action: 'auto_generate', cycle_id: Number(currentTargetEmp.cycleId), target_id: Number(currentTargetEmp.id)
-        }).catch(error => console.warn('AI 자동 생성 대기/실패:', error));
-
         await loadFromServer();
       }
 
@@ -5601,7 +5405,6 @@
       tbody.innerHTML = '';
 
       const cycleScores = cycleScoresDb[currentSelectedSummaryCycleId] || {};
-      ensureAiAutomationForSummary(Number(currentSelectedSummaryCycleId));
       initializeSummaryFiltersAndSorting();
 
       // 점수 집계·2차 조정은 실제 피평가자만 대상으로 한다.
@@ -5682,8 +5485,6 @@
             : `<button onclick="event.stopPropagation(); openScoreAdjustmentModal(usersDb.find(u=>u.id===${emp.id}), cycleScoresDb['${currentSelectedSummaryCycleId}'] ? cycleScoresDb['${currentSelectedSummaryCycleId}']['${emp.id}'] : null)" class="bg-slate-800 hover:bg-slate-700 text-xs px-2.5 py-1 rounded text-slate-300 font-bold border border-slate-700">점수 입력/조정</button>`;
 
         
-        const aiStatusHtml = aiAutomationStatusHtml(emp.id, Boolean(empScoreData?.complete));
-
         tr.innerHTML = `
           <td class="py-3 px-3 font-bold text-white">
             ${canViewDetails ? `
@@ -5700,7 +5501,6 @@
           <td class="py-3 px-3">${isAdjustedStr}</td>
           <td class="py-3 px-3">${gradeBadgeHtml}</td>
           <td class="py-3 px-3 text-right">
-            ${aiStatusHtml}
             ${scoreActionHtml}
           </td>
         `;
@@ -5841,7 +5641,7 @@
 
       const emp = usersDb.find(e => String(e.id) === String(selectedAdjustId));
       try {
-        await callAiReportApi('POST', {
+        await callResultStateApi('POST', {
           action: 'adjust', cycle_id: Number(currentSelectedSummaryCycleId),
           target_id: Number(selectedAdjustId), final_score: val, reason
         });
@@ -5850,7 +5650,7 @@
         announceCentralChange();
         await loadCentralState();
         renderAdminSummaryTable();
-        alert(`[${emp ? emp.name : '피평가자'}] 조정이 서버에 기록되었습니다. 기존 AI 초안은 폐기되었으므로 익명 의견 기반 리포트를 다시 생성해 주세요.`);
+        alert(`[${emp ? emp.name : '피평가자'}] 조정이 서버에 기록되었습니다.`);
       } catch (error) {
         alert(`점수 조정 저장 실패: ${error.message}`);
       }
@@ -5864,7 +5664,7 @@
       }
       const emp = usersDb.find(e => String(e.id) === String(selectedAdjustId));
       try {
-        await callAiReportApi('POST', {
+        await callResultStateApi('POST', {
           action: 'cancel_adjustment', cycle_id: Number(currentSelectedSummaryCycleId),
           target_id: Number(selectedAdjustId), reason
         });
@@ -5872,7 +5672,7 @@
         announceCentralChange();
         await loadCentralState();
         renderAdminSummaryTable();
-        alert(`[${emp ? emp.name : '피평가자'}]의 점수 조정이 취소되어 원점수로 복귀했습니다. 기존 AI 리포트는 무효화되었습니다.`);
+        alert(`[${emp ? emp.name : '피평가자'}]의 점수 조정이 취소되어 원점수로 복귀했습니다.`);
       } catch (error) {
         alert(`점수 조정 취소 실패: ${error.message}`);
       }
@@ -5881,7 +5681,7 @@
     async function toggleResultPublishing() {
       const nextPublished = !isResultPublished;
       try {
-        await callAiReportApi('POST', {
+        await callResultStateApi('POST', {
           action: 'publish',
           cycle_id: Number(currentSelectedSummaryCycleId),
           target_id: Number(currentLoggedInUser?.id),
