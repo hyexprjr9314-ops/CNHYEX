@@ -475,6 +475,29 @@
       body {
         padding-bottom: 5.5rem;
       }
+      header {
+        padding: 0.625rem 0.75rem !important;
+      }
+      header > div:first-child {
+        min-width: 0;
+      }
+      header > div:first-child > div:first-child {
+        width: 2.5rem !important;
+        height: 2.5rem !important;
+        flex: 0 0 auto;
+      }
+      header h1 {
+        font-size: 0.875rem !important;
+        white-space: nowrap;
+      }
+      header h1 + span,
+      header p,
+      #header-user-info > div {
+        display: none !important;
+      }
+      #header-user-info {
+        flex-wrap: nowrap !important;
+      }
       :where(button, input:not([type="checkbox"]):not([type="radio"]), select) {
         min-height: 48px;
         font-size: 14px !important;
@@ -489,7 +512,9 @@
         bottom: 0;
         z-index: 45;
         display: grid !important;
-        grid-template-columns: repeat(5, minmax(0, 1fr));
+        grid-template-columns: none;
+        grid-auto-flow: column;
+        grid-auto-columns: minmax(0, 1fr);
         gap: 0;
         padding: 0.5rem max(0.5rem, env(safe-area-inset-right))
           calc(0.5rem + env(safe-area-inset-bottom))
@@ -513,6 +538,61 @@
         font-size: 11px !important;
         line-height: 1.15;
       }
+      #view-eval .glass-card {
+        padding: 1rem !important;
+      }
+      .evaluation-score-options {
+        display: grid !important;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 0.4rem !important;
+      }
+      .evaluation-score-option {
+        min-height: 48px;
+        justify-content: center;
+        padding: 0.5rem 0.25rem !important;
+      }
+      .mobile-card-table thead {
+        display: none;
+      }
+      .mobile-card-table,
+      .mobile-card-table tbody,
+      .mobile-card-table tr,
+      .mobile-card-table td {
+        display: block;
+        width: 100%;
+      }
+      .mobile-card-table tr {
+        margin-bottom: 0.75rem;
+        padding: 0.75rem;
+        border: 1px solid #94A3B8;
+        border-radius: 0.75rem;
+        background: #FFFFFF;
+      }
+      .mobile-card-table td {
+        display: grid;
+        grid-template-columns: 7rem minmax(0, 1fr);
+        gap: 0.5rem;
+        padding: 0.35rem 0 !important;
+        text-align: left !important;
+      }
+      .mobile-card-table td::before {
+        content: attr(data-label);
+        color: #475569;
+        font-weight: 800;
+      }
+      .mobile-card-table td[colspan] {
+        display: block;
+        text-align: center !important;
+      }
+    }
+
+    .csv-dropzone {
+      transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+    }
+    .csv-dropzone.is-drag-over {
+      border-color: #0D9488 !important;
+      background: #F0FDFA !important;
+      box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.16);
     }
 
     /* White Enterprise Theme */
@@ -1243,11 +1323,11 @@
             <p class="text-xs text-slate-400 leading-relaxed">
               아이디는 이메일 주소로 자동 등록되며, 비밀번호는 최초 생성 시 자동 생성됩니다.
             </p>
-            <div class="p-4 border-2 border-dashed border-slate-700 hover:border-brandTeal rounded-2xl text-center space-y-2 cursor-pointer bg-slate-900/50" onclick="document.getElementById('csv-file-input').click()">
+            <div id="csv-user-dropzone" class="csv-dropzone p-4 border-2 border-dashed border-slate-700 hover:border-brandTeal rounded-2xl text-center space-y-2 cursor-pointer bg-slate-900/50" onclick="document.getElementById('csv-file-input').click()" ondragover="handleCSVDragOver(event)" ondragleave="handleCSVDragLeave(event)" ondrop="handleCSVDrop(event)">
               <i class="fa-solid fa-cloud-arrow-up text-3xl text-brandTeal"></i>
               <p class="text-xs font-bold text-slate-200">클릭하여 CSV 파일 선택</p>
               <p class="text-[10px] text-slate-500">필목: 성명, 이메일, 부서, 근무지, 직급, 입사일자, 구분, 전화번호</p>
-              <input type="file" id="csv-file-input" accept=".csv" class="hidden" onchange="handleCSVUpload(event)">
+              <input type="file" id="csv-file-input" accept=".csv,text/csv" class="hidden" onchange="handleCSVUpload(event)">
             </div>
             <button onclick="downloadCSVTemplate()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold py-2 rounded-xl transition flex items-center justify-center gap-1.5">
               <i class="fa-solid fa-download"></i>
@@ -1960,7 +2040,7 @@
             <select id="progress-status-filter" onchange="renderEvaluationProgress()" class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-bold text-slate-200"><option value="">전체 상태</option><option value="pending">미제출 있음</option><option value="complete">완료</option><option value="not_started">미착수</option></select>
           </div>
           <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs text-slate-300">
+            <table class="mobile-card-table w-full text-left text-xs text-slate-300">
               <thead><tr class="border-b border-slate-700 text-slate-400"><th class="p-3">평가자</th><th class="p-3">소속</th><th class="p-3 text-center">배정</th><th class="p-3 text-center">완료</th><th class="p-3 text-center">미제출</th><th class="p-3 text-center">진행률</th><th class="p-3">미제출 대상</th></tr></thead>
               <tbody id="progress-evaluator-body" class="divide-y divide-slate-800"></tbody>
             </table>
@@ -1968,7 +2048,7 @@
           <div class="pt-4 border-t border-slate-800">
             <h4 class="text-sm font-bold text-white mb-3">피평가자별 수집 현황</h4>
             <div class="overflow-x-auto">
-              <table class="w-full text-left text-xs text-slate-300">
+              <table class="mobile-card-table w-full text-left text-xs text-slate-300">
                 <thead><tr class="border-b border-slate-700 text-slate-400"><th class="p-3">피평가자</th><th class="p-3">소속</th><th class="p-3 text-center">예정</th><th class="p-3 text-center">수집</th><th class="p-3 text-center">미수집</th><th class="p-3 text-center">진행률</th></tr></thead>
                 <tbody id="progress-target-body" class="divide-y divide-slate-800"></tbody>
               </table>
@@ -2937,7 +3017,7 @@
       if (title) title.innerText = `${displayName || '사용자'}님 환영합니다! 👋`;
       if (message) {
         message.innerText = Number(totalAssignments) > 0
-          ? '배정된 동료들에 대한 360° 다면평가를 성실히 진행해 주세요. (자기평가 제외됨)'
+          ? '배정된 동료들에 대한 360° 다면평가를 성실히 진행해 주세요.'
           : '현재 배정된 평가 대상자가 없습니다.';
       }
     }
@@ -2976,6 +3056,7 @@
           ...profile,
           sysRole: profile.sys_role,
           isAdmin: profile.sys_role === '관리자',
+          isSuperAdmin: profile.sys_role === '관리자' && String(profile.email).toLowerCase() === 'admin@cnhyex.com',
           isExecutive: profile.sys_role === '임원'
         };
 
@@ -3023,7 +3104,7 @@
           start: cycle.start_date,
           end: cycle.end_date,
           deadline: cycle.deadline || cycle.end_date,
-          status: cycle.status === '진행중' ? '진행 중' : cycle.status
+          status: cycle.status
         }));
         const selectedCycle = cyclesDb.find(cycle => Number(cycle.id) === Number(currentSelectedSummaryCycleId)) || cyclesDb[0];
         isResultPublished = selectedCycle?.results_published === true;
@@ -3617,7 +3698,7 @@
         subtab = 'summary';
       }
 
-      if (isExecOnly && subtab !== 'summary' && subtab !== 'history') {
+      if (isExecOnly && !['summary', 'history', 'progress'].includes(subtab)) {
         alert('임원 권한 사용자는 [📋 점수 집계 & 2차 조정] 및 [🔒 평가 마감 & 과거 이력] 접근 권한이 부여됩니다.');
         subtab = 'summary';
       }
@@ -3626,7 +3707,7 @@
       ['users', 'cycles', 'questions', 'permissions', 'matching', 'progress'].forEach(st => {
         const btn = document.getElementById(`admin-tab-${st}`);
         if (btn) {
-          if (isExecOnly) btn.classList.add('hidden');
+          if (isExecOnly && st !== 'progress') btn.classList.add('hidden');
           else btn.classList.remove('hidden');
         }
       });
@@ -3657,10 +3738,12 @@
       if (subtab === 'progress') renderEvaluationProgress();
       if (subtab === 'summary') renderAdminSummaryTable();
       if (subtab === 'history') renderHistoryTable();
+      requestAnimationFrame(applyMobileAdminTableLayout);
     }
 
     function renderEvaluationProgress() {
-      if (!currentLoggedInUser?.isAdmin) return;
+      const roleInfo = checkUserRole(currentLoggedInUser);
+      if (!roleInfo.isAdmin && !roleInfo.isExecutive) return;
       const cycleId = Number(document.getElementById('progress-cycle-select')?.value || cyclesDb[0]?.id);
       const userById = new Map(usersDb.map(user => [Number(user.id), user]));
       const matchings = customManualMatchingsDb.filter(row =>
@@ -3734,11 +3817,11 @@
             }).join('')}</div></details>`
           : '<span class="font-bold text-emerald-700">모두 완료</span>';
         return `<tr>
-          <td class="p-3 font-bold text-slate-900">${escapeHtml(row.person.name)}</td>
-          <td class="p-3 text-slate-600">${escapeHtml([row.person.company, row.person.dept].filter(Boolean).join(' · '))}</td>
-          <td class="p-3 text-center">${row.rows.length}</td><td class="p-3 text-center text-emerald-700">${row.completed}</td>
-          <td class="p-3 text-center font-bold text-amber-700">${row.pending.length}</td><td class="p-3 text-center font-bold">${rowRate.toFixed(1)}%</td>
-          <td class="p-3 min-w-64">${pendingDetails}</td>
+          <td data-label="평가자" class="p-3 font-bold text-slate-900">${escapeHtml(row.person.name)}</td>
+          <td data-label="소속" class="p-3 text-slate-600">${escapeHtml([row.person.company, row.person.dept].filter(Boolean).join(' · '))}</td>
+          <td data-label="배정" class="p-3 text-center">${row.rows.length}</td><td data-label="완료" class="p-3 text-center text-emerald-700">${row.completed}</td>
+          <td data-label="미제출" class="p-3 text-center font-bold text-amber-700">${row.pending.length}</td><td data-label="진행률" class="p-3 text-center font-bold">${rowRate.toFixed(1)}%</td>
+          <td data-label="미제출 대상" class="p-3 min-w-64">${pendingDetails}</td>
         </tr>`;
       }).join('') : '<tr><td colspan="7" class="p-8 text-center text-slate-500">조건에 맞는 평가자가 없습니다.</td></tr>';
 
@@ -3750,10 +3833,10 @@
       if (targetBody) targetBody.innerHTML = visibleTargets.length ? visibleTargets.map(row => {
         const pending = row.rows.length - row.completed;
         const rowRate = row.rows.length ? row.completed / row.rows.length * 100 : 0;
-        return `<tr><td class="p-3 font-bold text-slate-900">${escapeHtml(row.person.name)}</td>
-          <td class="p-3 text-slate-600">${escapeHtml([row.person.company, row.person.dept].filter(Boolean).join(' · '))}</td>
-          <td class="p-3 text-center">${row.rows.length}</td><td class="p-3 text-center text-emerald-700">${row.completed}</td>
-          <td class="p-3 text-center font-bold text-amber-700">${pending}</td><td class="p-3 text-center font-bold">${rowRate.toFixed(1)}%</td></tr>`;
+        return `<tr><td data-label="피평가자" class="p-3 font-bold text-slate-900">${escapeHtml(row.person.name)}</td>
+          <td data-label="소속" class="p-3 text-slate-600">${escapeHtml([row.person.company, row.person.dept].filter(Boolean).join(' · '))}</td>
+          <td data-label="예정" class="p-3 text-center">${row.rows.length}</td><td data-label="수집" class="p-3 text-center text-emerald-700">${row.completed}</td>
+          <td data-label="미수집" class="p-3 text-center font-bold text-amber-700">${pending}</td><td data-label="진행률" class="p-3 text-center font-bold">${rowRate.toFixed(1)}%</td></tr>`;
       }).join('') : '<tr><td colspan="6" class="p-8 text-center text-slate-500">표시할 피평가자가 없습니다.</td></tr>';
     }
 
@@ -4257,13 +4340,14 @@
 
     function checkUserRole(user) {
       if (!user) {
-        return { isAdmin: false, isExecutive: false, isPrivileged: false };
+        return { isAdmin: false, isExecutive: false, isSuperAdmin: false, isPrivileged: false };
       }
 
       const systemRole = user.sysRole ?? user.sys_role ?? '';
 
       // 1. Master System Admin Condition: sysRole MUST explicitly be '관리자' (유종열 대리 / admin)
       const isAdmin = systemRole === '관리자';
+      const isSuperAdmin = isAdmin && String(user.email || '').toLowerCase() === 'admin@cnhyex.com';
 
       // 2. Executive access is granted only by the server-managed system role.
       const isExecutive = systemRole === '임원';
@@ -4271,7 +4355,7 @@
       // 3. Privileged User Condition for evaluation management (Admin or Executive)
       const isPrivileged = isAdmin || isExecutive;
 
-      return { isAdmin, isExecutive, isPrivileged };
+      return { isAdmin, isExecutive, isSuperAdmin, isPrivileged };
     }
 
     function canCurrentUserViewResults() {
@@ -4336,7 +4420,8 @@
       currentLoggedInUser = {
         ...foundUser,
         isAdmin: authenticatedRoles.isAdmin,
-        isExecutive: authenticatedRoles.isExecutive
+        isExecutive: authenticatedRoles.isExecutive,
+        isSuperAdmin: authenticatedRoles.isSuperAdmin
       };
 
       finishAuthenticatedLogin();
@@ -4450,6 +4535,27 @@
         if (currentActiveSubtab === 'summary') renderAdminSummaryTable();
         if (currentActiveSubtab === 'history') renderHistoryTable();
       }
+      requestAnimationFrame(applyMobileAdminTableLayout);
+    }
+
+    function applyMobileAdminTableLayout() {
+      const selectors = [
+        '#admin-subtab-users table', '#admin-subtab-permissions table',
+        '#admin-subtab-progress table', '#admin-subtab-summary table',
+        '#admin-subtab-history table', '#view-admin table'
+      ];
+      document.querySelectorAll(selectors.join(',')).forEach(table => {
+        const labels = [...table.querySelectorAll('thead th')].map(cell => cell.textContent.trim());
+        if (labels.length < 3) return;
+        table.classList.add('mobile-card-table');
+        table.querySelectorAll('tbody tr').forEach(row => {
+          [...row.children].forEach((cell, index) => {
+            if (!cell.hasAttribute('colspan') && !cell.dataset.label) {
+              cell.dataset.label = labels[index] || '정보';
+            }
+          });
+        });
+      });
     }
 
     function scheduleCentralReload() {
@@ -5267,9 +5373,9 @@
               <span class="text-[10px] text-slate-400">가중치 ${q.weight}%</span>
             </div>
             <p class="text-xs font-bold text-white pt-0.5">Q${idx + 1}. ${escapeHtml(q.text)}</p>
-            <div class="flex items-center gap-3 pt-1">
+            <div class="evaluation-score-options flex items-center gap-3 pt-1">
               ${[1, 2, 3, 4, 5].map(num => `
-                <label class="flex items-center gap-1.5 cursor-pointer bg-slate-950/40 px-2.5 py-1 rounded-lg border border-slate-800 hover:border-brandTeal transition">
+                <label class="evaluation-score-option flex items-center gap-1.5 cursor-pointer bg-slate-950/40 px-2.5 py-1 rounded-lg border border-slate-800 hover:border-brandTeal transition">
                   <input type="radio" name="pq_dynamic_${q.id}" value="${num}" required class="accent-brandTeal">
                   <span class="text-xs text-slate-300 font-bold">${num}점</span>
                 </label>
@@ -5649,10 +5755,16 @@
       document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url);
     }
 
-    function handleCSVUpload(event) {
-      const file = event.target.files[0];
+    async function processCSVFile(file) {
       if (!file) return;
-
+      if (!/\.csv$/i.test(file.name)) {
+        alert('CSV 파일 한 개만 업로드할 수 있습니다.');
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        alert('CSV 파일은 5MB 이하만 업로드할 수 있습니다.');
+        return;
+      }
       const reader = new FileReader();
       reader.onload = async function(e) {
         try {
@@ -5669,11 +5781,37 @@
           alert(`CSV 사용자 등록 완료: 성공 ${payload.success}명, 실패 ${payload.failed}명\n상세 결과 CSV가 다운로드됩니다.`);
         } catch (error) {
           alert(`CSV 사용자 등록 실패: ${error.message}`);
-        } finally {
-          event.target.value = '';
         }
       };
       reader.readAsText(file, 'utf-8');
+    }
+
+    function handleCSVUpload(event) {
+      const file = event.target.files?.[0];
+      processCSVFile(file).finally(() => { event.target.value = ''; });
+    }
+
+    function handleCSVDragOver(event) {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'copy';
+      event.currentTarget.classList.add('is-drag-over');
+    }
+
+    function handleCSVDragLeave(event) {
+      if (!event.currentTarget.contains(event.relatedTarget)) {
+        event.currentTarget.classList.remove('is-drag-over');
+      }
+    }
+
+    function handleCSVDrop(event) {
+      event.preventDefault();
+      event.currentTarget.classList.remove('is-drag-over');
+      const files = [...(event.dataTransfer.files || [])];
+      if (files.length !== 1) {
+        alert('CSV 파일 한 개만 드롭해 주세요.');
+        return;
+      }
+      processCSVFile(files[0]);
     }
 
     let currentEditingCycleId = null;
@@ -5684,12 +5822,18 @@
       container.innerHTML = '';
 
       cyclesDb.forEach(c => {
+        const roleInfo = checkUserRole(currentLoggedInUser);
+        const displayStatus = c.cancelled_at ? '취소/보관됨'
+          : c.force_closed_at ? '강제 종료/보관됨' : c.status;
+        const isPaused = String(c.status).includes('일시정지');
+        const isActive = String(c.status).includes('진행');
+        const isClosed = String(c.status).includes('마감') || String(c.status).includes('보관') || String(c.status).includes('취소');
         const div = document.createElement('div');
-        div.className = 'bg-slate-900/80 p-4 rounded-xl border border-slate-800 flex justify-between items-center';
+        div.className = 'bg-slate-900/80 p-4 rounded-xl border border-slate-800 flex flex-col md:flex-row md:justify-between md:items-center gap-3';
         div.innerHTML = `
           <div>
             <div class="flex items-center gap-2 mb-1">
-              <span class="bg-emerald-500/20 text-emerald-300 font-bold px-2 py-0.5 rounded text-[10px]">${c.status}</span>
+              <span class="bg-emerald-500/20 text-emerald-300 font-bold px-2 py-0.5 rounded text-[10px]">${escapeHtml(displayStatus)}</span>
               <span class="text-xs text-slate-400">업무기간: ${c.start} ~ ${c.end}</span>
             </div>
             <h4 class="text-sm font-bold text-white">${c.name}</h4>
@@ -5707,13 +5851,62 @@
             <button onclick="openEditCycleModal(${c.id})" class="bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 border border-blue-500/30">
               <i class="fa-solid fa-pen-to-square"></i> 수정
             </button>
-            <button onclick="deleteEvaluationCycle(${c.id})" class="bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 border border-rose-500/30">
-              <i class="fa-solid fa-trash-can"></i> 삭제
+            ${roleInfo.isAdmin && isActive && !isPaused && !isClosed ? `
+            <button onclick="changeCycleState(${c.id}, 'cycle_pause')" class="bg-amber-600/20 hover:bg-amber-600 text-amber-700 hover:text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 border border-amber-500/40">
+              <i class="fa-solid fa-pause"></i> 일시정지
+            </button>` : ''}
+            ${roleInfo.isAdmin && isPaused && !isClosed ? `
+            <button onclick="changeCycleState(${c.id}, 'cycle_resume')" class="bg-emerald-600/20 hover:bg-emerald-600 text-emerald-700 hover:text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 border border-emerald-500/40">
+              <i class="fa-solid fa-play"></i> 평가 재개
+            </button>` : ''}
+            ${roleInfo.isSuperAdmin && !isClosed ? `
+            <button onclick="runEmergencyCycleAction(${c.id}, 'cycle_force_close')" class="bg-orange-600/20 hover:bg-orange-600 text-orange-800 hover:text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 border border-orange-500/40">
+              <i class="fa-solid fa-lock"></i> 강제 종료(결과 없음)
             </button>
+            <button onclick="runEmergencyCycleAction(${c.id}, 'cycle_cancel')" class="bg-rose-600/20 hover:bg-rose-600 text-rose-800 hover:text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 border border-rose-500/40">
+              <i class="fa-solid fa-ban"></i> 평가주기 취소
+            </button>
+            <button onclick="runEmergencyCycleAction(${c.id}, 'cycle_cancel', true)" class="bg-slate-700 hover:bg-slate-800 text-slate-800 hover:text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 border border-slate-500/50">
+              <i class="fa-solid fa-trash-can"></i> 완전 삭제
+            </button>` : ''}
           </div>
         `;
         container.appendChild(div);
       });
+    }
+
+    async function changeCycleState(cycleId, action) {
+      const cycle = cyclesDb.find(item => Number(item.id) === Number(cycleId));
+      const label = action === 'cycle_pause' ? '일시정지' : '재개';
+      const reason = prompt(`평가주기 [${cycle?.name || cycleId}] ${label} 사유를 입력해 주세요.`);
+      if (!reason?.trim()) return;
+      if (!confirm(`평가주기를 ${label}하시겠습니까?`)) return;
+      try {
+        await callAdminStateApi({ action, cycle_id: Number(cycleId), reason: reason.trim() });
+        announceCentralChange();
+        await loadFromServer();
+        populateCycleSelects();
+        renderCyclesList();
+      } catch (error) {
+        alert(`평가주기 ${label} 실패: ${error.message}`);
+      }
+    }
+
+    async function runEmergencyCycleAction(cycleId, action, hardDelete = false) {
+      const cycle = cyclesDb.find(item => Number(item.id) === Number(cycleId));
+      const phrase = hardDelete ? '완전 삭제' : action === 'cycle_force_close' ? '강제 종료' : '평가주기 취소';
+      const reason = prompt(`[최고 관리자] ${phrase} 사유를 입력해 주세요.`);
+      if (!reason?.trim()) return;
+      if (prompt(`확인을 위해 "${phrase}"을(를) 입력해 주세요.`) !== phrase) return;
+      try {
+        await callAdminStateApi({ action, cycle_id: Number(cycleId), reason: reason.trim(), hard_delete: hardDelete });
+        announceCentralChange();
+        await loadFromServer();
+        populateCycleSelects();
+        renderCyclesList();
+      } catch (error) {
+        alert(`${phrase} 실패: ${error.message}`);
+      }
     }
 
     function formatCycleValidationReport(report) {
@@ -6835,6 +7028,12 @@
       const el = document.getElementById('internal-approval-controls');
       const cycle = cyclesDb.find(row => Number(row.id) === Number(currentSelectedSummaryCycleId));
       if (!el || !cycle) return;
+      if (cycle.cancelled_at || cycle.force_closed_at) {
+        el.innerHTML = `<span class="rounded-lg border border-slate-400 bg-slate-100 px-3 py-2 font-bold text-slate-700">${
+          cycle.cancelled_at ? '취소된 평가주기' : '강제 종료된 평가주기'
+        } · 전자승인 및 결과 공개 불가</span>`;
+        return;
+      }
       const role = currentLoggedInUser?.sys_role;
       const status = cycle.internal_approval_status || 'not_requested';
       const label = { not_requested: '전자결재 미요청', requested: '전자결재 요청됨', approved: '전자결재 승인됨', rejected: '전자결재 반려됨' }[status] || status;

@@ -5,10 +5,11 @@ import { normalizeTrack, relationshipType, targetTrack, TRACK_CATEGORIES } from 
 import { isMutableDraftCycle } from './questions.js';
 
 const PRIVILEGED = new Set([ROLES.admin, ROLES.executive]);
+const SUPER_ADMIN_EMAIL = 'admin@cnhyex.com';
 const ADMIN_ONLY = new Set([
   'cycle_create', 'cycle_update', 'cycle_delete', 'cycle_validate', 'cycle_activate', 'question_create', 'question_update',
   'question_delete', 'matching_toggle', 'matching_replace', 'matching_generate', 'permission_update', 'permission_bulk_update', 'settings_update',
-  'goal_status', 'cycle_close'
+  'goal_status', 'cycle_close', 'cycle_pause', 'cycle_resume', 'cycle_force_close', 'cycle_cancel'
 ]);
 const EXECUTIVE_ALLOWED = new Set();
 const send = (res, status, payload) => res.status(status).json(payload);
@@ -28,6 +29,20 @@ function authenticatedRpcClient(accessToken) {
     auth: { persistSession: false, autoRefreshToken: false },
     global: { headers: { Authorization: `Bearer ${accessToken}` } }
   });
+}
+
+function requiredReason(body) {
+  const reason = String(body?.reason || '').trim();
+  if (reason.length < 5) {
+    throw Object.assign(new Error('작업 사유를 5자 이상 입력해 주세요.'), { status: 400 });
+  }
+  return reason;
+}
+
+function assertSuperAdmin(authUser) {
+  if (String(authUser?.email || '').trim().toLowerCase() !== SUPER_ADMIN_EMAIL) {
+    throw Object.assign(new Error('최고관리자 전용 기능입니다.'), { status: 403 });
+  }
 }
 
 async function authenticate(req, service) {
@@ -150,7 +165,7 @@ async function assertCycleMutable(service, cycleId) {
 }
 
 export function isClosedHistoricalCycle(cycle = {}) {
-  return ['마감/보관됨', 'closed', 'archived'].includes(String(cycle.status || '').trim());
+  return ['마감/보관됨', '취소/보관됨', 'closed', 'cancelled', 'archived'].includes(String(cycle.status || '').trim());
 }
 
 export function isCurrentGovernanceCycle(cycle = {}) {
@@ -279,15 +294,14 @@ async function readState(service, profile) {
   return {
     settings: settingsResult.data, goals: goalsResult.data || [],
     ...(profile.sys_role === ROLES.admin ? { all_goals: allGoals.data || [] } : {}),
-    // Executive GET is deliberately summary-only: raw assignments and
-    // individual answer rows are not needed for final score/close views.
-    matchings: profile.sys_role === ROLES.admin ? (matchings.data || []) : [],
-    submitted_matching_ids: profile.sys_role === ROLES.admin
-      ? eligibleEvaluations.map(row => Number(row.matching_id))
-      : [],
-    eligible_matching_ids: profile.sys_role === ROLES.admin
-      ? eligibleMatchings.map(row => Number(row.id))
-      : [],
+    // Progress visibility needs assignment identities and submission state,
+    // never individual answers or qualitative comments.
+    matchings: (matchings.data || []).map(row => ({
+      id: row.id, cycle_id: row.cycle_id, evaluator_id: row.evaluator_id,
+      target_id: row.target_id, type: row.type
+    })),
+    submitted_matching_ids: eligibleEvaluations.map(row => Number(row.matching_id)),
+    eligible_matching_ids: eligibleMatchings.map(row => Number(row.id)),
     archives: archives.data || [], cycle_scores: cycleScores,
     final_results: currentFinalResults
   };
@@ -438,6 +452,23 @@ export default async function handler(req, res) {
       result = await service.rpc('validate_evaluation_cycle', { p_cycle_id: Number(req.body.cycle_id) });
     } else if (action === 'cycle_activate') {
       result = await service.rpc('activate_evaluation_cycle', { p_cycle_id: Number(req.body.cycle_id) });
+      if (result.error) throw Object.assign(new Error(result.error.message), { status: 409 });
+    } else if (['cycle_pause', 'cycle_resume', 'cycle_force_close', 'cycle_cancel'].includes(action)) {
+      if (['cycle_force_close', 'cycle_cancel'].includes(action)) assertSuperAdmin(authUser);
+      const rpcNames = {
+        cycle_pause: 'governance_pause_cycle',
+        cycle_resume: 'governance_resume_cycle',
+        cycle_force_close: 'governance_force_close_cycle',
+        cycle_cancel: 'governance_cancel_cycle'
+      };
+      const accessToken = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+      const args = {
+        p_cycle_id: Number(req.body.cycle_id),
+        p_reason: requiredReason(req.body),
+        p_actor_id: authUser.id
+      };
+      if (action === 'cycle_cancel') args.p_hard_delete = req.body.hard_delete === true;
+      result = await authenticatedRpcClient(accessToken).rpc(rpcNames[action], args);
       if (result.error) throw Object.assign(new Error(result.error.message), { status: 409 });
     } else if (action === 'cycle_delete') {
       const cycleId = Number(req.body.id);
