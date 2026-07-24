@@ -55,7 +55,7 @@
 
 ## Responsive behavior
 - Supported breakpoints/devices: 데스크톱 우선, 640px 이하 모바일
-- Layout adaptations: 기존 고정 하단 탐색과 반응형 표/카드를 유지하며 글자 확대 시 카드 최소 폭을 넓히고 열 수를 자동 축소
+- Layout adaptations: 기존 고정 하단 탐색과 반응형 표/카드를 유지하며 글자 확대 시 카드 최소 폭을 넓히고 열 수를 자동 축소, 매칭 화면은 배정 가능 영역 아래에 현재 배정 영역을 배치해 검색·필터 전체 너비를 보장
 - Touch/hover differences: 데스크톱은 드래그앤드롭, 모바일·키보드는 배정·해제 버튼을 제공하며 핵심 동작은 hover에 의존하지 않음
 
 ## Interaction states
