@@ -172,6 +172,14 @@
     .matching-person-card.is-staged {
       border-style: dashed !important;
     }
+    .matching-save-action {
+      background: #0F766E !important;
+      border-color: #115E59 !important;
+      color: #FFFFFF !important;
+    }
+    .matching-save-action:hover {
+      background: #115E59 !important;
+    }
 
     /* Dynamic Smooth Progress Fill Animation */
     .bar-grow-animated {
@@ -1623,7 +1631,7 @@
                 </div>
                 <div class="flex gap-2">
                   <button id="matching-discard-btn" onclick="discardStagedMatchingChanges()" class="px-3 py-2 rounded-lg border border-slate-400 bg-white text-slate-700 text-[11px] font-bold disabled:opacity-40" disabled>변경 취소</button>
-                  <button id="matching-save-btn" onclick="saveStagedMatchingChanges()" class="px-3 py-2 rounded-lg border border-teal-700 bg-teal-700 text-white text-[11px] font-bold disabled:opacity-40" disabled><i class="fa-solid fa-floppy-disk mr-1"></i>변경사항 저장</button>
+                  <button id="matching-save-btn" onclick="saveStagedMatchingChanges()" class="matching-save-action px-3 py-2 rounded-lg border text-[11px] font-bold disabled:opacity-40" disabled><i class="fa-solid fa-floppy-disk mr-1"></i>변경사항 저장</button>
                 </div>
               </div>
             </div>
