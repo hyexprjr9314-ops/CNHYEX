@@ -1626,7 +1626,7 @@
               </label>
               <div class="flex items-center gap-1 ml-2">
                 <span class="text-xs font-bold text-slate-300 whitespace-nowrap"><i class="fa-solid fa-calendar-check text-brandTeal mr-1"></i>주기:</span>
-                <select id="question-cycle-select" onchange="renderQuestionsList()" class="bg-slate-900 border border-slate-700 text-xs font-bold text-white rounded-xl px-3 py-2">
+                <select id="question-cycle-select" onchange="handleCycleSelectChange(this); renderQuestionsList()" class="bg-slate-900 border border-slate-700 text-xs font-bold text-white rounded-xl px-3 py-2">
                   <!-- Dynamically Populated -->
                 </select>
               </div>
@@ -2080,7 +2080,7 @@
               <h3 class="text-base font-bold text-white flex items-center gap-2"><i class="fa-solid fa-chart-line text-brandTeal"></i><span>평가 진행 현황</span></h3>
               <p class="text-xs text-slate-400 mt-1">전체 진행률과 평가자별 미제출 대상을 확인합니다.</p>
             </div>
-            <select id="progress-cycle-select" onchange="renderEvaluationProgress()" class="bg-slate-900 border border-slate-700 text-xs font-bold text-white rounded-xl px-3 py-2"></select>
+            <select id="progress-cycle-select" onchange="handleCycleSelectChange(this); renderEvaluationProgress()" class="bg-slate-900 border border-slate-700 text-xs font-bold text-white rounded-xl px-3 py-2"></select>
           </div>
           <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
             <div class="progress-stat-neutral rounded-xl border p-4"><p class="text-xs">전체 배정</p><strong id="progress-total" class="text-xl">0건</strong></div>
@@ -2127,7 +2127,7 @@
             </div>
             <div class="flex flex-wrap items-center justify-end gap-2">
               <label class="text-xs font-bold text-slate-300 whitespace-nowrap"><i class="fa-solid fa-calendar-check text-brandGold mr-1"></i>평가 주기 선택:</label>
-              <select id="summary-cycle-select" onchange="renderAdminSummaryTable()" class="bg-slate-900 border border-slate-700 text-xs font-bold text-white rounded-xl px-3 py-2">
+              <select id="summary-cycle-select" onchange="handleCycleSelectChange(this); renderAdminSummaryTable()" class="bg-slate-900 border border-slate-700 text-xs font-bold text-white rounded-xl px-3 py-2">
                 <!-- Dynamically Populated -->
               </select>
               <button type="button" onclick="downloadCSVReport()" class="bg-brandBlue hover:bg-blue-600 text-white font-bold px-3.5 py-2 rounded-xl transition text-xs flex items-center gap-2 shadow-lg shadow-blue-900/30">
@@ -2204,7 +2204,7 @@
             <div class="bg-slate-900/90 p-4 rounded-xl border border-slate-700/80 space-y-2 text-xs w-full md:w-auto">
               <label class="block font-bold text-slate-200">마감 대상 평가 주기 선택:</label>
               <div class="flex gap-2">
-                <select id="history-close-cycle-select" class="bg-slate-800 border border-slate-700 text-xs font-bold text-white rounded-xl px-3 py-2 flex-grow">
+                <select id="history-close-cycle-select" onchange="handleCycleSelectChange(this)" class="bg-slate-800 border border-slate-700 text-xs font-bold text-white rounded-xl px-3 py-2 flex-grow">
                   <!-- Dynamically Populated -->
                 </select>
                 <button onclick="handleCloseCycleSubmit()" class="bg-rose-600 hover:bg-rose-500 text-white font-bold px-4 py-2 rounded-xl transition flex items-center gap-1.5 shadow-lg shadow-rose-900/40 whitespace-nowrap">
@@ -3041,6 +3041,7 @@
     // The browser keeps navigation preferences only. All HR data lives in Supabase.
     let currentActiveView = 'list';
     let currentActiveSubtab = 'users';
+    let selectedEvaluationCycleId = null;
 
     function saveUiPreferences() {
       try {
@@ -3257,6 +3258,26 @@
       }
     }
 
+    function setSelectedEvaluationCycleId(value) {
+      const cycleId = Number(value);
+      if (Number.isInteger(cycleId) && cyclesDb.some(cycle => Number(cycle.id) === cycleId)) {
+        selectedEvaluationCycleId = cycleId;
+        currentSelectedSummaryCycleId = cycleId;
+        return cycleId;
+      }
+      return null;
+    }
+
+    function handleCycleSelectChange(selectEl) {
+      const cycleId = setSelectedEvaluationCycleId(selectEl?.value);
+      if (!cycleId) return;
+      ['question-cycle-select', 'perm-cycle-select', 'matching-cycle-select', 'progress-cycle-select', 'summary-cycle-select', 'history-close-cycle-select']
+        .forEach(id => {
+          const select = document.getElementById(id);
+          if (select && select.value !== String(cycleId)) select.value = String(cycleId);
+        });
+    }
+
     function populateCycleSelects() {
       const myReportSelect = document.getElementById('my-report-cycle-select');
       const questionSelect = document.getElementById('question-cycle-select');
@@ -3271,7 +3292,12 @@
       // Sort by newest created cycle first (top of dropdown list)
       const sortedCycles = [...cyclesDb].sort((a, b) => b.id - a.id);
 
-      const optionsHtml = sortedCycles.map((c, i) => `<option value="${c.id}" ${i === 0 ? 'selected' : ''}>[${c.status}] ${c.name} (${c.start} ~ ${c.end})</option>`).join('');
+      const previousMyReportValue = myReportSelect?.value;
+      const currentSelectValues = [questionSelect, permSelect, matchingSelect, progressSelect, summarySelect, historyCloseSelect]
+        .map(select => select?.value)
+        .find(value => value && !String(value).startsWith('history_'));
+      const selectedCycleId = setSelectedEvaluationCycleId(selectedEvaluationCycleId || currentSelectValues || sortedCycles[0].id) || Number(sortedCycles[0].id);
+      const optionsHtml = sortedCycles.map(c => `<option value="${c.id}">[${c.status}] ${c.name} (${c.start} ~ ${c.end})</option>`).join('');
 
       let myReportOptionsHtml = optionsHtml;
       if (evaluationHistoryDb && evaluationHistoryDb.length > 0) {
@@ -3286,6 +3312,11 @@
       if (progressSelect) progressSelect.innerHTML = optionsHtml;
       if (summarySelect) summarySelect.innerHTML = optionsHtml;
       if (historyCloseSelect) historyCloseSelect.innerHTML = optionsHtml;
+      [questionSelect, permSelect, matchingSelect, progressSelect, summarySelect, historyCloseSelect]
+        .forEach(select => { if (select) select.value = String(selectedCycleId); });
+      if (myReportSelect && previousMyReportValue && [...myReportSelect.options].some(option => option.value === previousMyReportValue)) {
+        myReportSelect.value = previousMyReportValue;
+      }
     }
 
     async function handleCloseCycleSubmit() {
@@ -4006,6 +4037,7 @@
     }
 
     function handlePermissionCycleChange(selectEl) {
+      const requestedCycleId = Number(selectEl?.value);
       if (hasStagedMatchingChanges()) {
         const shouldDiscard = confirm('저장하지 않은 평가 매칭 변경사항이 있습니다. 변경사항을 취소하고 평가 주기를 이동하시겠습니까?');
         if (!shouldDiscard) {
@@ -4021,6 +4053,8 @@
         const cycleSelect = document.getElementById(id);
         if (cycleSelect && cycleSelect !== selectEl) cycleSelect.value = selectEl.value;
       });
+      setSelectedEvaluationCycleId(requestedCycleId);
+      handleCycleSelectChange(selectEl);
       resetStagedMatchingState();
       syncSelectedCycleMatchingMode();
       if (currentActiveSubtab === 'matching') renderManualMatchingTable();
@@ -4446,18 +4480,15 @@
           target_ids: targetIds,
           reason
         });
+        const savedMatchings = Array.isArray(payload.data?.matchings) ? payload.data.matchings : null;
+        if (!savedMatchings) throw new Error('서버가 저장된 평가 배정 목록을 반환하지 않았습니다.');
+        customManualMatchingsDb = customManualMatchingsDb
+          .filter(row => Number(row.evaluatorId) !== evaluatorId || Number(row.cycleId) !== Number(cycleId))
+          .concat(savedMatchings.map(row => ({
+            id: Number(row.id), cycleId: Number(row.cycle_id), evaluatorId: Number(row.evaluator_id),
+            targetId: Number(row.target_id), type: row.type
+          })));
         announceCentralChange();
-        await loadCentralState();
-        const expectedIds = payload.data?.matchings
-          ? payload.data.matchings.map(row => Number(row.target_id)).sort((a, b) => a - b)
-          : [...new Set([
-              ...targetIds,
-              ...(payload.data?.protected_target_ids || []).map(Number)
-            ])].sort((a, b) => a - b);
-        const savedIds = getServerMatchingTargetIds(evaluatorId, cycleId).sort((a, b) => a - b);
-        if (expectedIds.length !== savedIds.length || expectedIds.some((id, index) => id !== savedIds[index])) {
-          throw new Error('서버 저장 결과를 확인하지 못했습니다. 변경사항은 화면에 유지됩니다.');
-        }
         resetStagedMatchingState();
         renderManualMatchingTable();
         renderEmployeeGrid();
@@ -6212,8 +6243,10 @@
         populateCycleSelects();
         renderCyclesList();
         const newId = response.data?.id;
-        const summarySelect = document.getElementById('summary-cycle-select');
-        if (summarySelect && newId) summarySelect.value = String(newId);
+        if (newId) {
+          setSelectedEvaluationCycleId(newId);
+          handleCycleSelectChange({ value: String(newId) });
+        }
         renderAdminSummaryTable();
         alert(`새 평가 주기 [${name}]가 서버에 등록되었습니다.`);
       } catch (error) {
@@ -6872,7 +6905,7 @@
       function renderAdminSummaryTable() {
       const summarySelect = document.getElementById('summary-cycle-select');
       if (summarySelect && summarySelect.value) {
-        currentSelectedSummaryCycleId = parseInt(summarySelect.value);
+        setSelectedEvaluationCycleId(summarySelect.value);
       } else if (cyclesDb && cyclesDb.length > 0) {
         const sortedCycles = [...cyclesDb].sort((a, b) => b.id - a.id);
         currentSelectedSummaryCycleId = sortedCycles[0].id;
@@ -7274,7 +7307,7 @@
     }
 
     function navigateToApprovalSummary(cycleId) {
-      currentSelectedSummaryCycleId = Number(cycleId);
+      setSelectedEvaluationCycleId(cycleId);
       navigateTo('evalmanage');
       switchAdminTab('summary');
       const select = document.getElementById('summary-cycle-select');

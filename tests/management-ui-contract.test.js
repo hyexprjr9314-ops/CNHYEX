@@ -35,15 +35,17 @@ test('question editor emits canonical tracks and resolves leaders before job-are
   assert.match(index, /function normalizeQuestionTrack\(track\)/);
 });
 
-test('manual matching keeps staged cards until the server confirms normalized ids', async () => {
+test('manual matching commits the authoritative server response without a second read', async () => {
   const index = await readFile(indexUrl, 'utf8');
   const saveFlow = index.match(/async function saveStagedMatchingChanges\(\) \{[\s\S]*?\n    \}/)?.[0] ?? '';
 
   assert.match(index, /\.filter\(m => Number\(m\.evaluatorId\) === Number\(evaluatorId\)/);
   assert.match(index, /evaluatorId: Number\(row\.evaluator_id\)/);
-  assert.ok(saveFlow.indexOf('await loadCentralState()') < saveFlow.indexOf('resetStagedMatchingState()'));
-  assert.match(saveFlow, /payload\.data\.matchings\.map\(row => Number\(row\.target_id\)\)/);
-  assert.match(saveFlow, /expectedIds\.some\(\(id, index\) => id !== savedIds\[index\]\)/);
+  assert.equal(saveFlow.includes('await loadCentralState()'), false);
+  assert.match(saveFlow, /Array\.isArray\(payload\.data\?\.matchings\)/);
+  assert.match(saveFlow, /customManualMatchingsDb = customManualMatchingsDb/);
+  assert.match(saveFlow, /savedMatchings\.map\(row => \(\{/);
+  assert.equal(saveFlow.includes('서버 저장 결과를 확인하지 못했습니다'), false);
 });
 
 test('matching studio exposes and synchronizes its own cycle selector', async () => {
@@ -52,4 +54,10 @@ test('matching studio exposes and synchronizes its own cycle selector', async ()
   assert.match(index, /id="matching-cycle-select"/);
   assert.match(index, /\['perm-cycle-select', 'matching-cycle-select'\]\.forEach/);
   assert.match(index, /getElementById\('matching-cycle-select'\)\?\.value \|\| document\.getElementById\('perm-cycle-select'\)\?\.value/);
+  assert.match(index, /let selectedEvaluationCycleId = null/);
+  assert.match(index, /function handleCycleSelectChange\(selectEl\)/);
+  assert.match(index, /currentSelectedSummaryCycleId = cycleId/);
+  assert.match(index, /id="history-close-cycle-select" onchange="handleCycleSelectChange\(this\)"/);
+  assert.match(index, /setSelectedEvaluationCycleId\(selectedEvaluationCycleId \|\| currentSelectValues \|\| sortedCycles\[0\]\.id\)/);
+  assert.match(index, /select\.value = String\(selectedCycleId\)/);
 });

@@ -28,3 +28,14 @@ test('cycle validation groups repeated question gaps into actionable scopes', as
   assert.match(ui, /issue\.relationship_type/);
   assert.match(ui, /issue\.category/);
 });
+
+test('cycle validation delegates question coverage to the cycle-scoped dynamic validator', async () => {
+  const sql = await read('../supabase/migrations/202607250006_unify_cycle_validation.sql');
+  assert.match(sql, /create or replace function public\.validate_evaluation_cycle\(p_cycle_id bigint\)/i);
+  assert.match(sql, /public\.validate_cycle_question_coverage\(p_cycle_id\)/i);
+  assert.match(sql, /count\(distinct m\.target_id\)/i);
+  assert.doesNotMatch(sql, /array\['성과','협업','성장','조화'\]/);
+  assert.match(sql, /'counts'/i);
+  assert.match(sql, /v_issues\s*:=\s*v_issues\s*\|\|\s*coalesce\(v_coverage->'issues'/i);
+  assert.match(sql, /create or replace function public\.activate_evaluation_cycle[\s\S]*v_report := public\.validate_evaluation_cycle\(p_cycle_id\)/i);
+});

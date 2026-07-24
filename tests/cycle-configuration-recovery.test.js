@@ -8,6 +8,10 @@ const migration = fs.readFileSync(
   new URL('../supabase/migrations/202607250004_cycle_hard_delete_trigger_bypass.sql', import.meta.url),
   'utf8'
 );
+const matchingMigration = fs.readFileSync(
+  new URL('../supabase/migrations/202607250005_draft_matching_replace_rpc.sql', import.meta.url),
+  'utf8'
+);
 
 test('automatic matching uses only explicitly enabled users', () => {
   assert.match(adminState, /user\.can_evaluate === true/);
@@ -15,7 +19,9 @@ test('automatic matching uses only explicitly enabled users', () => {
 });
 
 test('matching replacement returns the authoritative saved rows', () => {
-  assert.match(adminState, /\.eq\('evaluator_id', evaluatorId\)[\s\S]*matchings: saved\.data \|\| \[\]/);
+  assert.match(adminState, /governance_replace_draft_matchings/);
+  assert.match(matchingMigration, /'matchings', v_after/);
+  assert.match(index, /Array\.isArray\(payload\.data\?\.matchings\)/);
 });
 
 test('question creation requires an explicit evaluation cycle', () => {

@@ -649,9 +649,6 @@ export default async function handler(req, res) {
     } else if (action === 'matching_replace') {
       const cycleId = Number(req.body.cycle_id), evaluatorId = Number(req.body.evaluator_id);
       const targetIds = [...new Set((req.body.target_ids || []).map(Number).filter(id => id && id !== evaluatorId))];
-      const existing = await service.from('matchings').select('id,target_id').eq('cycle_id', cycleId).eq('evaluator_id', evaluatorId);
-      if (existing.error) throw existing.error;
-      const protectedTargetIds = new Set();
       if (matchingMode === 'paused') {
         const people = await service.from('users')
           .select('id,dept,workplace,role,type,company')
@@ -673,50 +670,25 @@ export default async function handler(req, res) {
         });
         if (result.error) throw Object.assign(new Error(result.error.message), { status: 409 });
       } else {
-      if ((existing.data || []).length) {
-        const evaluated = await service.from('evaluations').select('matching_id').in('matching_id', existing.data.map(row => row.id));
-        if (evaluated.error) throw evaluated.error;
-        const evaluatedIds = new Set((evaluated.data || []).map(row => row.matching_id));
-        for (const row of existing.data) if (evaluatedIds.has(row.id)) protectedTargetIds.add(Number(row.target_id));
+      const people = await service.from('users')
+        .select('id,dept,workplace,role,type,company')
+        .in('id', [evaluatorId, ...targetIds]);
+      if (people.error) throw people.error;
+      const peopleById = new Map((people.data || []).map(row => [Number(row.id), row]));
+      const evaluator = peopleById.get(evaluatorId);
+      const targets = targetIds.map(targetId => ({
+        target_id: targetId,
+        relationship_type: relationshipType(evaluator, peopleById.get(targetId))
+      }));
+      const accessToken = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+      result = await authenticatedRpcClient(accessToken).rpc('governance_replace_draft_matchings', {
+        p_cycle_id: cycleId,
+        p_evaluator_id: evaluatorId,
+        p_targets: targets,
+        p_actor_id: authUser.id
+      });
+      if (result.error) throw Object.assign(new Error(result.error.message), { status: 409 });
       }
-      for (const targetId of protectedTargetIds) if (!targetIds.includes(targetId)) targetIds.push(targetId);
-      const removable = (existing.data || []).filter(row => !protectedTargetIds.has(Number(row.target_id))).map(row => row.id);
-      if (removable.length) { const removed = await service.from('matchings').delete().in('id', removable); if (removed.error) throw removed.error; }
-      const targetIdsToInsert = targetIds.filter(targetId => !protectedTargetIds.has(targetId));
-      if (targetIdsToInsert.length) {
-        const people = await service.from('users')
-          .select('id,dept,workplace,role,type,company')
-          .in('id', [evaluatorId, ...targetIdsToInsert]);
-        if (people.error) throw people.error;
-
-        const peopleById = new Map((people.data || []).map(row => [Number(row.id), row]));
-        const evaluator = peopleById.get(evaluatorId);
-        const rows = targetIdsToInsert.map(targetId => ({
-          cycle_id: cycleId,
-          evaluator_id: evaluatorId,
-          target_id: targetId,
-          type: '관리자 수동 지정',
-          relationship_type: relationshipType(evaluator, peopleById.get(targetId)),
-          updated_at: new Date().toISOString()
-        }));
-        const inserted = await service.from('matchings').upsert(rows, { onConflict: 'cycle_id,evaluator_id,target_id' });
-        if (inserted.error) throw inserted.error;
-      }
-      }
-      const saved = await service.from('matchings')
-        .select('id,cycle_id,evaluator_id,target_id,type,relationship_type')
-        .eq('cycle_id', cycleId)
-        .eq('evaluator_id', evaluatorId)
-        .order('target_id');
-      if (saved.error) throw saved.error;
-      result = {
-        data: {
-          ...(result?.data && !Array.isArray(result.data) ? result.data : {}),
-          protected_target_ids: [...protectedTargetIds],
-          matchings: saved.data || []
-        },
-        error: null
-      };
     } else if (action === 'matching_mode_update') {
       const cycleId = Number(req.body.cycle_id);
       const enabled = req.body.enabled !== false;
