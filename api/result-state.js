@@ -139,7 +139,7 @@ export function secondStageFinalScore(requestedScore, currentScore) {
   return Number.isFinite(candidate) && candidate >= 0 && candidate <= 100 ? candidate : null;
 }
 
-function mutationArguments(action, body, cycleId, actorId, rawScore = null) {
+function mutationArguments(action, body, cycleId, actorId, rawScore = null, approverAuthIds = []) {
   const targetId = Number(body?.target_id);
   const reason = String(body?.reason || '').trim();
   const finalScore = body?.final_score === '' || body?.final_score === undefined ? null : Number(body?.final_score);
@@ -147,8 +147,9 @@ function mutationArguments(action, body, cycleId, actorId, rawScore = null) {
     case 'adjust': return { p_cycle_id: cycleId, p_target_id: targetId, p_raw_score: rawScore, p_final_score: finalScore, p_reason: reason, p_actor_id: actorId };
     case 'approve_adjustment': return { p_cycle_id: cycleId, p_target_id: targetId, p_final_score: finalScore, p_reason: reason, p_actor_id: actorId };
     case 'cancel_adjustment': return { p_cycle_id: cycleId, p_target_id: targetId, p_reason: reason, p_actor_id: actorId };
-    case 'request_internal_approval': return { p_cycle_id: cycleId, p_actor_id: actorId };
+    case 'request_internal_approval': return { p_cycle_id: cycleId, p_actor_id: actorId, p_approver_ids: approverAuthIds };
     case 'decide_internal_approval': return { p_cycle_id: cycleId, p_approved: body?.approved === true, p_reason: reason, p_actor_id: actorId };
+    case 'recall_internal_approval': return { p_cycle_id: cycleId, p_reason: reason, p_actor_id: actorId };
     case 'publish': return { p_cycle_id: cycleId, p_published: body?.published === true, p_actor_id: actorId };
     default: return null;
   }
@@ -160,8 +161,28 @@ const RPC_BY_ACTION = Object.freeze({
   cancel_adjustment: 'governance_cancel_adjustment',
   request_internal_approval: 'governance_request_approval',
   decide_internal_approval: 'governance_decide_approval',
+  recall_internal_approval: 'governance_recall_approval',
   publish: 'governance_publish_results'
 });
+
+async function resolveApproverAuthIds(service, userIds) {
+  const ids = [...new Set((userIds || []).map(Number).filter(Number.isInteger))];
+  if (ids.length < 1 || ids.length > 2) {
+    throw Object.assign(new Error('Select one or two unique executive approvers.'), { status: 400 });
+  }
+  const approvers = await service.from('users')
+    .select('id,auth_user_id')
+    .in('id', ids)
+    .eq('active', true)
+    .eq('sys_role', ROLES.executive);
+  if (approvers.error) throw approvers.error;
+  const byId = new Map((approvers.data || []).map(row => [Number(row.id), row.auth_user_id]));
+  const authIds = ids.map(id => byId.get(id));
+  if (authIds.some(id => !id)) {
+    throw Object.assign(new Error('Every approver must be an active executive with an Auth account.'), { status: 400 });
+  }
+  return authIds;
+}
 
 export default async function handler(req, res) {
   try {
@@ -204,8 +225,11 @@ export default async function handler(req, res) {
       if (!aggregate.complete) return send(res, 409, { error: 'All assigned evaluations must be complete before adjustment.' });
       rawScore = aggregate.scores.total;
     }
+    const approverAuthIds = action === 'request_internal_approval'
+      ? await resolveApproverAuthIds(service, req.body?.approver_user_ids)
+      : [];
     const rpc = await authenticatedRpcClient(accessToken)
-      .rpc(rpcName, mutationArguments(action, req.body, cycleId, authUser.id, rawScore));
+      .rpc(rpcName, mutationArguments(action, req.body, cycleId, authUser.id, rawScore, approverAuthIds));
     if (rpc.error) throw Object.assign(new Error(rpc.error.message), { status: 409 });
     return send(res, 200, { data: rpc.data });
   } catch (error) {

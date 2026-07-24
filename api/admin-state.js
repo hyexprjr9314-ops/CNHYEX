@@ -164,6 +164,22 @@ async function assertCycleMutable(service, cycleId) {
   }
 }
 
+async function matchingCycleMode(service, cycleId, action, body) {
+  const cycle = await service.from('evaluation_cycles')
+    .select('id,status,internal_approval_status')
+    .eq('id', cycleId)
+    .single();
+  if (cycle.error) throw cycle.error;
+  if (isMutableDraftCycle(cycle.data)) return 'draft';
+  if (action !== 'matching_generate'
+      && cycle.data.status === '일시정지'
+      && cycle.data.internal_approval_status === 'not_requested') {
+    requiredReason(body);
+    return 'paused';
+  }
+  throw Object.assign(new Error('매칭은 초안 또는 일시정지 상태에서만 변경할 수 있습니다.'), { status: 409 });
+}
+
 export function isClosedHistoricalCycle(cycle = {}) {
   return ['마감/보관됨', '취소/보관됨', 'closed', 'cancelled', 'archived'].includes(String(cycle.status || '').trim());
 }
@@ -264,7 +280,7 @@ async function readState(service, profile) {
   if (settingsResult.error) throw settingsResult.error;
   if (goalsResult.error) throw goalsResult.error;
   if (!PRIVILEGED.has(profile.sys_role)) return { settings: settingsResult.data, goals: goalsResult.data || [] };
-  const [matchings, archives, evaluations, adjustments, allGoals, users, cycles, finalResults] = await Promise.all([
+  const [matchings, archives, evaluations, adjustments, allGoals, users, cycles, finalResults, approvalRequests, approvalSteps] = await Promise.all([
     service.from('matchings').select('*').order('id'),
     service.from('evaluation_archives').select('*').order('closed_at', { ascending: false }),
     service.from('evaluations').select('matching_id,cycle_id,target_id,perf_score,collab_score,growth_score,harmony_score'),
@@ -272,9 +288,11 @@ async function readState(service, profile) {
     service.from('employee_goals').select('*').order('created_at', { ascending: false }),
     service.from('users').select('id,active,can_evaluate,is_evaluatee,company,dept,workplace,role,type'),
     service.from('evaluation_cycles').select('id,result_version'),
-    service.from('evaluation_final_results').select('cycle_id,target_id,result_version,raw_score,effective_score,relative_grade,category_labels,category_scores')
+    service.from('evaluation_final_results').select('cycle_id,target_id,result_version,raw_score,effective_score,relative_grade,category_labels,category_scores'),
+    service.from('evaluation_cycle_approval_requests').select('id,cycle_id,request_status,requested_at,result_version').order('requested_at', { ascending: false }),
+    service.from('evaluation_cycle_approval_steps').select('approval_request_id,step_order,approver_user_id,status,decided_at,decision_note').order('step_order')
   ]);
-  for (const result of [matchings, archives, evaluations, adjustments, allGoals, users, cycles, finalResults]) if (result.error) throw result.error;
+  for (const result of [matchings, archives, evaluations, adjustments, allGoals, users, cycles, finalResults, approvalRequests, approvalSteps]) if (result.error) throw result.error;
   const userMap = new Map((users.data || []).map(user => [Number(user.id), user]));
   const eligibleMatchings = (matchings.data || []).filter(row => {
     const evaluator = userMap.get(Number(row.evaluator_id));
@@ -291,6 +309,43 @@ async function readState(service, profile) {
     Number(row.result_version) === Number(cyclesById.get(Number(row.cycle_id))?.result_version || 0)
   );
   applyImmutableFinalResults(cycleScores, currentFinalResults, cyclesById);
+  const stepsByRequest = new Map();
+  for (const step of approvalSteps.data || []) {
+    if (!stepsByRequest.has(Number(step.approval_request_id))) stepsByRequest.set(Number(step.approval_request_id), []);
+    stepsByRequest.get(Number(step.approval_request_id)).push(step);
+  }
+  const visibleApprovalRequests = profile.sys_role === ROLES.admin
+    ? (approvalRequests.data || [])
+    : (approvalRequests.data || []).filter(request =>
+        (stepsByRequest.get(Number(request.id)) || [])
+          .some(step => Number(step.approver_user_id) === Number(profile.id)));
+  const approvalLines = visibleApprovalRequests.map(request => {
+    const steps = stepsByRequest.get(Number(request.id)) || [];
+    const current = steps.find(step => step.status === 'pending') || null;
+    return {
+      id: request.id,
+      cycle_id: request.cycle_id,
+      request_status: request.request_status,
+      current_step: current?.step_order || null,
+      current_approver_user_id: current?.approver_user_id || null,
+      steps: steps.map(step => ({
+        step_order: step.step_order,
+        approver_user_id: step.approver_user_id,
+        status: step.status,
+        decided_at: step.decided_at,
+        ...(profile.sys_role === ROLES.admin ? { decision_note: step.decision_note } : {})
+      }))
+    };
+  });
+  const pendingApprovalNotifications = profile.sys_role === ROLES.executive
+    ? approvalLines.filter(request => request.request_status === 'requested'
+      && Number(request.current_approver_user_id) === Number(profile.id))
+      .map(request => ({
+        approval_request_id: request.id,
+        cycle_id: request.cycle_id,
+        step_order: request.current_step
+      }))
+    : [];
   return {
     settings: settingsResult.data, goals: goalsResult.data || [],
     ...(profile.sys_role === ROLES.admin ? { all_goals: allGoals.data || [] } : {}),
@@ -303,7 +358,9 @@ async function readState(service, profile) {
     submitted_matching_ids: eligibleEvaluations.map(row => Number(row.matching_id)),
     eligible_matching_ids: eligibleMatchings.map(row => Number(row.id)),
     archives: archives.data || [], cycle_scores: cycleScores,
-    final_results: currentFinalResults
+    final_results: currentFinalResults,
+    approval_requests: approvalLines,
+    pending_approval_notifications: pendingApprovalNotifications
   };
 }
 
@@ -408,9 +465,13 @@ export default async function handler(req, res) {
     }
     if (ADMIN_ONLY.has(action) && profile.sys_role !== ROLES.admin) return send(res, 403, { error: '인사관리자 전용 기능입니다.' });
     const guardedCycleId = Number(req.body?.cycle_id || req.body?.cycleId || req.body?.id);
-    if (['cycle_update', 'cycle_delete', 'cycle_activate', 'question_create', 'question_update', 'question_delete', 'matching_toggle', 'matching_replace', 'matching_generate'].includes(action)) {
+    let matchingMode = null;
+    if (['cycle_update', 'cycle_delete', 'cycle_activate', 'question_create', 'question_update', 'question_delete'].includes(action)) {
       const questionCycleId = action.startsWith('question_') ? Number(req.body?.cycle_id || req.body?.cycleId) : guardedCycleId;
       if (questionCycleId) await assertCycleMutable(service, questionCycleId);
+    }
+    if (['matching_toggle', 'matching_replace', 'matching_generate'].includes(action) && guardedCycleId) {
+      matchingMode = await matchingCycleMode(service, guardedCycleId, action, req.body);
     }
     let result;
     if (action === 'settings_update') {
@@ -524,14 +585,48 @@ export default async function handler(req, res) {
       const people = await service.from('users').select('id,dept,workplace,role,type,company').in('id', [evaluatorId, targetId]);
       if (people.error) throw people.error;
       const personById = new Map((people.data || []).map(row => [Number(row.id), row]));
-      result = existing.data
-        ? await service.from('matchings').delete().eq('id', existing.data.id)
-        : await service.from('matchings').insert({ cycle_id: cycleId, evaluator_id: evaluatorId, target_id: targetId, type: '관리자 수동 지정', relationship_type: relationshipType(personById.get(evaluatorId), personById.get(targetId)), updated_at: new Date().toISOString() }).select().single();
+      if (matchingMode === 'paused') {
+        const accessToken = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+        result = await authenticatedRpcClient(accessToken).rpc('governance_toggle_paused_matching', {
+          p_cycle_id: cycleId,
+          p_evaluator_id: evaluatorId,
+          p_target_id: targetId,
+          p_relationship_type: relationshipType(personById.get(evaluatorId), personById.get(targetId)),
+          p_reason: requiredReason(req.body),
+          p_actor_id: authUser.id
+        });
+        if (result.error) throw Object.assign(new Error(result.error.message), { status: 409 });
+      } else {
+        result = existing.data
+          ? await service.from('matchings').delete().eq('id', existing.data.id)
+          : await service.from('matchings').insert({ cycle_id: cycleId, evaluator_id: evaluatorId, target_id: targetId, type: '관리자 수동 지정', relationship_type: relationshipType(personById.get(evaluatorId), personById.get(targetId)), updated_at: new Date().toISOString() }).select().single();
+      }
     } else if (action === 'matching_replace') {
       const cycleId = Number(req.body.cycle_id), evaluatorId = Number(req.body.evaluator_id);
       const targetIds = [...new Set((req.body.target_ids || []).map(Number).filter(id => id && id !== evaluatorId))];
       const existing = await service.from('matchings').select('id,target_id').eq('cycle_id', cycleId).eq('evaluator_id', evaluatorId);
       if (existing.error) throw existing.error;
+      if (matchingMode === 'paused') {
+        const people = await service.from('users')
+          .select('id,dept,workplace,role,type,company')
+          .in('id', [evaluatorId, ...targetIds]);
+        if (people.error) throw people.error;
+        const peopleById = new Map((people.data || []).map(row => [Number(row.id), row]));
+        const evaluator = peopleById.get(evaluatorId);
+        const targets = targetIds.map(targetId => ({
+          target_id: targetId,
+          relationship_type: relationshipType(evaluator, peopleById.get(targetId))
+        }));
+        const accessToken = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+        result = await authenticatedRpcClient(accessToken).rpc('governance_replace_paused_matchings', {
+          p_cycle_id: cycleId,
+          p_evaluator_id: evaluatorId,
+          p_targets: targets,
+          p_reason: requiredReason(req.body),
+          p_actor_id: authUser.id
+        });
+        if (result.error) throw Object.assign(new Error(result.error.message), { status: 409 });
+      } else {
       const protectedTargetIds = new Set();
       if ((existing.data || []).length) {
         const evaluated = await service.from('evaluations').select('matching_id').in('matching_id', existing.data.map(row => row.id));
@@ -563,6 +658,7 @@ export default async function handler(req, res) {
         if (inserted.error) throw inserted.error;
       }
       result = { data: { protected_target_ids: [...protectedTargetIds] }, error: null };
+      }
     } else if (action === 'matching_generate') {
       const cycleId = Number(req.body.cycle_id);
       if (!cycleId) return send(res, 400, { error: '평가 주기가 필요합니다.' });

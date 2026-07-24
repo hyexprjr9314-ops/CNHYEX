@@ -243,6 +243,20 @@
     }
     .approval-panel p:first-child { color: #92400e !important; }
     .approval-panel p { color: #475569 !important; }
+    #bulk-permission-evaluator-btn,
+    #bulk-permission-both-btn,
+    #bulk-password-mail-btn,
+    #bulk-permission-evaluator-btn i,
+    #bulk-permission-both-btn i,
+    #bulk-password-mail-btn i {
+      color: #FFFFFF !important;
+    }
+    .approval-toast {
+      background: #FFFFFF;
+      border: 1px solid #0F766E;
+      color: #0F172A;
+      box-shadow: 0 12px 32px rgba(15, 23, 42, 0.2);
+    }
     .matching-dropzone {
       min-height: 240px;
       border: 2px dashed #94A3B8;
@@ -477,6 +491,16 @@
       }
       header {
         padding: 0.625rem 0.75rem !important;
+        transition: transform 180ms ease, opacity 180ms ease;
+      }
+      html.mobile-header-hidden header {
+        display: none !important;
+      }
+      #mobile-header-toggle {
+        display: inline-flex !important;
+      }
+      html.mobile-header-hidden #mobile-header-toggle {
+        top: 0.5rem;
       }
       header > div:first-child {
         min-width: 0;
@@ -540,6 +564,26 @@
       }
       #view-eval .glass-card {
         padding: 1rem !important;
+      }
+      #view-myresults > .glass-card,
+      #view-myresults #my-chart-card,
+      #view-myresults #my-grade-card,
+      #view-myresults #my-adjusted-notice {
+        padding: 1rem !important;
+      }
+      #view-myresults > .grid {
+        gap: 0.75rem !important;
+      }
+      #view-myresults #my-grade-card {
+        order: -1;
+        min-height: 160px !important;
+      }
+      #view-myresults #my-chart-card .space-y-4 {
+        gap: 0.75rem;
+      }
+      #view-myresults #my-report-cycle-select,
+      #view-myresults .no-print {
+        width: 100%;
       }
       .evaluation-score-options {
         display: grid !important;
@@ -828,9 +872,10 @@
 </head>
 <body class="min-h-screen flex flex-col antialiased selection:bg-brandTeal selection:text-white custom-scrollbar">
   <a class="skip-link" href="#main-content">본문 바로가기</a>
+  <div id="approval-toast-container" class="fixed right-3 top-20 z-[70] flex w-[min(24rem,calc(100vw-1.5rem))] flex-col gap-2" aria-live="polite"></div>
 
   <!-- Header / Navigation Bar -->
-  <header class="bg-brandNavy/95 backdrop-blur-md border-b border-slate-800 sticky top-0 z-40 px-4 md:px-8 py-3.5 flex items-center justify-between shadow-xl">
+  <header id="site-header" class="bg-brandNavy/95 backdrop-blur-md border-b border-slate-800 sticky top-0 z-40 px-4 md:px-8 py-3.5 flex items-center justify-between shadow-xl">
     <div class="flex items-center gap-3 cursor-pointer" onclick="navigateTo('list')">
       <div class="w-11 h-11 bg-gradient-to-tr from-brandTeal via-teal-500 to-emerald-400 rounded-xl flex items-center justify-center shadow-lg shadow-teal-900/40 ring-1 ring-teal-300/30 group transition-all duration-300 hover:scale-105">
         <i class="fa-solid fa-bus-simple text-white text-2xl drop-shadow-md"></i>
@@ -876,6 +921,9 @@
       </button>
     </div>
   </header>
+  <button id="mobile-header-toggle" type="button" onclick="toggleMobileHeader()" class="fixed right-2 top-[4.75rem] z-[60] hidden items-center gap-1 rounded-full border border-teal-700 bg-white px-3 py-2 text-xs font-black text-teal-800 shadow-lg" aria-controls="site-header" aria-expanded="true">
+    <i class="fa-solid fa-chevron-up" aria-hidden="true"></i><span>헤더 숨기기</span>
+  </button>
 
   <!-- Main Container -->
   <main id="main-content" tabindex="-1" class="app-shell flex-grow flex flex-col p-3 sm:p-4 xl:px-5 xl:py-8 space-y-6">
@@ -1286,9 +1334,10 @@
               <strong class="text-sm text-brandGold">점수·항목별 비교 그래프 비공개</strong>
               <p class="mt-1 text-slate-400 leading-relaxed">평가위원회의 종합 검토에 따라 결과가 조정되어, 최종 피드백과 향후 개선 방향을 중심으로 제공합니다.</p>
             </div>
-            <p class="text-slate-400 leading-relaxed bg-slate-900/60 p-3 rounded-lg border border-slate-800/80">
-              조정 전후 점수와 사유, 조정자 및 처리 시각은 감사 목적으로 서버에 별도 보관되며 직원 화면에는 공개되지 않습니다.
-            </p>
+            <details class="rounded-lg border border-slate-800/80 bg-slate-900/60 p-3 text-slate-400">
+              <summary class="cursor-pointer font-bold text-slate-700">상세 안내</summary>
+              <p class="mt-2 leading-relaxed">조정 전후 점수와 사유, 조정자 및 처리 시각은 감사 목적으로 서버에 별도 보관되며 직원 화면에는 공개되지 않습니다.</p>
+            </details>
           </div>
         </div>
 
@@ -1774,9 +1823,9 @@
           </div>
           <div class="flex flex-wrap items-center gap-2 rounded-xl border border-slate-300 bg-white p-3">
             <span class="text-xs font-bold text-slate-700">현재 검색·필터 결과:</span>
-            <button type="button" onclick="bulkActivatePermissions('evaluator')" class="rounded-lg bg-teal-600 px-3 py-2 text-xs font-bold text-white hover:bg-teal-700">평가 작성 권한 일괄 활성</button>
+            <button id="bulk-permission-evaluator-btn" type="button" onclick="bulkActivatePermissions('evaluator')" class="rounded-lg bg-teal-600 px-3 py-2 text-xs font-bold text-white hover:bg-teal-700"><i class="fa-solid fa-user-check mr-1"></i>평가 작성 권한 일괄 활성</button>
             <button type="button" onclick="bulkActivatePermissions('evaluatee')" class="rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white hover:bg-blue-700">피평가 대상 일괄 활성</button>
-            <button type="button" onclick="bulkActivatePermissions('both')" class="rounded-lg bg-violet-600 px-3 py-2 text-xs font-bold text-white hover:bg-violet-700">두 권한 모두 활성</button>
+            <button id="bulk-permission-both-btn" type="button" onclick="bulkActivatePermissions('both')" class="rounded-lg bg-violet-600 px-3 py-2 text-xs font-bold text-white hover:bg-violet-700"><i class="fa-solid fa-user-shield mr-1"></i>두 권한 모두 활성</button>
           </div>
 
           <div class="overflow-x-auto">
@@ -2281,6 +2330,29 @@
       <div class="flex gap-2">
         <button onclick="closeScoreAdjustmentCancelModal()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-2.5 rounded-xl transition text-sm">돌아가기</button>
         <button onclick="cancelScoreAdjustment()" class="flex-1 bg-rose-600 hover:bg-rose-500 text-white font-bold py-2.5 rounded-xl transition text-sm">조정 취소 확정</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: INTERNAL APPROVAL LINE -->
+  <div id="modal-approval-line" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 p-4">
+    <div class="glass-card w-full max-w-md space-y-4 rounded-2xl border border-slate-500 p-5 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-300 pb-3">
+        <div>
+          <h3 class="font-black text-slate-900"><i class="fa-solid fa-route mr-1 text-teal-700"></i>전자결재선 지정</h3>
+          <p class="mt-1 text-xs text-slate-600">활성 임원 1~2명을 순서대로 지정합니다.</p>
+        </div>
+        <button type="button" onclick="closeApprovalLineModal()" class="rounded-lg px-3 text-slate-600 hover:bg-slate-100" aria-label="닫기"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <label class="block text-xs font-bold text-slate-700">1차 결재자
+        <select id="approval-step-one" class="mt-1 w-full rounded-lg border border-slate-400 bg-white px-3 py-2 text-sm text-slate-900"></select>
+      </label>
+      <label class="block text-xs font-bold text-slate-700">2차 결재자 (선택)
+        <select id="approval-step-two" class="mt-1 w-full rounded-lg border border-slate-400 bg-white px-3 py-2 text-sm text-slate-900"></select>
+      </label>
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" onclick="closeApprovalLineModal()" class="rounded-lg border border-slate-400 bg-white px-4 py-2 text-sm font-bold text-slate-700">취소</button>
+        <button type="button" onclick="submitInternalApprovalRequest()" class="rounded-lg bg-amber-600 px-4 py-2 text-sm font-black text-white hover:bg-amber-700">결재 요청</button>
       </div>
     </div>
   </div>
@@ -2910,6 +2982,8 @@
     let isResultPublished = false;
     let selectedAdjustId = null;
     let selectedAdjustmentMode = 'admin';
+    let approvalRequestsDb = [];
+    let pendingApprovalNotifications = [];
 
     const QUESTION_TRACKS = Object.freeze({
       all: { key: 'all', label: '전사 공통', categories: ['성과', '협업', '성장', '조화'] },
@@ -2990,6 +3064,28 @@
         savedScale = localStorage.getItem('cnhy_font_scale') || 'default';
       } catch (_) {}
       applyFontScale(savedScale, false);
+    }
+
+    function applyMobileHeaderPreference() {
+      let hidden = false;
+      try {
+        hidden = localStorage.getItem('cnhy_mobile_header_hidden') === 'true';
+      } catch (_) {}
+      document.documentElement.classList.toggle('mobile-header-hidden', hidden);
+      const button = document.getElementById('mobile-header-toggle');
+      if (!button) return;
+      button.setAttribute('aria-expanded', String(!hidden));
+      button.innerHTML = hidden
+        ? '<i class="fa-solid fa-chevron-down" aria-hidden="true"></i><span>헤더 열기</span>'
+        : '<i class="fa-solid fa-chevron-up" aria-hidden="true"></i><span>헤더 숨기기</span>';
+    }
+
+    function toggleMobileHeader() {
+      const hidden = !document.documentElement.classList.contains('mobile-header-hidden');
+      try {
+        localStorage.setItem('cnhy_mobile_header_hidden', String(hidden));
+      } catch (_) {}
+      applyMobileHeaderPreference();
     }
 
     function escapeHtml(value) {
@@ -4292,6 +4388,14 @@
       if (!selectedEvaluatorForMatching || !hasStagedMatchingChanges() || isAutoMatchingEnabled) return;
       const cycleId = getSelectedMatchingCycleId();
       const targetIds = [...ensureStagedMatchingState()];
+      const cycle = cyclesDb.find(row => Number(row.id) === Number(cycleId));
+      const reason = cycle?.status === '일시정지'
+        ? String(prompt('일시정지 중 매칭 변경 사유를 5자 이상 입력해 주세요.') || '').trim()
+        : '';
+      if (cycle?.status === '일시정지' && reason.length < 5) {
+        alert('일시정지 중 매칭 변경 사유는 5자 이상 필요합니다.');
+        return;
+      }
       const saveBtn = document.getElementById('matching-save-btn');
       if (saveBtn) {
         saveBtn.disabled = true;
@@ -4302,7 +4406,8 @@
           action: 'matching_replace',
           cycle_id: cycleId,
           evaluator_id: selectedEvaluatorForMatching,
-          target_ids: targetIds
+          target_ids: targetIds,
+          reason
         });
         announceCentralChange();
         resetStagedMatchingState();
@@ -4512,6 +4617,9 @@
       }
       if (Array.isArray(payload.goals)) goalsDb = payload.goals;
       if (Array.isArray(payload.all_goals)) allGoalsDb = payload.all_goals;
+      approvalRequestsDb = Array.isArray(payload.approval_requests) ? payload.approval_requests : [];
+      pendingApprovalNotifications = Array.isArray(payload.pending_approval_notifications) ? payload.pending_approval_notifications : [];
+      showPendingApprovalToasts();
     }
 
     async function loadCentralState() {
@@ -4586,7 +4694,8 @@
       centralRealtimeChannel = supabaseClient.channel('cnhy-central-state');
       [
         'users','evaluation_cycles','evaluation_questions','matchings','evaluations',
-        'evaluation_result_adjustments','evaluation_settings','evaluation_archives','employee_goals','evaluation_answers'
+        'evaluation_result_adjustments','evaluation_settings','evaluation_archives','employee_goals','evaluation_answers',
+        'evaluation_cycle_approval_requests','evaluation_cycle_approval_steps'
       ].forEach(table => {
         centralRealtimeChannel.on('postgres_changes', { event: '*', schema: 'public', table }, scheduleCentralReload);
       });
@@ -6516,6 +6625,7 @@
     // Default Initialization (브라우저 탭 닫기 전까지는 F5 새로고침시 세션 유지, 탭 닫고 다시 올땐 로그인 창)
     window.addEventListener('DOMContentLoaded', async () => {
       initializeFontScaleControl();
+      applyMobileHeaderPreference();
       await loadFromServer();
 
       const lastSubtab = sessionStorage.getItem('cnhy_last_subtab') || 'users';
@@ -7024,6 +7134,66 @@
       if (!canPublish) label.innerText = '🔒 전자결재 승인·결과 게이트 대기';
     }
 
+    async function refreshApprovalWorkflowState() {
+      if (!currentLoggedInUser) return;
+      try {
+        const payload = await loadCentralState();
+        approvalRequestsDb = Array.isArray(payload.approval_requests) ? payload.approval_requests : [];
+        pendingApprovalNotifications = Array.isArray(payload.pending_approval_notifications) ? payload.pending_approval_notifications : [];
+      } catch (error) {
+        console.warn('전자결재 상태를 불러오지 못했습니다:', error);
+      }
+    }
+
+    function showPendingApprovalToasts() {
+      if (currentLoggedInUser?.sys_role !== '임원') return;
+      pendingApprovalNotifications.forEach(notification => {
+        const requestId = notification.approval_request_id || notification.request_id || notification.id;
+        const step = notification.current_step || notification.step_order || 1;
+        const key = `cnhy_approval_toast_${currentLoggedInUser.id}_${requestId}_${step}`;
+        try {
+          if (sessionStorage.getItem(key)) return;
+          sessionStorage.setItem(key, '1');
+        } catch (_) {}
+        showApprovalToast(notification);
+      });
+    }
+
+    function showApprovalToast(notification) {
+      const container = document.getElementById('approval-toast-container');
+      if (!container) return;
+      const cycleId = Number(notification.cycle_id);
+      const cycle = cyclesDb.find(row => Number(row.id) === cycleId);
+      const toast = document.createElement('div');
+      toast.className = 'approval-toast rounded-xl p-4 text-sm';
+      toast.innerHTML = `
+        <p class="font-black"><i class="fa-solid fa-file-signature mr-1 text-teal-700"></i>전자결재 요청이 도착했습니다</p>
+        <p class="mt-1 text-xs text-slate-600">${escapeHtml(cycle?.name || notification.cycle_name || '평가주기')} · ${Number(notification.current_step || notification.step_order || 1)}차 결재</p>
+        <div class="mt-3 flex justify-end gap-2">
+          <button type="button" class="rounded-lg px-3 py-2 text-xs font-bold text-slate-600" aria-label="알림 닫기">닫기</button>
+          <button type="button" class="rounded-lg bg-teal-700 px-3 py-2 text-xs font-black text-white">결재 화면으로 이동</button>
+        </div>`;
+      const [closeButton, moveButton] = toast.querySelectorAll('button');
+      closeButton.addEventListener('click', () => toast.remove());
+      moveButton.addEventListener('click', () => {
+        toast.remove();
+        navigateToApprovalSummary(cycleId);
+      });
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 12000);
+    }
+
+    function navigateToApprovalSummary(cycleId) {
+      currentSelectedSummaryCycleId = Number(cycleId);
+      navigateTo('evalmanage');
+      switchAdminTab('summary');
+      const select = document.getElementById('summary-cycle-select');
+      if (select) {
+        select.value = String(cycleId);
+        renderAdminSummaryTable();
+      }
+    }
+
     function renderInternalApprovalControls() {
       const el = document.getElementById('internal-approval-controls');
       const cycle = cyclesDb.find(row => Number(row.id) === Number(currentSelectedSummaryCycleId));
@@ -7037,21 +7207,85 @@
       const role = currentLoggedInUser?.sys_role;
       const status = cycle.internal_approval_status || 'not_requested';
       const label = { not_requested: '전자결재 미요청', requested: '전자결재 요청됨', approved: '전자결재 승인됨', rejected: '전자결재 반려됨' }[status] || status;
+      const request = approvalRequestsDb.find(row => Number(row.cycle_id) === Number(cycle.id) && ['requested', 'pending'].includes(row.request_status))
+        || approvalRequestsDb.find(row => Number(row.cycle_id) === Number(cycle.id));
+      const steps = Array.isArray(request?.steps) ? [...request.steps].sort((a, b) => Number(a.step_order) - Number(b.step_order)) : [];
+      const line = steps.length
+        ? `<span class="w-full text-[11px] text-slate-600">${steps.map(step => {
+            const approver = usersDb.find(user => Number(user.id) === Number(step.approver_user_id));
+            const state = { pending: '대기', approved: '승인', rejected: '반려' }[step.status] || step.status || '대기';
+            return `${Number(step.step_order)}차 ${escapeHtml(approver?.name || '지정 임원')} · ${escapeHtml(state)}`;
+          }).join(' → ')}</span>`
+        : '';
       let actions = '';
-      if (role === '관리자' && ['not_requested', 'rejected'].includes(status)) actions = '<button onclick="requestInternalApproval()" class="px-3 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-black">전자결재 요청</button>';
-      if (role === '임원' && status === 'requested') actions = '<button onclick="decideInternalApproval(true)" class="px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-black">승인</button><button onclick="decideInternalApproval(false)" class="px-3 py-2 rounded-lg bg-rose-700 hover:bg-rose-600 text-white font-black">반려</button>';
-      el.innerHTML = `<span class="rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 font-bold">${label}${cycle.result_gate_open ? ' · 결과 게이트 열림' : ''}</span>${actions}`;
+      if (role === '관리자' && ['not_requested', 'rejected'].includes(status)) actions = '<button onclick="openApprovalLineModal()" class="px-3 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-black">전자결재 요청</button>';
+      if (role === '관리자' && status === 'requested') actions = '<button onclick="recallInternalApproval()" class="px-3 py-2 rounded-lg border border-rose-400 bg-white text-rose-700 font-black hover:bg-rose-50">요청 회수</button>';
+      const isMyTurn = role === '임원'
+        && status === 'requested'
+        && Number(request?.current_approver_user_id) === Number(currentLoggedInUser?.id);
+      if (isMyTurn) actions = '<button onclick="decideInternalApproval(true)" class="px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-black">승인</button><button onclick="decideInternalApproval(false)" class="px-3 py-2 rounded-lg bg-rose-700 hover:bg-rose-600 text-white font-black">반려</button>';
+      el.innerHTML = `<span class="rounded-lg border border-slate-400 bg-white px-3 py-2 font-bold text-slate-800">${label}${cycle.result_gate_open ? ' · 결과 게이트 열림' : ''}</span>${actions}${line}`;
     }
-    async function requestInternalApproval() {
+
+    function openApprovalLineModal() {
+      const executives = usersDb.filter(user => user.active !== false && (user.sys_role || user.sysRole) === '임원');
+      if (!executives.length) return alert('활성 상태인 임원 계정이 없습니다.');
+      const optionHtml = executives.map(user => `<option value="${Number(user.id)}">${escapeHtml(user.name)} · ${escapeHtml(user.email || user.role || '')}</option>`).join('');
+      const first = document.getElementById('approval-step-one');
+      const second = document.getElementById('approval-step-two');
+      first.innerHTML = optionHtml;
+      second.innerHTML = `<option value="">선택 안 함</option>${optionHtml}`;
+      if (executives.length > 1) second.value = String(executives[1].id);
+      const modal = document.getElementById('modal-approval-line');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeApprovalLineModal() {
+      const modal = document.getElementById('modal-approval-line');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    async function submitInternalApprovalRequest() {
       const cycle = cyclesDb.find(row => Number(row.id) === Number(currentSelectedSummaryCycleId));
-      if (!cycle || !confirm(`[${cycle.name}] 평가 결과를 임원 전자승인으로 요청하시겠습니까?`)) return;
+      const firstId = Number(document.getElementById('approval-step-one')?.value);
+      const secondValue = document.getElementById('approval-step-two')?.value;
+      const approverIds = [firstId, secondValue ? Number(secondValue) : null].filter(Boolean);
+      if (!cycle || !firstId) return alert('1차 결재자를 선택해 주세요.');
+      if (new Set(approverIds).size !== approverIds.length) return alert('같은 임원을 중복 지정할 수 없습니다.');
+      if (!confirm(`[${cycle.name}] 지정한 ${approverIds.length}명의 결재선으로 요청하시겠습니까?`)) return;
       try {
-        await callResultStateApi('POST', { action: 'request_internal_approval', cycle_id: Number(currentSelectedSummaryCycleId) });
+        await callResultStateApi('POST', {
+          action: 'request_internal_approval',
+          cycle_id: Number(currentSelectedSummaryCycleId),
+          approver_user_ids: approverIds
+        });
+        closeApprovalLineModal();
         await loadFromServer();
         renderAdminSummaryTable();
         alert('전자결재 요청이 임원 계정에 전달되었습니다.');
       } catch (error) {
         alert(`전자결재 요청 실패: ${error.message}`);
+      }
+    }
+
+    async function recallInternalApproval() {
+      const cycle = cyclesDb.find(row => Number(row.id) === Number(currentSelectedSummaryCycleId));
+      if (!cycle) return;
+      const reason = String(prompt('결재 요청 회수 사유를 10자 이상 입력해 주세요.') || '').trim();
+      if (reason.length < 10) return alert('회수 사유를 10자 이상 입력해 주세요.');
+      if (!confirm(`[${cycle.name}] 전자결재 요청을 회수하시겠습니까?`)) return;
+      try {
+        await callResultStateApi('POST', {
+          action: 'recall_internal_approval',
+          cycle_id: Number(currentSelectedSummaryCycleId),
+          reason
+        });
+        await loadFromServer();
+        renderAdminSummaryTable();
+      } catch (error) {
+        alert(`전자결재 요청 회수 실패: ${error.message}`);
       }
     }
     async function decideInternalApproval(approved) {
@@ -7069,6 +7303,7 @@
           approved,
           reason
         });
+        await refreshApprovalWorkflowState();
         await loadFromServer();
         renderAdminSummaryTable();
         alert(`전자결재가 ${actionLabel} 처리되었습니다.`);
