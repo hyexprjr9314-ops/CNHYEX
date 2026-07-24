@@ -4416,10 +4416,12 @@
         });
         announceCentralChange();
         await loadCentralState();
-        const expectedIds = [...new Set([
-          ...targetIds,
-          ...(payload.data?.protected_target_ids || []).map(Number)
-        ])].sort((a, b) => a - b);
+        const expectedIds = payload.data?.matchings
+          ? payload.data.matchings.map(row => Number(row.target_id)).sort((a, b) => a - b)
+          : [...new Set([
+              ...targetIds,
+              ...(payload.data?.protected_target_ids || []).map(Number)
+            ])].sort((a, b) => a - b);
         const savedIds = getServerMatchingTargetIds(evaluatorId, cycleId).sort((a, b) => a - b);
         if (expectedIds.length !== savedIds.length || expectedIds.some((id, index) => id !== savedIds[index])) {
           throw new Error('서버 저장 결과를 확인하지 못했습니다. 변경사항은 화면에 유지됩니다.');

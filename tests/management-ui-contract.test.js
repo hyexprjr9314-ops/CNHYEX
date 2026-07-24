@@ -42,5 +42,6 @@ test('manual matching keeps staged cards until the server confirms normalized id
   assert.match(index, /\.filter\(m => Number\(m\.evaluatorId\) === Number\(evaluatorId\)/);
   assert.match(index, /evaluatorId: Number\(row\.evaluator_id\)/);
   assert.ok(saveFlow.indexOf('await loadCentralState()') < saveFlow.indexOf('resetStagedMatchingState()'));
+  assert.match(saveFlow, /payload\.data\.matchings\.map\(row => Number\(row\.target_id\)\)/);
   assert.match(saveFlow, /expectedIds\.some\(\(id, index\) => id !== savedIds\[index\]\)/);
 });
