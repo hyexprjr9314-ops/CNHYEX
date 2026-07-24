@@ -206,8 +206,8 @@ async function generateAutoMatchings(service, cycleId) {
     service.from('evaluations').select('matching_id').eq('cycle_id', cycleId)
   ]);
   for (const query of [users, existing, submitted]) if (query.error) return query;
-  const evaluators = (users.data || []).filter(user => user.can_evaluate !== false);
-  const targets = (users.data || []).filter(user => user.is_evaluatee !== false);
+  const evaluators = (users.data || []).filter(user => user.can_evaluate === true);
+  const targets = (users.data || []).filter(user => user.is_evaluatee === true);
   const desired = new Map();
   for (const evaluator of evaluators) {
     const evaluatorIsBranch = String(evaluator.workplace || '').includes('영업소') || String(evaluator.dept || '').includes('영업소');
@@ -651,6 +651,7 @@ export default async function handler(req, res) {
       const targetIds = [...new Set((req.body.target_ids || []).map(Number).filter(id => id && id !== evaluatorId))];
       const existing = await service.from('matchings').select('id,target_id').eq('cycle_id', cycleId).eq('evaluator_id', evaluatorId);
       if (existing.error) throw existing.error;
+      const protectedTargetIds = new Set();
       if (matchingMode === 'paused') {
         const people = await service.from('users')
           .select('id,dept,workplace,role,type,company')
@@ -672,7 +673,6 @@ export default async function handler(req, res) {
         });
         if (result.error) throw Object.assign(new Error(result.error.message), { status: 409 });
       } else {
-      const protectedTargetIds = new Set();
       if ((existing.data || []).length) {
         const evaluated = await service.from('evaluations').select('matching_id').in('matching_id', existing.data.map(row => row.id));
         if (evaluated.error) throw evaluated.error;
@@ -702,8 +702,21 @@ export default async function handler(req, res) {
         const inserted = await service.from('matchings').upsert(rows, { onConflict: 'cycle_id,evaluator_id,target_id' });
         if (inserted.error) throw inserted.error;
       }
-      result = { data: { protected_target_ids: [...protectedTargetIds] }, error: null };
       }
+      const saved = await service.from('matchings')
+        .select('id,cycle_id,evaluator_id,target_id,type,relationship_type')
+        .eq('cycle_id', cycleId)
+        .eq('evaluator_id', evaluatorId)
+        .order('target_id');
+      if (saved.error) throw saved.error;
+      result = {
+        data: {
+          ...(result?.data && !Array.isArray(result.data) ? result.data : {}),
+          protected_target_ids: [...protectedTargetIds],
+          matchings: saved.data || []
+        },
+        error: null
+      };
     } else if (action === 'matching_mode_update') {
       const cycleId = Number(req.body.cycle_id);
       const enabled = req.body.enabled !== false;

@@ -2510,6 +2510,7 @@
           <label class="block text-[11px] font-bold text-slate-400 mb-1">시스템 권한</label>
           <select id="edit-user-sysrole" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-amber-300 font-bold">
             <option value="일반사용자">👤 일반사용자</option>
+            <option value="임원">⚖️ 임원 (전자결재·2차 조정)</option>
             <option value="관리자">👑 관리자 (Admin 권한)</option>
           </select>
         </div>
@@ -6400,7 +6401,11 @@
     async function handleAddQuestionSubmit(e) {
       e.preventDefault();
       const questionSelect = document.getElementById('question-cycle-select');
-      const cycleId = questionSelect ? parseInt(questionSelect.value) : 1;
+      const cycleId = Number(questionSelect?.value);
+      if (!Number.isInteger(cycleId) || cycleId <= 0) {
+        alert('질문을 등록할 평가 주기를 먼저 선택해 주세요.');
+        return;
+      }
       const category = document.getElementById('q-category-in').value;
       const targetTrack = normalizeQuestionTrack(document.getElementById('q-track-in').value);
       const targetDept = document.getElementById('q-dept-in').value;
