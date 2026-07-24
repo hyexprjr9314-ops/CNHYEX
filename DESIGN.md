@@ -42,7 +42,7 @@
 
 ## Components
 - Existing components to reuse: glass-card, 관계별 그룹, 표, 필터, 등급 배지
-- New/changed components: 화이트 테마용 EX/S/A 등급 표면 및 단색 등급 라벨
+- New/changed components: 화이트 테마용 EX/S/A 등급 표면, 단색 등급 라벨, 조정 수정·취소 의미형 버튼
 - Variants and states: EX, S, A, B, C, D, 미평가, 조정됨
 - Token/component ownership: `index.html`의 화이트 테마 CSS
 
@@ -63,6 +63,7 @@
 - Empty: 명시적인 빈 상태 문구
 - Error: 원인과 재시도 행동 제공
 - Success: 색상과 텍스트를 함께 사용
+- Destructive actions: 취소·삭제 계열은 옅은 로즈 배경, 진한 로즈 글자와 명확한 테두리를 사용
 - Disabled: 낮은 강조와 비활성 의미를 명확히 구분
 - Offline/slow network, if applicable: 서버 오류와 로딩 상태를 구분
 
