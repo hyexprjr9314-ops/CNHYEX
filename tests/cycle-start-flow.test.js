@@ -15,6 +15,8 @@ test('automatic matching is idempotent and matching mode belongs to a cycle', as
   assert.match(api, /action === 'matching_mode_update'/);
   assert.match(ui, /action:\s*'matching_mode_update'/);
   assert.match(ui, /cycle\?\.auto_matching_enabled !== false/);
+  assert.match(ui, /일시정지 중 매칭 모드 변경 사유를 5자 이상/);
+  assert.match(ui, /matching_mode_update'[\s\S]*reason/);
   assert.match(migration, /add column if not exists auto_matching_enabled boolean not null default true/i);
 });
 
