@@ -1384,6 +1384,10 @@
           <i class="fa-solid fa-shuffle"></i>
           <span>🔀 평가 매칭 관리</span>
         </button>
+        <button onclick="switchAdminTab('progress')" id="admin-tab-progress" class="px-4 py-2 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-2">
+          <i class="fa-solid fa-chart-line"></i>
+          <span>평가 진행 현황</span>
+        </button>
         <button onclick="switchAdminTab('summary')" id="admin-tab-summary" class="px-4 py-2 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-2">
           <i class="fa-solid fa-table-list"></i>
           <span>📋 점수 집계 & 2차 조정</span>
@@ -1896,6 +1900,48 @@
                   <button id="matching-save-btn" onclick="saveStagedMatchingChanges()" class="matching-save-action px-3 py-2 rounded-lg border text-[11px] font-bold disabled:opacity-40" disabled><i class="fa-solid fa-floppy-disk mr-1"></i>변경사항 저장</button>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ADMIN SUB-TAB: EVALUATION PROGRESS -->
+      <div id="admin-subtab-progress" class="hidden space-y-6">
+        <div class="glass-card rounded-2xl p-6 border border-slate-800 space-y-4">
+          <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 border-b border-slate-800 pb-4">
+            <div>
+              <h3 class="text-base font-bold text-white flex items-center gap-2"><i class="fa-solid fa-chart-line text-brandTeal"></i><span>평가 진행 현황</span></h3>
+              <p class="text-xs text-slate-400 mt-1">전체 진행률과 평가자별 미제출 대상을 확인합니다.</p>
+            </div>
+            <select id="progress-cycle-select" onchange="renderEvaluationProgress()" class="bg-slate-900 border border-slate-700 text-xs font-bold text-white rounded-xl px-3 py-2"></select>
+          </div>
+          <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
+            <div class="rounded-xl border border-slate-700 bg-slate-900/70 p-4"><p class="text-xs text-slate-400">전체 배정</p><strong id="progress-total" class="text-xl text-white">0건</strong></div>
+            <div class="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4"><p class="text-xs text-emerald-700">제출 완료</p><strong id="progress-completed" class="text-xl text-emerald-700">0건</strong></div>
+            <div class="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4"><p class="text-xs text-amber-700">미제출</p><strong id="progress-pending" class="text-xl text-amber-700">0건</strong></div>
+            <div class="rounded-xl border border-blue-500/30 bg-blue-500/10 p-4"><p class="text-xs text-blue-700">전체 진행률</p><strong id="progress-rate" class="text-xl text-blue-700">0%</strong></div>
+            <div class="rounded-xl border border-slate-700 bg-slate-900/70 p-4"><p class="text-xs text-slate-400">평가 완료 인원</p><strong id="progress-evaluator-complete" class="text-xl text-white">0명</strong></div>
+          </div>
+          <div class="h-3 overflow-hidden rounded-full bg-slate-200"><div id="progress-rate-bar" class="h-full bg-brandTeal transition-all" style="width:0%"></div></div>
+          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-2 rounded-xl border border-slate-800 bg-slate-950/50 p-3">
+            <label class="relative xl:col-span-2"><i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i><input id="progress-search" oninput="renderEvaluationProgress()" type="search" placeholder="평가자·피평가자 이름 검색" class="w-full rounded-lg border border-slate-700 bg-slate-900 py-2 pl-8 pr-3 text-xs text-white"></label>
+            <select id="progress-company-filter" onchange="renderEvaluationProgress()" class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-bold text-slate-200"><option value="">전체 소속사</option></select>
+            <select id="progress-dept-filter" onchange="renderEvaluationProgress()" class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-bold text-slate-200"><option value="">전체 부서</option></select>
+            <select id="progress-status-filter" onchange="renderEvaluationProgress()" class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-bold text-slate-200"><option value="">전체 상태</option><option value="pending">미제출 있음</option><option value="complete">완료</option><option value="not_started">미착수</option></select>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead><tr class="border-b border-slate-700 text-slate-400"><th class="p-3">평가자</th><th class="p-3">소속</th><th class="p-3 text-center">배정</th><th class="p-3 text-center">완료</th><th class="p-3 text-center">미제출</th><th class="p-3 text-center">진행률</th><th class="p-3">미제출 대상</th></tr></thead>
+              <tbody id="progress-evaluator-body" class="divide-y divide-slate-800"></tbody>
+            </table>
+          </div>
+          <div class="pt-4 border-t border-slate-800">
+            <h4 class="text-sm font-bold text-white mb-3">피평가자별 수집 현황</h4>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs text-slate-300">
+                <thead><tr class="border-b border-slate-700 text-slate-400"><th class="p-3">피평가자</th><th class="p-3">소속</th><th class="p-3 text-center">예정</th><th class="p-3 text-center">수집</th><th class="p-3 text-center">미수집</th><th class="p-3 text-center">진행률</th></tr></thead>
+                <tbody id="progress-target-body" class="divide-y divide-slate-800"></tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -2745,6 +2791,8 @@
     let customQuestionsDb = [];
     let evaluationHistoryDb = [];
     let cycleScoresDb = {};
+    let submittedMatchingIds = new Set();
+    let eligibleMatchingIds = new Set();
     // Immutable server-finalized rows are kept separate from live aggregation.
     let finalResultsByCycle = {};
     let goalsDb = [];
@@ -2997,6 +3045,7 @@
       const myReportSelect = document.getElementById('my-report-cycle-select');
       const questionSelect = document.getElementById('question-cycle-select');
       const permSelect = document.getElementById('perm-cycle-select');
+      const progressSelect = document.getElementById('progress-cycle-select');
       const summarySelect = document.getElementById('summary-cycle-select');
       const historyCloseSelect = document.getElementById('history-close-cycle-select');
 
@@ -3016,6 +3065,7 @@
       if (myReportSelect) myReportSelect.innerHTML = myReportOptionsHtml;
       if (questionSelect) questionSelect.innerHTML = optionsHtml;
       if (permSelect) permSelect.innerHTML = optionsHtml;
+      if (progressSelect) progressSelect.innerHTML = optionsHtml;
       if (summarySelect) summarySelect.innerHTML = optionsHtml;
       if (historyCloseSelect) historyCloseSelect.innerHTML = optionsHtml;
     }
@@ -3546,7 +3596,7 @@
       }
 
       // Hide/Show subtab navigation buttons for Executives
-      ['users', 'cycles', 'questions', 'permissions', 'matching'].forEach(st => {
+      ['users', 'cycles', 'questions', 'permissions', 'matching', 'progress'].forEach(st => {
         const btn = document.getElementById(`admin-tab-${st}`);
         if (btn) {
           if (isExecOnly) btn.classList.add('hidden');
@@ -3554,7 +3604,7 @@
         }
       });
 
-      const subtabs = ['users', 'cycles', 'questions', 'permissions', 'matching', 'summary', 'history'];
+      const subtabs = ['users', 'cycles', 'questions', 'permissions', 'matching', 'progress', 'summary', 'history'];
       subtabs.forEach(st => {
         const el = document.getElementById(`admin-subtab-${st}`);
         const btn = document.getElementById(`admin-tab-${st}`);
@@ -3577,8 +3627,107 @@
       if (subtab === 'questions') renderQuestionsList();
       if (subtab === 'permissions') renderPermissionsTable();
       if (subtab === 'matching') renderManualMatchingTable();
+      if (subtab === 'progress') renderEvaluationProgress();
       if (subtab === 'summary') renderAdminSummaryTable();
       if (subtab === 'history') renderHistoryTable();
+    }
+
+    function renderEvaluationProgress() {
+      if (!currentLoggedInUser?.isAdmin) return;
+      const cycleId = Number(document.getElementById('progress-cycle-select')?.value || cyclesDb[0]?.id);
+      const userById = new Map(usersDb.map(user => [Number(user.id), user]));
+      const matchings = customManualMatchingsDb.filter(row =>
+        Number(row.cycleId) === cycleId && eligibleMatchingIds.has(Number(row.id))
+      );
+      const isSubmitted = row => submittedMatchingIds.has(Number(row.id));
+      const completed = matchings.filter(isSubmitted).length;
+      const rate = matchings.length ? completed / matchings.length * 100 : 0;
+
+      const setText = (id, value) => {
+        const element = document.getElementById(id);
+        if (element) element.textContent = value;
+      };
+      setText('progress-total', `${matchings.length}건`);
+      setText('progress-completed', `${completed}건`);
+      setText('progress-pending', `${matchings.length - completed}건`);
+      setText('progress-rate', `${rate.toFixed(1)}%`);
+      const rateBar = document.getElementById('progress-rate-bar');
+      if (rateBar) rateBar.style.width = `${rate}%`;
+
+      const evaluatorGroups = new Map();
+      const targetGroups = new Map();
+      for (const matching of matchings) {
+        if (!evaluatorGroups.has(matching.evaluatorId)) evaluatorGroups.set(matching.evaluatorId, []);
+        if (!targetGroups.has(matching.targetId)) targetGroups.set(matching.targetId, []);
+        evaluatorGroups.get(matching.evaluatorId).push(matching);
+        targetGroups.get(matching.targetId).push(matching);
+      }
+      const evaluatorRows = [...evaluatorGroups].map(([id, rows]) => ({
+        person: userById.get(Number(id)), rows,
+        completed: rows.filter(isSubmitted).length,
+        pending: rows.filter(row => !isSubmitted(row))
+      })).filter(row => row.person);
+      const completedEvaluators = evaluatorRows.filter(row => row.completed === row.rows.length).length;
+      setText('progress-evaluator-complete', `${completedEvaluators}명 / ${evaluatorRows.length}명`);
+
+      const companies = [...new Set(evaluatorRows.map(row => row.person.company).filter(Boolean))].sort();
+      const depts = [...new Set(evaluatorRows.map(row => row.person.dept).filter(Boolean))].sort();
+      const syncOptions = (id, label, values) => {
+        const select = document.getElementById(id);
+        if (!select) return;
+        const selected = select.value;
+        select.innerHTML = `<option value="">${label}</option>${values.map(value => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join('')}`;
+        if (values.includes(selected)) select.value = selected;
+      };
+      syncOptions('progress-company-filter', '전체 소속사', companies);
+      syncOptions('progress-dept-filter', '전체 부서', depts);
+
+      const query = String(document.getElementById('progress-search')?.value || '').trim().toLowerCase();
+      const company = document.getElementById('progress-company-filter')?.value || '';
+      const dept = document.getElementById('progress-dept-filter')?.value || '';
+      const status = document.getElementById('progress-status-filter')?.value || '';
+      const visibleEvaluators = evaluatorRows.filter(row => {
+        const names = [row.person.name, ...row.pending.map(item => userById.get(Number(item.targetId))?.name)].join(' ').toLowerCase();
+        if (query && !names.includes(query)) return false;
+        if (company && row.person.company !== company) return false;
+        if (dept && row.person.dept !== dept) return false;
+        if (status === 'complete' && row.pending.length) return false;
+        if (status === 'pending' && !row.pending.length) return false;
+        if (status === 'not_started' && row.completed !== 0) return false;
+        return true;
+      }).sort((a, b) => b.pending.length - a.pending.length || String(a.person.name).localeCompare(String(b.person.name), 'ko'));
+
+      const evaluatorBody = document.getElementById('progress-evaluator-body');
+      if (evaluatorBody) evaluatorBody.innerHTML = visibleEvaluators.length ? visibleEvaluators.map(row => {
+        const rowRate = row.rows.length ? row.completed / row.rows.length * 100 : 0;
+        const pendingDetails = row.pending.length
+          ? `<details><summary class="cursor-pointer font-bold text-amber-700">${row.pending.length}명 보기</summary><div class="mt-2 flex flex-wrap gap-1">${row.pending.map(item => {
+              const target = userById.get(Number(item.targetId));
+              return `<span class="rounded-full border border-amber-300 bg-amber-50 px-2 py-1 text-[11px] text-amber-900">${escapeHtml(target?.name || `#${item.targetId}`)} · ${escapeHtml(item.type || '평가')}</span>`;
+            }).join('')}</div></details>`
+          : '<span class="font-bold text-emerald-700">모두 완료</span>';
+        return `<tr>
+          <td class="p-3 font-bold text-slate-900">${escapeHtml(row.person.name)}</td>
+          <td class="p-3 text-slate-600">${escapeHtml([row.person.company, row.person.dept].filter(Boolean).join(' · '))}</td>
+          <td class="p-3 text-center">${row.rows.length}</td><td class="p-3 text-center text-emerald-700">${row.completed}</td>
+          <td class="p-3 text-center font-bold text-amber-700">${row.pending.length}</td><td class="p-3 text-center font-bold">${rowRate.toFixed(1)}%</td>
+          <td class="p-3 min-w-64">${pendingDetails}</td>
+        </tr>`;
+      }).join('') : '<tr><td colspan="7" class="p-8 text-center text-slate-500">조건에 맞는 평가자가 없습니다.</td></tr>';
+
+      const visibleTargets = [...targetGroups].map(([id, rows]) => ({
+        person: userById.get(Number(id)), rows, completed: rows.filter(isSubmitted).length
+      })).filter(row => row.person && (!query || String(row.person.name).toLowerCase().includes(query)))
+        .sort((a, b) => (a.completed / a.rows.length) - (b.completed / b.rows.length) || String(a.person.name).localeCompare(String(b.person.name), 'ko'));
+      const targetBody = document.getElementById('progress-target-body');
+      if (targetBody) targetBody.innerHTML = visibleTargets.length ? visibleTargets.map(row => {
+        const pending = row.rows.length - row.completed;
+        const rowRate = row.rows.length ? row.completed / row.rows.length * 100 : 0;
+        return `<tr><td class="p-3 font-bold text-slate-900">${escapeHtml(row.person.name)}</td>
+          <td class="p-3 text-slate-600">${escapeHtml([row.person.company, row.person.dept].filter(Boolean).join(' · '))}</td>
+          <td class="p-3 text-center">${row.rows.length}</td><td class="p-3 text-center text-emerald-700">${row.completed}</td>
+          <td class="p-3 text-center font-bold text-amber-700">${pending}</td><td class="p-3 text-center font-bold">${rowRate.toFixed(1)}%</td></tr>`;
+      }).join('') : '<tr><td colspan="6" class="p-8 text-center text-slate-500">표시할 피평가자가 없습니다.</td></tr>';
     }
 
     // Manual Matching Management State & Logic
@@ -4224,6 +4373,8 @@
           targetId: row.target_id, type: row.type
         }));
       }
+      submittedMatchingIds = new Set((payload.submitted_matching_ids || []).map(Number));
+      eligibleMatchingIds = new Set((payload.eligible_matching_ids || []).map(Number));
       if (Array.isArray(payload.archives)) {
         evaluationHistoryDb = payload.archives.map(row => ({
           id: row.id, cycleId: row.cycle_id, cycleName: row.cycle_name,
@@ -4262,6 +4413,7 @@
         if (currentActiveSubtab === 'questions') renderQuestionsList();
         if (currentActiveSubtab === 'permissions') renderPermissionsTable();
         if (currentActiveSubtab === 'matching') renderManualMatchingTable();
+        if (currentActiveSubtab === 'progress') renderEvaluationProgress();
         if (currentActiveSubtab === 'summary') renderAdminSummaryTable();
         if (currentActiveSubtab === 'history') renderHistoryTable();
       }

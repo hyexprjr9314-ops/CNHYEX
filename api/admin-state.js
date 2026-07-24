@@ -274,6 +274,12 @@ async function readState(service, profile) {
     // Executive GET is deliberately summary-only: raw assignments and
     // individual answer rows are not needed for final score/close views.
     matchings: profile.sys_role === ROLES.admin ? (matchings.data || []) : [],
+    submitted_matching_ids: profile.sys_role === ROLES.admin
+      ? eligibleEvaluations.map(row => Number(row.matching_id))
+      : [],
+    eligible_matching_ids: profile.sys_role === ROLES.admin
+      ? eligibleMatchings.map(row => Number(row.id))
+      : [],
     archives: archives.data || [], cycle_scores: cycleScores,
     final_results: currentFinalResults
   };
