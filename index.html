@@ -160,7 +160,7 @@
       color: #FFFFFF !important;
     }
     .matching-dropzone {
-      min-height: 420px;
+      min-height: 240px;
       border: 2px dashed #94A3B8;
       background: #F8FAFC;
       transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
@@ -204,8 +204,14 @@
       padding: 20px !important;
     }
     .matching-studio-fullscreen .matching-dropzone {
-      min-height: calc(100vh - 270px);
-      max-height: calc(100vh - 270px) !important;
+      min-height: 32vh;
+      max-height: 42vh !important;
+    }
+    .matching-dropzone-available {
+      min-height: 360px;
+    }
+    .matching-dropzone-assigned {
+      min-height: 220px;
     }
     .matching-save-action {
       background: #0F766E !important;
@@ -1716,13 +1722,13 @@
                 </div>
               </div>
 
-              <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div class="space-y-4">
                 <section>
                   <div class="flex items-center justify-between mb-2">
                     <h5 class="text-xs font-black text-slate-700"><i class="fa-solid fa-users mr-1 text-blue-600"></i>배정 가능한 인원</h5>
                     <span id="matching-available-count" class="text-[11px] font-bold text-blue-700">0명</span>
                   </div>
-                  <div id="interactive-target-tags-grid" class="matching-dropzone matching-card-grid rounded-xl p-2 max-h-[600px] overflow-y-auto custom-scrollbar"
+                  <div id="interactive-target-tags-grid" class="matching-dropzone matching-dropzone-available matching-card-grid rounded-xl p-2 max-h-[600px] overflow-y-auto custom-scrollbar"
                     onpointerdown="handleMatchingMarqueeStart(event)" ondragover="handleMatchingDragOver(event)" ondragleave="handleMatchingDragLeave(event)" ondrop="handleMatchingDrop(event, false)">
                     <!-- Dynamically rendered unassigned people -->
                   </div>
@@ -1732,7 +1738,7 @@
                     <h5 class="text-xs font-black text-slate-700"><i class="fa-solid fa-folder-check mr-1 text-teal-600"></i>현재 배정된 인원</h5>
                     <span id="selected-evaluator-match-count" class="text-[11px] font-bold text-teal-700">0명</span>
                   </div>
-                  <div id="interactive-assigned-targets-grid" class="matching-dropzone matching-card-grid rounded-xl p-2 max-h-[600px] overflow-y-auto custom-scrollbar"
+                  <div id="interactive-assigned-targets-grid" class="matching-dropzone matching-dropzone-assigned matching-card-grid rounded-xl p-2 max-h-[420px] overflow-y-auto custom-scrollbar"
                     onpointerdown="handleMatchingMarqueeStart(event)" ondragover="handleMatchingDragOver(event)" ondragleave="handleMatchingDragLeave(event)" ondrop="handleMatchingDrop(event, true)">
                     <!-- Dynamically rendered assigned people -->
                   </div>
