@@ -153,10 +153,12 @@
       color: #FFFFFF !important;
     }
     .matching-dropzone {
-      min-height: 240px;
+      min-height: 420px;
       border: 2px dashed #94A3B8;
       background: #F8FAFC;
       transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+      user-select: none;
+      touch-action: pan-y;
     }
     .matching-dropzone.is-drag-over {
       border-color: #0D9488;
@@ -171,6 +173,32 @@
     }
     .matching-person-card.is-staged {
       border-style: dashed !important;
+    }
+    .matching-person-card.is-selected {
+      border-color: #2563EB !important;
+      background: #EFF6FF !important;
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.22) !important;
+    }
+    .matching-selection-marquee {
+      position: fixed;
+      z-index: 100;
+      pointer-events: none;
+      border: 1px solid #2563EB;
+      background: rgba(59, 130, 246, 0.14);
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.7) inset;
+    }
+    .matching-studio-fullscreen {
+      position: fixed !important;
+      inset: 0 !important;
+      z-index: 70 !important;
+      overflow: auto !important;
+      border-radius: 0 !important;
+      background: #FFFFFF !important;
+      padding: 20px !important;
+    }
+    .matching-studio-fullscreen .matching-dropzone {
+      min-height: calc(100vh - 270px);
+      max-height: calc(100vh - 270px) !important;
     }
     .matching-save-action {
       background: #0F766E !important;
@@ -1559,7 +1587,7 @@
         </div>
 
         <!-- 3. Evaluator-folder based drag-and-drop matching workspace -->
-        <div class="glass-card rounded-2xl p-6 border border-slate-800 space-y-4">
+        <div id="matching-studio-card" class="glass-card rounded-2xl p-6 border border-slate-800 space-y-4">
           <div class="flex justify-between items-center border-b border-slate-800 pb-3">
             <div>
               <h3 class="text-base font-bold text-white flex items-center gap-2">
@@ -1568,12 +1596,15 @@
               </h3>
               <p class="text-xs text-slate-400 mt-0.5">평가자 폴더를 선택하고 인원 카드를 좌우로 끌어 배정한 뒤, 변경사항을 한 번에 저장합니다.</p>
             </div>
-            <span class="text-xs text-slate-400">등록된 매칭 연결: <strong id="interactive-matching-count" class="text-brandTeal font-bold">0</strong>건</span>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-slate-400">등록된 매칭 연결: <strong id="interactive-matching-count" class="text-brandTeal font-bold">0</strong>건</span>
+              <button id="matching-fullscreen-btn" onclick="toggleMatchingStudioFullscreen()" class="px-3 py-1.5 rounded-lg border border-slate-400 bg-white text-slate-700 text-[11px] font-bold"><i class="fa-solid fa-expand mr-1"></i>전체화면 작업</button>
+            </div>
           </div>
 
           <!-- 3-column evaluator folder / available people / assigned people workspace -->
           <div class="grid grid-cols-1 xl:grid-cols-12 gap-4">
-            <div class="xl:col-span-3 bg-slate-900/90 p-4 rounded-2xl border border-slate-800 space-y-3">
+            <div class="xl:col-span-2 bg-slate-900/90 p-3 rounded-2xl border border-slate-800 space-y-3">
               <h4 class="text-xs font-bold text-white flex items-center justify-between border-b border-slate-800 pb-2">
                 <span class="flex items-center gap-1.5">
                   <i class="fa-solid fa-folder-open text-brandTeal"></i>
@@ -1581,12 +1612,12 @@
                 </span>
                 <span class="text-[10px] text-slate-500">폴더 선택</span>
               </h4>
-              <div class="space-y-2 max-h-[500px] overflow-y-auto custom-scrollbar pr-1" id="interactive-evaluator-list">
+              <div class="space-y-1.5 max-h-[600px] overflow-y-auto custom-scrollbar pr-1" id="interactive-evaluator-list">
                 <!-- Dynamically rendered evaluator folders -->
               </div>
             </div>
 
-            <div class="xl:col-span-9 bg-slate-900/90 p-4 rounded-2xl border border-slate-800 space-y-4">
+            <div class="xl:col-span-10 bg-slate-900/90 p-4 rounded-2xl border border-slate-800 space-y-4">
               <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-800 pb-3">
                 <div>
                   <h4 class="text-xs font-bold text-white flex items-center gap-2">
@@ -1607,8 +1638,8 @@
                     <h5 class="text-xs font-black text-slate-700"><i class="fa-solid fa-users mr-1 text-blue-600"></i>배정 가능한 인원</h5>
                     <span id="matching-available-count" class="text-[11px] font-bold text-blue-700">0명</span>
                   </div>
-                  <div id="interactive-target-tags-grid" class="matching-dropzone rounded-xl p-3 space-y-2 max-h-[440px] overflow-y-auto custom-scrollbar"
-                    ondragover="handleMatchingDragOver(event)" ondragleave="handleMatchingDragLeave(event)" ondrop="handleMatchingDrop(event, false)">
+                  <div id="interactive-target-tags-grid" class="matching-dropzone rounded-xl p-2 grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-2 content-start max-h-[600px] overflow-y-auto custom-scrollbar"
+                    onpointerdown="handleMatchingMarqueeStart(event)" ondragover="handleMatchingDragOver(event)" ondragleave="handleMatchingDragLeave(event)" ondrop="handleMatchingDrop(event, false)">
                     <!-- Dynamically rendered unassigned people -->
                   </div>
                 </section>
@@ -1617,8 +1648,8 @@
                     <h5 class="text-xs font-black text-slate-700"><i class="fa-solid fa-folder-check mr-1 text-teal-600"></i>현재 배정된 인원</h5>
                     <span id="selected-evaluator-match-count" class="text-[11px] font-bold text-teal-700">0명</span>
                   </div>
-                  <div id="interactive-assigned-targets-grid" class="matching-dropzone rounded-xl p-3 space-y-2 max-h-[440px] overflow-y-auto custom-scrollbar"
-                    ondragover="handleMatchingDragOver(event)" ondragleave="handleMatchingDragLeave(event)" ondrop="handleMatchingDrop(event, true)">
+                  <div id="interactive-assigned-targets-grid" class="matching-dropzone rounded-xl p-2 grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-2 content-start max-h-[600px] overflow-y-auto custom-scrollbar"
+                    onpointerdown="handleMatchingMarqueeStart(event)" ondragover="handleMatchingDragOver(event)" ondragleave="handleMatchingDragLeave(event)" ondrop="handleMatchingDrop(event, true)">
                     <!-- Dynamically rendered assigned people -->
                   </div>
                 </section>
@@ -1627,9 +1658,10 @@
               <div class="bg-slate-950/80 p-3 rounded-xl border border-slate-800/80 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 text-xs">
                 <div>
                   <span id="matching-pending-status" class="text-slate-500">저장할 변경사항이 없습니다.</span>
-                  <p class="text-[10px] text-slate-500 mt-0.5">PC는 드래그앤드롭, 모바일·키보드는 카드의 이동 버튼을 사용하세요.</p>
+                  <p class="text-[10px] text-slate-500 mt-0.5">빈 공간을 드래그해 단체 선택 · Shift/Ctrl로 추가 선택 · 선택 카드 하나를 끌면 함께 이동합니다.</p>
                 </div>
-                <div class="flex gap-2">
+                <div class="flex items-center gap-2">
+                  <span id="matching-selected-count" class="px-2 py-1 rounded-lg bg-blue-50 border border-blue-300 text-blue-800 text-[11px] font-bold">0명 선택</span>
                   <button id="matching-discard-btn" onclick="discardStagedMatchingChanges()" class="px-3 py-2 rounded-lg border border-slate-400 bg-white text-slate-700 text-[11px] font-bold disabled:opacity-40" disabled>변경 취소</button>
                   <button id="matching-save-btn" onclick="saveStagedMatchingChanges()" class="matching-save-action px-3 py-2 rounded-lg border text-[11px] font-bold disabled:opacity-40" disabled><i class="fa-solid fa-floppy-disk mr-1"></i>변경사항 저장</button>
                 </div>
@@ -3223,6 +3255,9 @@
     let stagedMatchingEvaluatorId = null;
     let stagedMatchingCycleId = null;
     let draggedMatchingTargetId = null;
+    let draggedMatchingTargetIds = [];
+    let selectedMatchingTargetIds = new Set();
+    let matchingMarqueeState = null;
 
     function getSelectedMatchingCycleId() {
       return Number(document.getElementById('perm-cycle-select')?.value || currentSelectedSummaryCycleId || cyclesDb[0]?.id);
@@ -3239,6 +3274,9 @@
       stagedMatchingEvaluatorId = null;
       stagedMatchingCycleId = null;
       draggedMatchingTargetId = null;
+      draggedMatchingTargetIds = [];
+      selectedMatchingTargetIds.clear();
+      finishMatchingMarquee();
     }
 
     function ensureStagedMatchingState() {
@@ -3348,7 +3386,7 @@
 
         const card = document.createElement('div');
         card.onclick = () => selectEvaluatorForInteractiveMatching(u.id);
-        card.className = `p-3 rounded-xl border transition cursor-pointer flex justify-between items-center ${
+        card.className = `p-2 rounded-lg border transition cursor-pointer flex justify-between items-center gap-1 ${
           isSelected
             ? 'bg-brandTeal/20 border-brandTeal text-white shadow-lg ring-1 ring-brandTeal'
             : 'bg-slate-950/70 border-slate-800 text-slate-300 hover:border-slate-700'
@@ -3410,6 +3448,8 @@
       const activeTargetIds = ensureStagedMatchingState();
       const serverTargetIds = new Set(getServerMatchingTargetIds());
       const targetCandidates = usersDb.filter(target => target.id !== selectedEvaluatorForMatching && target.is_evaluatee !== false);
+      const candidateIds = new Set(targetCandidates.map(target => Number(target.id)));
+      selectedMatchingTargetIds = new Set([...selectedMatchingTargetIds].filter(id => candidateIds.has(Number(id))));
       ensureDirectoryToolbar('matchingTargets', availableGrid, targetCandidates, {
         render: renderInteractiveTargetTags, placeholder: '피평가자 이름·소속·부서·직급 검색', sortKey: 'matched',
         companyValue: target => target.company, deptValue: target => target.dept,
@@ -3444,37 +3484,131 @@
       }
       if (saveBtn) saveBtn.disabled = !dirty || isAutoMatchingEnabled;
       if (discardBtn) discardBtn.disabled = !dirty;
+      updateMatchingSelectionUi();
     }
 
     function createMatchingPersonCard(target, isAssigned, serverTargetIds) {
       const wasAssigned = serverTargetIds.has(target.id);
       const isStaged = wasAssigned !== isAssigned;
+      const isSelected = selectedMatchingTargetIds.has(Number(target.id));
       const card = document.createElement('article');
-      card.className = `matching-person-card ${isStaged ? 'is-staged' : ''} p-3 rounded-xl border flex justify-between items-center gap-2 ${
+      card.dataset.targetId = String(target.id);
+      card.className = `matching-person-card ${isStaged ? 'is-staged' : ''} ${isSelected ? 'is-selected' : ''} relative min-h-[48px] px-2 py-1.5 rounded-lg border flex justify-between items-center gap-1.5 ${
         isAssigned
           ? 'bg-emerald-50 border-teal-500'
           : 'bg-white border-slate-300 hover:border-blue-500'
       }`;
       card.draggable = !isAutoMatchingEnabled;
       card.setAttribute('aria-label', `${target.name} ${target.role}, ${isAssigned ? '현재 배정됨' : '배정 가능'}`);
+      card.title = `${target.company} · ${target.dept} · ${target.workplace || ''}`;
       card.addEventListener('dragstart', event => handleMatchingDragStart(event, target.id));
       card.addEventListener('dragend', clearMatchingDragHighlights);
+      card.addEventListener('click', event => {
+        if (event.target.closest('button')) return;
+        toggleMatchingCardSelection(target.id, event.ctrlKey || event.metaKey || event.shiftKey);
+      });
       card.innerHTML = `
         <div class="min-w-0">
-          <div class="flex items-center gap-1.5">
+          <div class="flex items-center gap-1">
             <i class="fa-solid fa-grip-vertical text-slate-400" aria-hidden="true"></i>
-            <span class="text-[9px] font-bold px-1.5 py-0.5 rounded ${target.company.includes('한양') ? 'bg-blue-100 text-blue-800' : 'bg-orange-100 text-orange-800'}">${target.company}</span>
-            <strong class="text-xs font-black text-slate-800 truncate">${target.name} ${target.role}</strong>
+            <strong class="text-[11px] font-black text-slate-800 truncate">${target.name} ${target.role}</strong>
           </div>
-          <p class="text-[10px] text-slate-600 mt-1 truncate">${target.dept} • ${target.workplace}</p>
-          ${isStaged ? `<span class="inline-block mt-1 text-[10px] font-bold ${isAssigned ? 'text-teal-700' : 'text-rose-700'}">${isAssigned ? '배정 예정' : '해제 예정'}</span>` : ''}
+          <p class="text-[9px] text-slate-600 mt-0.5 truncate">${target.company} · ${target.dept}</p>
+          ${isStaged ? `<span class="absolute right-1 top-0.5 text-[8px] font-bold ${isAssigned ? 'text-teal-700' : 'text-rose-700'}">${isAssigned ? '배정 예정' : '해제 예정'}</span>` : ''}
         </div>
-        <button type="button" class="flex-shrink-0 px-2 py-1 rounded-lg border text-[10px] font-bold ${
+        <button type="button" class="flex-shrink-0 w-7 h-7 rounded-md border text-[10px] font-bold ${
           isAssigned ? 'border-rose-300 bg-rose-50 text-rose-800' : 'border-teal-300 bg-teal-50 text-teal-800'
-        }" aria-label="${target.name} ${isAssigned ? '배정 해제' : '배정'}">${isAssigned ? '← 해제' : '배정 →'}</button>`;
+        }" title="${isAssigned ? '배정 해제' : '배정'}" aria-label="${target.name} ${isAssigned ? '배정 해제' : '배정'}">${isAssigned ? '←' : '→'}</button>`;
       card.querySelector('button').addEventListener('click', () => moveMatchingTarget(target.id, !isAssigned));
       return card;
     }
+
+    function toggleMatchingCardSelection(targetId, additive = false) {
+      const numericId = Number(targetId);
+      if (!additive) selectedMatchingTargetIds.clear();
+      if (selectedMatchingTargetIds.has(numericId) && additive) selectedMatchingTargetIds.delete(numericId);
+      else selectedMatchingTargetIds.add(numericId);
+      document.querySelectorAll('.matching-person-card').forEach(card => {
+        card.classList.toggle('is-selected', selectedMatchingTargetIds.has(Number(card.dataset.targetId)));
+      });
+      updateMatchingSelectionUi();
+    }
+
+    function updateMatchingSelectionUi() {
+      const countEl = document.getElementById('matching-selected-count');
+      if (countEl) countEl.textContent = `${selectedMatchingTargetIds.size}명 선택`;
+    }
+
+    function handleMatchingMarqueeStart(event) {
+      if (isAutoMatchingEnabled || event.button !== 0 || event.pointerType === 'touch') return;
+      if (event.target.closest('.matching-person-card, button, input, select')) return;
+      event.preventDefault();
+      if (!event.ctrlKey && !event.metaKey && !event.shiftKey) selectedMatchingTargetIds.clear();
+      const overlay = document.createElement('div');
+      overlay.className = 'matching-selection-marquee';
+      document.body.appendChild(overlay);
+      matchingMarqueeState = {
+        startX: event.clientX,
+        startY: event.clientY,
+        zone: event.currentTarget,
+        overlay,
+        baseSelection: new Set(selectedMatchingTargetIds)
+      };
+      updateMatchingMarquee(event);
+      document.addEventListener('pointermove', updateMatchingMarquee);
+      document.addEventListener('pointerup', finishMatchingMarquee, { once: true });
+    }
+
+    function updateMatchingMarquee(event) {
+      if (!matchingMarqueeState) return;
+      const left = Math.min(matchingMarqueeState.startX, event.clientX);
+      const top = Math.min(matchingMarqueeState.startY, event.clientY);
+      const right = Math.max(matchingMarqueeState.startX, event.clientX);
+      const bottom = Math.max(matchingMarqueeState.startY, event.clientY);
+      Object.assign(matchingMarqueeState.overlay.style, {
+        left: `${left}px`,
+        top: `${top}px`,
+        width: `${right - left}px`,
+        height: `${bottom - top}px`
+      });
+      selectedMatchingTargetIds = new Set(matchingMarqueeState.baseSelection);
+      matchingMarqueeState.zone.querySelectorAll('.matching-person-card').forEach(card => {
+        const rect = card.getBoundingClientRect();
+        const intersects = rect.left < right && rect.right > left && rect.top < bottom && rect.bottom > top;
+        if (intersects) selectedMatchingTargetIds.add(Number(card.dataset.targetId));
+        card.classList.toggle('is-selected', selectedMatchingTargetIds.has(Number(card.dataset.targetId)));
+      });
+      updateMatchingSelectionUi();
+    }
+
+    function finishMatchingMarquee() {
+      if (!matchingMarqueeState) return;
+      document.removeEventListener('pointermove', updateMatchingMarquee);
+      matchingMarqueeState.overlay?.remove();
+      matchingMarqueeState = null;
+      updateMatchingSelectionUi();
+    }
+
+    function toggleMatchingStudioFullscreen() {
+      const studio = document.getElementById('matching-studio-card');
+      const button = document.getElementById('matching-fullscreen-btn');
+      if (!studio || !button) return;
+      const isFullscreen = studio.classList.toggle('matching-studio-fullscreen');
+      document.body.classList.toggle('overflow-hidden', isFullscreen);
+      button.innerHTML = isFullscreen
+        ? '<i class="fa-solid fa-compress mr-1"></i>전체화면 종료'
+        : '<i class="fa-solid fa-expand mr-1"></i>전체화면 작업';
+    }
+
+    document.addEventListener('keydown', event => {
+      if (event.key !== 'Escape') return;
+      finishMatchingMarquee();
+      selectedMatchingTargetIds.clear();
+      updateMatchingSelectionUi();
+      document.querySelectorAll('.matching-person-card.is-selected').forEach(card => card.classList.remove('is-selected'));
+      const studio = document.getElementById('matching-studio-card');
+      if (studio?.classList.contains('matching-studio-fullscreen')) toggleMatchingStudioFullscreen();
+    });
 
     function handleMatchingDragStart(event, targetId) {
       if (isAutoMatchingEnabled) {
@@ -3483,8 +3617,14 @@
         return;
       }
       draggedMatchingTargetId = Number(targetId);
+      if (!selectedMatchingTargetIds.has(draggedMatchingTargetId)) {
+        selectedMatchingTargetIds = new Set([draggedMatchingTargetId]);
+      }
+      draggedMatchingTargetIds = [...selectedMatchingTargetIds];
       event.dataTransfer.effectAllowed = 'move';
-      event.dataTransfer.setData('text/plain', String(targetId));
+      event.dataTransfer.setData('text/plain', draggedMatchingTargetIds.join(','));
+      event.dataTransfer.setData('application/x-cnhy-matching-targets', JSON.stringify(draggedMatchingTargetIds));
+      updateMatchingSelectionUi();
     }
 
     function handleMatchingDragOver(event) {
@@ -3501,32 +3641,44 @@
     function clearMatchingDragHighlights() {
       document.querySelectorAll('.matching-dropzone.is-drag-over').forEach(zone => zone.classList.remove('is-drag-over'));
       draggedMatchingTargetId = null;
+      draggedMatchingTargetIds = [];
     }
 
     function handleMatchingDrop(event, shouldAssign) {
       event.preventDefault();
-      const targetId = Number(event.dataTransfer.getData('text/plain') || draggedMatchingTargetId);
+      let targetIds = draggedMatchingTargetIds;
+      try {
+        const serialized = event.dataTransfer.getData('application/x-cnhy-matching-targets');
+        if (serialized) targetIds = JSON.parse(serialized).map(Number);
+      } catch (_) {}
+      if (!targetIds.length) {
+        targetIds = String(event.dataTransfer.getData('text/plain') || draggedMatchingTargetId || '')
+          .split(',').map(Number).filter(Boolean);
+      }
       clearMatchingDragHighlights();
-      if (targetId) moveMatchingTarget(targetId, shouldAssign);
+      if (targetIds.length) moveMatchingTargets(targetIds, shouldAssign);
     }
 
     function moveMatchingTarget(targetId, shouldAssign) {
+      moveMatchingTargets([targetId], shouldAssign);
+    }
+
+    function moveMatchingTargets(targetIds, shouldAssign) {
       if (isAutoMatchingEnabled) {
         alert('자동 매칭 모드에서는 수동 배정을 변경할 수 없습니다. 먼저 수동 모드로 전환해 주세요.');
         return;
       }
-      if (Number(targetId) === Number(selectedEvaluatorForMatching)) {
-        alert('자기 자신에게는 평가를 배정할 수 없습니다.');
-        return;
-      }
-      const target = usersDb.find(user => Number(user.id) === Number(targetId));
-      if (!target || target.is_evaluatee === false) {
-        alert('피평가 대상이 아닌 인원은 배정할 수 없습니다.');
-        return;
-      }
       const stagedIds = ensureStagedMatchingState();
-      if (shouldAssign) stagedIds.add(Number(targetId));
-      else stagedIds.delete(Number(targetId));
+      const validIds = [...new Set(targetIds.map(Number))].filter(targetId => {
+        if (targetId === Number(selectedEvaluatorForMatching)) return false;
+        const target = usersDb.find(user => Number(user.id) === targetId);
+        return target && target.is_evaluatee !== false;
+      });
+      validIds.forEach(targetId => {
+        if (shouldAssign) stagedIds.add(targetId);
+        else stagedIds.delete(targetId);
+      });
+      selectedMatchingTargetIds = new Set(validIds);
       renderInteractiveTargetTags();
     }
 

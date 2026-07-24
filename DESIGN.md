@@ -35,15 +35,15 @@
 ## Visual language
 - Color: 흰 배경, `#F5F7FA` 표면, 진한 본문색, 틸 브랜드 포인트
 - Typography: 등급과 주요 상태는 굵은 단색 텍스트
-- Spacing/layout rhythm: 기존 Tailwind 간격 체계 유지
+- Spacing/layout rhythm: 일반 화면은 기존 Tailwind 간격 체계를 유지하고 대량 매칭 작업대는 48px 내외 소형 카드와 2~3열 고밀도 격자를 사용
 - Shape/radius/elevation: 둥근 카드와 얕은 그림자
-- Motion: 회전이나 바운스는 아이콘에만 제한하며 reduced-motion 지원
+- Motion: 회전이나 바운스는 아이콘에만 제한하며 reduced-motion 지원, 박스 선택은 짧은 테두리·배경 피드백만 사용
 - Imagery/iconography: Font Awesome과 의미가 명확한 이모지
 
 ## Components
 - Existing components to reuse: glass-card, 관계별 그룹, 표, 필터, 등급 배지
-- New/changed components: 화이트 테마용 EX/S/A 등급 표면, 단색 등급 라벨, 조정 수정·취소 의미형 버튼, 평가자 폴더 기반 드래그앤드롭 매칭 작업대
-- Variants and states: EX, S, A, B, C, D, 미평가, 조정됨, 배정 가능, 배정 완료, 배정 예정, 해제 예정
+- New/changed components: 화이트 테마용 EX/S/A 등급 표면, 단색 등급 라벨, 조정 수정·취소 의미형 버튼, 평가자 폴더 기반 드래그앤드롭 매칭 작업대, RTS형 박스 다중 선택과 전체화면 작업 모드
+- Variants and states: EX, S, A, B, C, D, 미평가, 조정됨, 배정 가능, 배정 완료, 배정 예정, 해제 예정, 다중 선택
 - Token/component ownership: `index.html`의 화이트 테마 CSS
 
 ## Accessibility
