@@ -1992,7 +1992,11 @@
               </h3>
               <p class="text-xs text-slate-400 mt-0.5">평가자 폴더를 선택하고 인원 카드를 좌우로 끌어 배정한 뒤, 변경사항을 한 번에 저장합니다.</p>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="flex flex-wrap items-center justify-end gap-2">
+              <label for="matching-cycle-select" class="text-xs font-bold text-slate-300 whitespace-nowrap"><i class="fa-solid fa-calendar-check text-brandTeal mr-1"></i>평가 주기:</label>
+              <select id="matching-cycle-select" onchange="handlePermissionCycleChange(this)" class="max-w-[360px] bg-white border border-slate-400 text-xs font-bold text-slate-800 rounded-xl px-3 py-2">
+                <!-- Dynamically Populated -->
+              </select>
               <span class="text-xs text-slate-400">등록된 매칭 연결: <strong id="interactive-matching-count" class="text-brandTeal font-bold">0</strong>건</span>
               <button id="matching-fullscreen-btn" onclick="toggleMatchingStudioFullscreen()" class="px-3 py-1.5 rounded-lg border border-slate-400 bg-white text-slate-700 text-[11px] font-bold"><i class="fa-solid fa-expand mr-1"></i>전체화면 작업</button>
             </div>
@@ -3256,6 +3260,7 @@
       const myReportSelect = document.getElementById('my-report-cycle-select');
       const questionSelect = document.getElementById('question-cycle-select');
       const permSelect = document.getElementById('perm-cycle-select');
+      const matchingSelect = document.getElementById('matching-cycle-select');
       const progressSelect = document.getElementById('progress-cycle-select');
       const summarySelect = document.getElementById('summary-cycle-select');
       const historyCloseSelect = document.getElementById('history-close-cycle-select');
@@ -3276,6 +3281,7 @@
       if (myReportSelect) myReportSelect.innerHTML = myReportOptionsHtml;
       if (questionSelect) questionSelect.innerHTML = optionsHtml;
       if (permSelect) permSelect.innerHTML = optionsHtml;
+      if (matchingSelect) matchingSelect.innerHTML = optionsHtml;
       if (progressSelect) progressSelect.innerHTML = optionsHtml;
       if (summarySelect) summarySelect.innerHTML = optionsHtml;
       if (historyCloseSelect) historyCloseSelect.innerHTML = optionsHtml;
@@ -3953,7 +3959,7 @@
     let matchingMarqueeState = null;
 
     function getSelectedMatchingCycleId() {
-      return Number(document.getElementById('perm-cycle-select')?.value || currentSelectedSummaryCycleId || cyclesDb[0]?.id);
+      return Number(document.getElementById('matching-cycle-select')?.value || document.getElementById('perm-cycle-select')?.value || currentSelectedSummaryCycleId || cyclesDb[0]?.id);
     }
 
     function getServerMatchingTargetIds(evaluatorId = selectedEvaluatorForMatching, cycleId = getSelectedMatchingCycleId()) {
@@ -3998,9 +4004,17 @@
         const shouldDiscard = confirm('저장하지 않은 평가 매칭 변경사항이 있습니다. 변경사항을 취소하고 평가 주기를 이동하시겠습니까?');
         if (!shouldDiscard) {
           selectEl.value = String(stagedMatchingCycleId);
+          ['perm-cycle-select', 'matching-cycle-select'].forEach(id => {
+            const cycleSelect = document.getElementById(id);
+            if (cycleSelect && cycleSelect !== selectEl) cycleSelect.value = selectEl.value;
+          });
           return;
         }
       }
+      ['perm-cycle-select', 'matching-cycle-select'].forEach(id => {
+        const cycleSelect = document.getElementById(id);
+        if (cycleSelect && cycleSelect !== selectEl) cycleSelect.value = selectEl.value;
+      });
       resetStagedMatchingState();
       if (currentActiveSubtab === 'matching') renderManualMatchingTable();
       else renderPermissionsTable();
@@ -4016,7 +4030,7 @@
       try {
         await callAdminStateApi({ action: 'settings_update', weights: categoryWeights, auto_matching_enabled: nextValue });
         if (nextValue) {
-          const cycleId = Number(document.getElementById('perm-cycle-select')?.value || currentSelectedSummaryCycleId || cyclesDb[0]?.id);
+          const cycleId = getSelectedMatchingCycleId();
           await callAdminStateApi({ action: 'matching_generate', cycle_id: cycleId });
         }
         isAutoMatchingEnabled = nextValue;
@@ -4031,7 +4045,7 @@
     }
 
     function renderManualMatchingTable() {
-      const matchingCycleId = Number(document.getElementById('perm-cycle-select')?.value || currentSelectedSummaryCycleId || cyclesDb[0]?.id);
+      const matchingCycleId = getSelectedMatchingCycleId();
       const cycleMatchings = customManualMatchingsDb.filter(m => Number(m.cycleId) === matchingCycleId);
       const statusText = document.getElementById('matching-mode-status-text');
       const toggleBtn = document.getElementById('toggle-matching-mode-btn');
