@@ -33,6 +33,7 @@
 - Tradeoffs: 화려한 발광 효과보다 운영 화면의 스캔 속도를 우선
 
 ## Visual language
+- C grade: use a light warm-orange surface (`#FFF7ED`), dark brown label (`#7C2D12`), and orange border/icon (`#C2410C`) so the bronze identity remains readable on the white theme.
 - Color: 흰 배경, `#F5F7FA` 표면, 진한 본문색, 틸 브랜드 포인트
 - Typography: 기본 본문 15~16px, 보조 정보 최소 13px를 사용하고 사용자 선택형 100%·115%·130% 가독성 모드를 제공
 - Spacing/layout rhythm: 일반 화면은 기존 Tailwind 간격 체계를 유지하고 대량 매칭 작업대는 48px 내외 소형 카드와 2~3열 고밀도 격자를 사용
