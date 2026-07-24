@@ -42,13 +42,13 @@
 
 ## Components
 - Existing components to reuse: glass-card, 관계별 그룹, 표, 필터, 등급 배지
-- New/changed components: 화이트 테마용 EX/S/A 등급 표면, 단색 등급 라벨, 조정 수정·취소 의미형 버튼
-- Variants and states: EX, S, A, B, C, D, 미평가, 조정됨
+- New/changed components: 화이트 테마용 EX/S/A 등급 표면, 단색 등급 라벨, 조정 수정·취소 의미형 버튼, 평가자 폴더 기반 드래그앤드롭 매칭 작업대
+- Variants and states: EX, S, A, B, C, D, 미평가, 조정됨, 배정 가능, 배정 완료, 배정 예정, 해제 예정
 - Token/component ownership: `index.html`의 화이트 테마 CSS
 
 ## Accessibility
 - Target standard: WCAG 2.1 AA 수준의 본문 대비를 지향
-- Keyboard/focus behavior: 기존 `:focus-visible` 유지
+- Keyboard/focus behavior: 기존 `:focus-visible` 유지, 드래그 작업에는 동일 기능의 이동 버튼을 항상 제공
 - Contrast/readability: 투명 그라데이션 글자를 정보성 배지에 사용하지 않음
 - Screen-reader semantics: 등급 텍스트를 시각 아이콘과 함께 항상 제공
 - Reduced motion and sensory considerations: `prefers-reduced-motion` 유지, 대형 광원 애니메이션 금지
@@ -56,7 +56,7 @@
 ## Responsive behavior
 - Supported breakpoints/devices: 데스크톱 우선, 640px 이하 모바일
 - Layout adaptations: 기존 고정 하단 탐색과 반응형 표/카드 유지
-- Touch/hover differences: 핵심 동작은 hover에 의존하지 않음
+- Touch/hover differences: 데스크톱은 드래그앤드롭, 모바일·키보드는 배정·해제 버튼을 제공하며 핵심 동작은 hover에 의존하지 않음
 
 ## Interaction states
 - Loading: 텍스트와 진행 아이콘 병행
@@ -64,6 +64,7 @@
 - Error: 원인과 재시도 행동 제공
 - Success: 색상과 텍스트를 함께 사용
 - Destructive actions: 취소·삭제 계열은 옅은 로즈 배경, 진한 로즈 글자와 명확한 테두리를 사용
+- Pending changes: 서버 반영 전 배정 예정·해제 예정 상태와 변경 건수를 표시하고 명시적 저장·취소를 제공
 - Disabled: 낮은 강조와 비활성 의미를 명확히 구분
 - Offline/slow network, if applicable: 서버 오류와 로딩 상태를 구분
 
