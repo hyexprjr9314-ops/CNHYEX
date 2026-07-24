@@ -4565,6 +4565,7 @@
       if (sessionError || !sessionData.session) throw new Error('로그인이 필요합니다.');
       const response = await fetch('/api/admin-state', {
         method,
+        cache: method === 'GET' ? 'no-store' : 'default',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${sessionData.session.access_token}`
