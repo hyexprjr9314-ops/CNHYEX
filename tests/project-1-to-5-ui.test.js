@@ -30,7 +30,9 @@ test('inline application scripts remain syntactically valid', async () => {
 
 test('relationship alignment migration preserves leader precedence and cross-organization exchange', async () => {
   const source = await readFile(migrationUrl, 'utf8');
+  assert.match(source, /disable trigger matchings_prevent_non_draft_mutation/);
   assert.match(source, /when context\.target_is_leader then 'leadership'/);
   assert.match(source, /context\.evaluator_company = context\.target_company[\s\S]*context\.evaluator_dept = context\.target_dept then 'internal'/);
   assert.match(source, /else 'exchange'/);
+  assert.match(source, /enable trigger matchings_prevent_non_draft_mutation[\s\S]*commit;/);
 });

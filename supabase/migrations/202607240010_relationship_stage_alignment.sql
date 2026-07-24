@@ -4,6 +4,10 @@ begin;
 -- leaders are evaluated for leadership unless two leaders from different
 -- departments evaluate each other; non-leaders are internal only when both
 -- company and department match.
+-- This is a controlled data migration across historical/live cycles, so the
+-- ordinary application mutation guard is disabled only for this transaction.
+alter table public.matchings disable trigger matchings_prevent_non_draft_mutation;
+
 with relationship_context as (
   select
     matching.id,
@@ -35,5 +39,7 @@ set relationship_type = case
 end
 from relationship_context as context
 where matching.id = context.id;
+
+alter table public.matchings enable trigger matchings_prevent_non_draft_mutation;
 
 commit;
