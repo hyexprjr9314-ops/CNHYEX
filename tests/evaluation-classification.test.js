@@ -13,6 +13,9 @@ test('classification covers tracks and relationship precedence', () => {
   assert.equal(isLeader({ role: '대리' }), false);
   assert.equal(relationshipType({ role: '부장', dept: '인사' }, { role: '부장', dept: '영업' }), 'exchange');
   assert.equal(relationshipType({}, { role: '부장', dept: '인사' }), 'leadership');
+  assert.equal(relationshipType({ company: '(주)한양고속', dept: '인사' }, { company: '(주)한양고속', dept: '인사' }), 'internal');
+  assert.equal(relationshipType({ company: '(주)한양고속', dept: '인사' }, { company: '(주)충남고속', dept: '인사' }), 'exchange');
+  assert.equal(relationshipType({ company: '(주)한양고속', dept: '인사' }, { company: '(주)한양고속', dept: '영업' }), 'exchange');
   assert.equal(normalizedCategory('소통 / 협력'), '소통 협력');
   assert.equal(normalizeTrack('기본 필수질문'), 'all');
   assert.equal(normalizeTrack('팀장·부서장급'), TRACKS.headquarters_leader);

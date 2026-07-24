@@ -1110,15 +1110,6 @@
             </button>
           </div>
         </div>
-        <div id="my-grade-card" class="glitter-diamond border px-6 py-3 rounded-2xl text-center flex items-center gap-4 transition-all">
-          <div id="my-medal-container">
-            <i class="fa-solid fa-gem text-cyan-300 text-3xl animate-spin3d filter drop-shadow-[0_0_15px_rgba(6,182,212,0.9)]"></i>
-          </div>
-          <div>
-            <span class="block text-[10px] uppercase font-bold text-slate-300 tracking-wider">최종 인사평가 등급</span>
-            <strong id="my-grade-title" class="text-xl font-black grade-label-s">S Grade (💎 Diamond)</strong>
-          </div>
-        </div>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1172,8 +1163,17 @@
           </div>
         </div>
 
+        <div id="my-grade-card" class="glitter-diamond border rounded-2xl p-6 text-center flex flex-col items-center justify-center gap-4 transition-all min-h-[220px]">
+          <span class="block text-[11px] uppercase font-black text-slate-300 tracking-[0.18em]">최종 인사평가 등급</span>
+          <div id="my-medal-container">
+            <i class="fa-solid fa-gem text-cyan-300 text-5xl animate-spin3d filter drop-shadow-[0_0_15px_rgba(6,182,212,0.9)]"></i>
+          </div>
+          <strong id="my-grade-title" class="text-2xl font-black grade-label-s">S Grade (💎 Diamond)</strong>
+          <p class="text-xs text-slate-400">최종 확정·공개된 인사평가 등급입니다.</p>
+        </div>
+
         <!-- Executive Adjusted Notice Card (Displayed ONLY when Executive 2nd Adjustment applied) -->
-        <div id="my-adjusted-notice" class="hidden glass-card rounded-2xl p-6 border border-amber-500/40 bg-amber-950/20 space-y-4">
+        <div id="my-adjusted-notice" class="hidden md:col-span-2 glass-card rounded-2xl p-6 border border-amber-500/40 bg-amber-950/20 space-y-4">
           <div class="flex items-center gap-3 border-b border-amber-500/30 pb-3">
             <div class="w-10 h-10 bg-amber-500/20 text-brandGold rounded-xl flex items-center justify-center text-lg">
               <i class="fa-solid fa-user-shield"></i>
@@ -1309,7 +1309,12 @@
               <i class="fa-solid fa-users text-brandTeal"></i>
               <span>등록된 사용자/평가자 계정 목록</span>
             </h3>
-            <span class="text-xs text-slate-400">총 <strong id="user-list-count" class="text-brandTeal">0</strong>명 등록됨</span>
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="text-xs text-slate-400">총 <strong id="user-list-count" class="text-brandTeal">0</strong>명 등록됨</span>
+              <button id="bulk-password-mail-btn" type="button" onclick="sendBulkPasswordResetEmails()" class="rounded-xl border border-teal-500 bg-teal-600 px-3 py-2 text-xs font-black text-white shadow-sm transition hover:bg-teal-500">
+                <i class="fa-solid fa-envelopes-bulk mr-1"></i>비밀번호 재설정 메일 전체 발송
+              </button>
+            </div>
           </div>
 
           <div class="overflow-x-auto">
@@ -1358,12 +1363,6 @@
             <i class="fa-solid fa-crown text-amber-400"></i>
             <span>👑 관리자·임원 전용 가이드라인</span>
           </button>
-          <button id="admin-publish-toggle-btn" onclick="toggleResultPublishing()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2.5 rounded-xl transition text-xs flex items-center gap-2 shadow-lg shadow-emerald-900/30">
-            <i class="fa-solid fa-globe"></i>
-            <span id="admin-publish-status-text">🌐 결과 공개 중 (클릭 시 비공개)</span>
-          </button>
-          <div id="internal-approval-controls" class="text-xs text-slate-300 flex items-center gap-2"></div>
-          
         </div>
       </div>
 
@@ -1921,6 +1920,24 @@
               <button type="button" onclick="downloadCSVReport()" class="bg-brandBlue hover:bg-blue-600 text-white font-bold px-3.5 py-2 rounded-xl transition text-xs flex items-center gap-2 shadow-lg shadow-blue-900/30">
                 <i class="fa-solid fa-file-csv"></i>
                 <span>선택 주기 전체 리포트 CSV</span>
+              </button>
+              <button id="bulk-grade-mail-btn" type="button" onclick="sendBulkGradeNoticeEmails()" class="bg-violet-600 hover:bg-violet-500 text-white font-bold px-3.5 py-2 rounded-xl transition text-xs flex items-center gap-2 shadow-lg shadow-violet-900/30">
+                <i class="fa-solid fa-envelopes-bulk"></i>
+                <span>평가 결과 메일 일괄 발송</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="rounded-xl border border-slate-700 bg-slate-900/70 p-3 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+            <div>
+              <p class="text-xs font-black text-white"><i class="fa-solid fa-file-signature text-amber-400 mr-1"></i>내부 전자승인 및 결과 공개</p>
+              <p class="mt-1 text-[11px] text-slate-400">조정이 완료된 선택 주기를 승인 요청하고, 임원 승인 후 결과를 공개합니다.</p>
+            </div>
+            <div class="flex flex-wrap items-center justify-end gap-2">
+              <div id="internal-approval-controls" class="text-xs text-slate-300 flex flex-wrap items-center gap-2"></div>
+              <button id="admin-publish-toggle-btn" onclick="toggleResultPublishing()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2.5 rounded-xl transition text-xs flex items-center gap-2 shadow-lg shadow-emerald-900/30">
+                <i class="fa-solid fa-globe"></i>
+                <span id="admin-publish-status-text">🌐 결과 공개 중 (클릭 시 비공개)</span>
               </button>
             </div>
           </div>
@@ -4306,6 +4323,79 @@
       return payload;
     }
 
+    async function callMailApi(params = {}) {
+      if (!supabaseClient) throw new Error('Supabase 연결이 없습니다.');
+      const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
+      if (sessionError || !sessionData.session) throw new Error('로그인이 필요합니다.');
+      const response = await fetch('/api/mail', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionData.session.access_token}`
+        },
+        body: JSON.stringify(params)
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.error || '메일 발송 요청에 실패했습니다.');
+      return payload;
+    }
+
+    function formatMailDispatchSummary(summary = {}) {
+      return `발송 ${Number(summary.sent || 0)}건 · 중복 제외 ${Number(summary.duplicate || 0)}건 · 대상 제외 ${Number(summary.skipped || 0)}건 · 실패 ${Number(summary.failed || 0)}건`;
+    }
+
+    async function runMailAction(button, params, confirmation) {
+      if (!confirm(confirmation)) return;
+      const originalHtml = button?.innerHTML;
+      if (button) {
+        button.disabled = true;
+        button.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>발송 처리 중';
+      }
+      try {
+        const result = await callMailApi(params);
+        alert(`메일 발송 처리가 완료되었습니다.\n${formatMailDispatchSummary(result.summary)}`);
+      } catch (error) {
+        alert(`메일 발송 실패: ${error.message}`);
+      } finally {
+        if (button) {
+          button.disabled = false;
+          button.innerHTML = originalHtml;
+        }
+      }
+    }
+
+    async function sendBulkPasswordResetEmails() {
+      const eligibleCount = usersDb.filter(user => user.active !== false && user.auth_user_id && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user.email || '')).length;
+      const button = document.getElementById('bulk-password-mail-btn');
+      await runMailAction(
+        button,
+        { action: 'password_reset_bulk' },
+        `활성 상태이며 Auth에 연결된 사용자 ${eligibleCount}명에게 비밀번호 재설정 메일을 발송하시겠습니까?\n중복 클릭은 서버에서 차단됩니다.`
+      );
+    }
+
+    async function sendBulkGradeNoticeEmails() {
+      const cycle = cyclesDb.find(row => Number(row.id) === Number(currentSelectedSummaryCycleId));
+      if (!cycle) return alert('평가 주기를 선택해 주세요.');
+      const button = document.getElementById('bulk-grade-mail-btn');
+      await runMailAction(
+        button,
+        { action: 'grade_notice_bulk', cycle_id: Number(cycle.id) },
+        `[${cycle.name}]의 공개된 최종 평가등급을 대상자 전체에게 발송하시겠습니까?\n승인·공개·최종화 조건을 충족한 대상자에게만 발송됩니다.`
+      );
+    }
+
+    async function sendGradeNoticeEmail(targetId, button) {
+      const target = usersDb.find(user => Number(user.id) === Number(targetId));
+      const cycle = cyclesDb.find(row => Number(row.id) === Number(currentSelectedSummaryCycleId));
+      if (!target || !cycle) return;
+      await runMailAction(
+        button,
+        { action: 'grade_notice', cycle_id: Number(cycle.id), target_id: Number(target.id) },
+        `[${target.name}] 님에게 ${cycle.name} 최종 평가등급 메일을 발송하시겠습니까?`
+      );
+    }
+
     function applyPublishedScores(scores) {
       const cardEl = document.getElementById('my-grade-card');
       const chartCard = document.getElementById('my-chart-card');
@@ -4555,6 +4645,82 @@
       };
     }
 
+    // Canonical relationship presentation. Server-provided relationshipType is
+    // authoritative; the fallback mirrors api/evaluation-classification.js.
+    function resolveEvaluationRelationship(evaluator, target) {
+      const sameCompany = String(evaluator?.company || '').trim() === String(target?.company || '').trim();
+      const sameDept = String(evaluator?.dept || '').trim() === String(target?.dept || '').trim();
+      const targetRole = String(target?.role || '');
+      const evaluatorRole = String(evaluator?.role || '');
+      const targetIsLeader = ['팀장급', '부서실장급', '임원급'].includes(target?.type)
+        || /(팀장|부장|실장|소장|지점장|센터장|본부장|임원|이사|상무|전무|대표)/.test(targetRole);
+      const evaluatorIsLeader = ['팀장급', '부서실장급', '임원급'].includes(evaluator?.type)
+        || /(팀장|부장|실장|소장|지점장|센터장|본부장|임원|이사|상무|전무|대표)/.test(evaluatorRole);
+      const relationshipKey = ['internal', 'exchange', 'leadership'].includes(target?.relationshipType)
+        ? target.relationshipType
+        : evaluatorIsLeader && targetIsLeader && !sameDept
+          ? 'exchange'
+          : targetIsLeader
+            ? 'leadership'
+            : sameCompany && sameDept
+              ? 'internal'
+              : 'exchange';
+      return {
+        leadership: {
+          key: 'leadership', title: '리더십 평가',
+          description: '팀원 관점에서 팀장·부서장의 리더십, 소통, 공정한 의사결정과 구성원 육성을 평가합니다.',
+          icon: 'fa-people-group', tone: 'purple'
+        },
+        internal: {
+          key: 'internal', title: '동일 부서 내부 평가',
+          description: '같은 소속사·부서에서 직접 관찰한 업무수행, 책임감과 협업 행동을 평가합니다.',
+          icon: 'fa-building-user', tone: 'teal'
+        },
+        exchange: {
+          key: 'exchange', title: '부서·계열사 교류 평가',
+          description: '다른 부서 또는 계열사와의 실제 업무 교류를 바탕으로 의사소통, 지원과 협업 태도를 평가합니다.',
+          icon: 'fa-arrows-left-right-to-line', tone: 'blue'
+        }
+      }[relationshipKey];
+    }
+
+    function resolveEvaluationStage(evaluator, target) {
+      const targetContext = `${target?.company || ''} ${target?.dept || ''} ${target?.workplace || ''}`;
+      const relationship = resolveEvaluationRelationship(evaluator, target).key;
+      const targetRole = String(target?.role || '');
+      const evaluatorRole = String(evaluator?.role || '');
+      const targetIsLeader = ['팀장급', '부서실장급', '임원급'].includes(target?.type)
+        || /(팀장|부장|실장|소장|지점장|센터장|본부장|임원|이사|상무|전무|대표)/.test(targetRole);
+      const evaluatorIsExecutive = evaluator?.sysRole === '임원' || evaluator?.type === '임원급'
+        || /(임원|이사|상무|전무|대표)/.test(evaluatorRole);
+      const evaluatorIsLeader = evaluatorIsExecutive || ['팀장급', '부서실장급'].includes(evaluator?.type)
+        || /(팀장|부장|실장|소장|지점장|센터장|본부장)/.test(evaluatorRole);
+
+      if (targetIsLeader) {
+        if (evaluatorIsExecutive) return { track: '팀장·부서장급 리더십 평가', stage: 3, total: 3, label: '임원 최종 평가 및 종결' };
+        if (relationship === 'exchange' || evaluatorIsLeader) return { track: '팀장·부서장급 리더십 평가', stage: 2, total: 3, label: '타 부서장 간 협업 태스크 교류 평가' };
+        return { track: '팀장·부서장급 리더십 평가', stage: 1, total: 3, label: '소속 부서원 상향 리더십 평가' };
+      }
+      if (targetContext.includes('정비')) {
+        if (evaluatorIsExecutive) return { track: '정비사 파트 실무 평가', stage: 3, total: 3, label: '임원 최종 평가 및 종결' };
+        if (evaluatorIsLeader) return { track: '정비사 파트 실무 평가', stage: 2, total: 3, label: '부서장·현장 직접 평가' };
+        return { track: '정비사 파트 실무 평가', stage: 1, total: 3, label: '차량·안전실 내부 실무 평가' };
+      }
+      if (targetContext.includes('영업소')) {
+        if (evaluatorIsExecutive) return { track: '영업소 현장밀착 평가', stage: 4, total: 4, label: '임원 최종 평가 및 종결' };
+        if (evaluatorIsLeader) return { track: '영업소 현장밀착 평가', stage: 3, total: 4, label: '유관부서 팀장급 정성 평가' };
+        return relationship === 'internal'
+          ? { track: '영업소 현장밀착 평가', stage: 1, total: 4, label: '동일 소속사 협업부서 다면평가' }
+          : { track: '영업소 현장밀착 평가', stage: 2, total: 4, label: '동일구역 계열사 협업·조화 평가' };
+      }
+      if (evaluatorIsExecutive) return { track: '본사 스태프 전주기 평가', stage: 5, total: 5, label: '임원 최종 평가 및 2차 조정 종결' };
+      if (evaluatorIsLeader) return { track: '본사 스태프 전주기 평가', stage: 4, total: 5, label: '부서장 성과평가' };
+      if (relationship === 'internal') return { track: '본사 스태프 전주기 평가', stage: 1, total: 5, label: '동일 소속부서 다면평가' };
+      return String(evaluator?.company || '').trim() === String(target?.company || '').trim()
+        ? { track: '본사 스태프 전주기 평가', stage: 2, total: 5, label: '소속사 내부부서 협업평가' }
+        : { track: '본사 스태프 전주기 평가', stage: 3, total: 5, label: '계열사 동일부서 협업평가' };
+    }
+
     // Employee Grid Handler (Relationship Groups + Track Subtabs + Privacy Protection)
     function renderEmployeeGrid() {
       const container = document.getElementById('employee-card-grid');
@@ -4693,21 +4859,11 @@
         const isManager = emp.type === '팀장급' || emp.role.includes('팀장') || emp.role.includes('부장');
         const isBranch = emp.workplace.includes('영업소') || emp.dept.includes('영업소');
 
-        let trackTitle = "🏢 본사 팀원급 (5단계)";
-        let totalStages = 5;
-        let myCurrentStageText = emp.evaluationRelationship.title;
+        const stageInfo = resolveEvaluationStage(loggedInUserObj, emp);
+        let trackTitle = `${stageInfo.track} (${stageInfo.total}단계)`;
+        let totalStages = stageInfo.total;
+        let myCurrentStageText = `${stageInfo.stage}차 · ${stageInfo.label}`;
         let isStageUnlocked = true;
-
-        if (isTechnician) {
-          trackTitle = "🔧 정비사 파트 (3단계)";
-          totalStages = 3;
-        } else if (isManager) {
-          trackTitle = "👔 본사 팀장급 (3단계)";
-          totalStages = 3;
-        } else if (isBranch) {
-          trackTitle = "🚌 영업소 현장 (4단계)";
-          totalStages = 4;
-        }
 
         const card = document.createElement('div');
 
@@ -6097,6 +6253,17 @@
       isResultPublished = selectedCycle?.results_published === true;
       updatePublishControlVisibility(selectedCycle);
       renderInternalApprovalControls();
+      const bulkGradeMailButton = document.getElementById('bulk-grade-mail-btn');
+      if (bulkGradeMailButton) {
+        const canSendGradeMail = checkUserRole(currentLoggedInUser).isAdmin
+          && selectedCycle?.results_published === true
+          && selectedCycle?.result_gate_open === true
+          && selectedCycle?.internal_approval_status === 'approved';
+        bulkGradeMailButton.classList.toggle('hidden', !checkUserRole(currentLoggedInUser).isAdmin);
+        bulkGradeMailButton.disabled = !canSendGradeMail;
+        bulkGradeMailButton.classList.toggle('opacity-50', !canSendGradeMail);
+        bulkGradeMailButton.title = canSendGradeMail ? '공개된 최종 평가등급을 일괄 발송합니다.' : '전자승인과 결과 공개 완료 후 발송할 수 있습니다.';
+      }
 
       const tbody = document.getElementById('admin-table-body');
       if (!tbody) return;
@@ -6166,6 +6333,9 @@
 
         const canViewDetails = currentLoggedInUser && (currentLoggedInUser.isAdmin || currentLoggedInUser.isExecutive);
         const scoreActionHtml = buildSummaryScoreAction(emp, empScoreData, isEvalOnly);
+        const gradeMailActionHtml = checkUserRole(currentLoggedInUser).isAdmin && empScoreData?.grade
+          ? `<button type="button" onclick="event.stopPropagation(); sendGradeNoticeEmail(${emp.id}, event.currentTarget)" class="ml-1 rounded border border-violet-400 bg-violet-600 px-2.5 py-1 text-xs font-bold text-white transition hover:bg-violet-500" title="${emp.name}에게 최종 평가등급 메일 발송"><i class="fa-solid fa-envelope"></i><span class="sr-only">평가 결과 메일 발송</span></button>`
+          : '';
 
         
         tr.innerHTML = `
@@ -6184,7 +6354,7 @@
           <td class="py-3 px-3">${isAdjustedStr}</td>
           <td class="py-3 px-3">${gradeBadgeHtml}</td>
           <td class="py-3 px-3 text-right">
-            ${scoreActionHtml}
+            ${scoreActionHtml}${gradeMailActionHtml}
           </td>
         `;
         tbody.appendChild(tr);
@@ -6432,19 +6602,43 @@
       const status = cycle.internal_approval_status || 'not_requested';
       const label = { not_requested: '전자결재 미요청', requested: '전자결재 요청됨', approved: '전자결재 승인됨', rejected: '전자결재 반려됨' }[status] || status;
       let actions = '';
-      if (role === '관리자' && status !== 'approved') actions = '<button onclick="requestInternalApproval()" class="px-2 py-1 rounded bg-amber-600 text-white">전자결재 요청</button>';
-      if (role === '임원' && status === 'requested') actions = '<button onclick="decideInternalApproval(true)" class="px-2 py-1 rounded bg-emerald-600 text-white">승인</button><button onclick="decideInternalApproval(false)" class="px-2 py-1 rounded bg-rose-700 text-white">반려</button>';
-      el.innerHTML = `<span>${label}${cycle.result_gate_open ? ' · 결과 게이트 열림' : ''}</span>${actions}`;
+      if (role === '관리자' && ['not_requested', 'rejected'].includes(status)) actions = '<button onclick="requestInternalApproval()" class="px-3 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-black">전자결재 요청</button>';
+      if (role === '임원' && status === 'requested') actions = '<button onclick="decideInternalApproval(true)" class="px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-black">승인</button><button onclick="decideInternalApproval(false)" class="px-3 py-2 rounded-lg bg-rose-700 hover:bg-rose-600 text-white font-black">반려</button>';
+      el.innerHTML = `<span class="rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 font-bold">${label}${cycle.result_gate_open ? ' · 결과 게이트 열림' : ''}</span>${actions}`;
     }
     async function requestInternalApproval() {
-      await callResultStateApi('POST', { action: 'request_internal_approval', cycle_id: Number(currentSelectedSummaryCycleId) });
-      await loadCentralState();
-      renderInternalApprovalControls();
+      const cycle = cyclesDb.find(row => Number(row.id) === Number(currentSelectedSummaryCycleId));
+      if (!cycle || !confirm(`[${cycle.name}] 평가 결과를 임원 전자승인으로 요청하시겠습니까?`)) return;
+      try {
+        await callResultStateApi('POST', { action: 'request_internal_approval', cycle_id: Number(currentSelectedSummaryCycleId) });
+        await loadFromServer();
+        renderAdminSummaryTable();
+        alert('전자결재 요청이 임원 계정에 전달되었습니다.');
+      } catch (error) {
+        alert(`전자결재 요청 실패: ${error.message}`);
+      }
     }
     async function decideInternalApproval(approved) {
-      await callResultStateApi('POST', { action: 'decide_internal_approval', cycle_id: Number(currentSelectedSummaryCycleId), approved });
-      await loadCentralState();
-      renderInternalApprovalControls();
+      const actionLabel = approved ? '승인' : '반려';
+      let reason = '';
+      if (!approved) {
+        reason = String(prompt('반려 사유를 입력해 주세요. (필수, 10자 이상)') || '').trim();
+        if (reason.length < 10) return alert('반려 사유를 10자 이상 입력해 주세요.');
+      }
+      if (!confirm(`선택한 평가 결과를 ${actionLabel}하시겠습니까?`)) return;
+      try {
+        await callResultStateApi('POST', {
+          action: 'decide_internal_approval',
+          cycle_id: Number(currentSelectedSummaryCycleId),
+          approved,
+          reason
+        });
+        await loadFromServer();
+        renderAdminSummaryTable();
+        alert(`전자결재가 ${actionLabel} 처리되었습니다.`);
+      } catch (error) {
+        alert(`전자결재 ${actionLabel} 실패: ${error.message}`);
+      }
     }
 
     function downloadCSVReport() {

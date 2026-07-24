@@ -47,11 +47,14 @@ export function targetTrack(user = {}) {
 export function relationshipType(evaluator = {}, target = {}) {
   const evaluatorIsLeader = isLeader(evaluator);
   const targetIsLeader = isLeader(target);
-  const evaluatorDepartment = String(evaluator.dept || '');
-  const targetDepartment = String(target.dept || '');
+  const evaluatorDepartment = String(evaluator.dept || '').trim();
+  const targetDepartment = String(target.dept || '').trim();
+  const evaluatorCompany = String(evaluator.company || '').trim();
+  const targetCompany = String(target.company || '').trim();
 
   if (evaluatorIsLeader && targetIsLeader && evaluatorDepartment !== targetDepartment) return 'exchange';
-  return targetIsLeader ? 'leadership' : 'internal';
+  if (targetIsLeader) return 'leadership';
+  return evaluatorCompany === targetCompany && evaluatorDepartment === targetDepartment ? 'internal' : 'exchange';
 }
 
 export function normalizedCategory(category) {
