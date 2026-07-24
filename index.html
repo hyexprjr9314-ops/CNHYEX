@@ -5974,8 +5974,9 @@
             </button>
             <button onclick="runEmergencyCycleAction(${c.id}, 'cycle_cancel')" class="bg-rose-600/20 hover:bg-rose-600 text-rose-800 hover:text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 border border-rose-500/40">
               <i class="fa-solid fa-ban"></i> 평가주기 취소
-            </button>
-            <button onclick="runEmergencyCycleAction(${c.id}, 'cycle_cancel', true)" class="bg-slate-700 hover:bg-slate-800 text-slate-800 hover:text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 border border-slate-500/50">
+            </button>` : ''}
+            ${roleInfo.isSuperAdmin && isClosed ? `
+            <button onclick="runEmergencyCycleAction(${c.id}, 'cycle_hard_delete')" class="bg-rose-700 hover:bg-rose-800 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 border border-rose-800">
               <i class="fa-solid fa-trash-can"></i> 완전 삭제
             </button>` : ''}
           </div>
@@ -6001,14 +6002,16 @@
       }
     }
 
-    async function runEmergencyCycleAction(cycleId, action, hardDelete = false) {
+    async function runEmergencyCycleAction(cycleId, action) {
       const cycle = cyclesDb.find(item => Number(item.id) === Number(cycleId));
+      const hardDelete = action === 'cycle_hard_delete';
       const phrase = hardDelete ? '완전 삭제' : action === 'cycle_force_close' ? '강제 종료' : '평가주기 취소';
       const reason = prompt(`[최고 관리자] ${phrase} 사유를 입력해 주세요.`);
       if (!reason?.trim()) return;
-      if (prompt(`확인을 위해 "${phrase}"을(를) 입력해 주세요.`) !== phrase) return;
+      const confirmation = hardDelete ? cycle?.name : phrase;
+      if (prompt(`확인을 위해 "${confirmation}"을(를) 정확히 입력해 주세요.`) !== confirmation) return;
       try {
-        await callAdminStateApi({ action, cycle_id: Number(cycleId), reason: reason.trim(), hard_delete: hardDelete });
+        await callAdminStateApi({ action, cycle_id: Number(cycleId), reason: reason.trim(), confirmation });
         announceCentralChange();
         await loadFromServer();
         populateCycleSelects();
