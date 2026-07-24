@@ -263,10 +263,16 @@
       max-height: 42vh !important;
     }
     .matching-dropzone-available {
-      min-height: 360px;
+      min-height: 480px;
     }
     .matching-dropzone-assigned {
-      min-height: 220px;
+      min-height: 480px;
+    }
+    .matching-target-columns {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 1rem;
+      align-items: start;
     }
     .matching-save-action {
       background: #0F766E !important;
@@ -353,6 +359,9 @@
     @media (min-width: 1280px) {
       .matching-workspace-grid {
         grid-template-columns: minmax(17.5rem, 20rem) minmax(0, 1fr);
+      }
+      .matching-target-columns {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
     }
     @media (max-width: 767px) {
@@ -1797,7 +1806,7 @@
                 </div>
               </div>
 
-              <div class="space-y-4">
+              <div class="matching-target-columns">
                 <section>
                   <div class="flex items-center justify-between mb-2">
                     <h5 class="text-xs font-black text-slate-700"><i class="fa-solid fa-users mr-1 text-blue-600"></i>배정 가능한 인원</h5>
@@ -1813,7 +1822,7 @@
                     <h5 class="text-xs font-black text-slate-700"><i class="fa-solid fa-folder-check mr-1 text-teal-600"></i>현재 배정된 인원</h5>
                     <span id="selected-evaluator-match-count" class="text-[11px] font-bold text-teal-700">0명</span>
                   </div>
-                  <div id="interactive-assigned-targets-grid" class="matching-dropzone matching-dropzone-assigned matching-card-grid rounded-xl p-2 max-h-[420px] overflow-y-auto custom-scrollbar"
+                  <div id="interactive-assigned-targets-grid" class="matching-dropzone matching-dropzone-assigned matching-card-grid rounded-xl p-2 max-h-[600px] overflow-y-auto custom-scrollbar"
                     onpointerdown="handleMatchingMarqueeStart(event)" ondragover="handleMatchingDragOver(event)" ondragleave="handleMatchingDragLeave(event)" ondrop="handleMatchingDrop(event, true)">
                     <!-- Dynamically rendered assigned people -->
                   </div>
