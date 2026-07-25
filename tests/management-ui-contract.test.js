@@ -107,7 +107,8 @@ test('matching studio exposes and synchronizes its own cycle selector', async ()
   assert.match(index, /function isClosedEvaluationCycle\(cycle\)/);
   assert.match(index, /const setupCycles = sortedCycles\.filter/);
   assert.match(index, /const progressCycles = sortedCycles\.filter/);
-  assert.match(index, /const summaryCycles = progressCycles\.filter/);
+  assert.match(index, /const finalizedApprovalCycles = sortedCycles\.filter/);
+  assert.match(index, /const summaryCycles = \[/);
   assert.match(index, /cyclesDb\.filter\(cycle => !isClosedEvaluationCycle\(cycle\)\)\.forEach/);
   assert.match(index, /\[\.\.\.select\.options\]\.some\(option => option\.value === String\(cycleId\)\)/);
   assert.match(index, /const closedWithoutArchive = cyclesDb\.filter/);

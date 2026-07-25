@@ -18,6 +18,9 @@ test('approval, bulk mail, and final grade controls are connected in their inten
   assert.match(index, /sendGradeNoticeEmail\(\$\{emp\.id\}/);
   assert.match(index, /cycle\.results_published !== true \|\| cycle\.result_gate_open !== true \|\| cycle\.internal_approval_status !== 'approved'/);
   assert.match(index, /\$\{canSendGradeMail \? '' : 'disabled'\}/);
+  assert.match(index, /const finalizedApprovalCycles = sortedCycles\.filter/);
+  assert.match(index, /hasClosedArchiveForCycle\(cycle\.id\)/);
+  assert.match(index, /먼저 평가 마감 필요/);
   assert.match(index, /id="my-chart-card"[\s\S]*id="my-grade-card"/);
 });
 
