@@ -4876,7 +4876,9 @@
           applyAdjustedResultMode(payload.adjustment?.final_grade || null);
           return;
         }
-        if (payload.state === 'ready' && payload.scores) applyPublishedScores(payload.scores);
+        if (payload.state === 'ready' && payload.scores) {
+          applyPublishedScores({ ...payload.scores, relative_grade: payload.relative_grade });
+        }
       } catch (error) {
         console.warn('평가 결과를 불러오지 못했습니다:', error);
       }

@@ -44,3 +44,8 @@ test('closed personal results are read from the current immutable final-result v
   assert.match(source, /eq\('result_version', cycle\.data\.result_version\)/);
   assert.match(source, /category_scores/);
 });
+
+test('personal result UI passes the released grade into the score renderer', async () => {
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  assert.match(html, /applyPublishedScores\(\{ \.\.\.payload\.scores, relative_grade: payload\.relative_grade \}\)/);
+});
