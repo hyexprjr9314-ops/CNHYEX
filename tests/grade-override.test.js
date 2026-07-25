@@ -19,5 +19,7 @@ test('approved grade override preserves computed relative grade', async () => {
   assert.match(admin, /grade: row\.approved_grade \|\| row\.relative_grade/);
   assert.match(mail, /finalResult\.approved_grade \|\| finalResult\.relative_grade/);
   assert.match(html, /id="adjust-grade-input"/);
+  assert.match(html, /onclick="closeScoreAdjustmentModal\(\)"/);
+  assert.match(html, /function closeScoreAdjustmentModal\(\)/);
   assert.match(html, /finalResult\?\.approved_grade \|\| finalResult\?\.relative_grade/);
 });

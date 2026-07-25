@@ -2160,10 +2160,13 @@
         <div class="w-10 h-10 bg-amber-500/20 text-brandGold rounded-xl flex items-center justify-center">
           <i class="fa-solid fa-sliders text-lg"></i>
         </div>
-        <div>
+        <div class="flex-1">
           <h3 id="adjust-modal-title" class="text-base font-bold text-white">⚙️ 1차 점수 조정 (관리자)</h3>
           <p class="text-xs text-slate-400" id="adjust-emp-name">피평가자 점수 보정</p>
         </div>
+        <button type="button" onclick="closeScoreAdjustmentModal()" aria-label="점수 조정 창 닫기" class="rounded-lg px-3 py-2 text-slate-300 hover:bg-slate-800">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
       </div>
 
       <div class="space-y-3">
@@ -2184,9 +2187,10 @@
           <textarea id="adjust-reason-input" rows="3" maxlength="1000" placeholder="객관적인 조정 근거를 입력해 주세요." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-brandGold"></textarea>
           <p class="mt-1 text-[10px] text-slate-500">조정 전후 점수, 조정자 및 시각과 함께 감사 이력으로 서버에 보관됩니다.</p>
         </div>
-        <button id="adjust-save-button" onclick="saveScoreAdjustment()" class="w-full bg-brandGold hover:bg-amber-600 text-white font-bold py-2.5 rounded-xl transition text-sm">
-          조정 점수 저장
-        </button>
+        <div class="flex gap-2">
+          <button type="button" onclick="closeScoreAdjustmentModal()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-2.5 rounded-xl transition text-sm">나가기</button>
+          <button id="adjust-save-button" onclick="saveScoreAdjustment()" class="flex-1 bg-brandGold hover:bg-amber-600 text-white font-bold py-2.5 rounded-xl transition text-sm">조정 점수 저장</button>
+        </div>
       </div>
     </div>
   </div>
@@ -6950,6 +6954,11 @@
       }, 100);
     }
 
+    function closeScoreAdjustmentModal() {
+      document.getElementById('modal-score-adjustment').classList.add('hidden');
+      document.getElementById('adjust-reason-input').value = '';
+    }
+
     function openScoreAdjustmentCancelModal(emp, empScoreData) {
       if (!emp || !empScoreData?.is_adjusted) {
         alert('취소할 활성 점수 조정 내역이 없습니다.');
@@ -6986,8 +6995,7 @@
           cycle_id: Number(currentSelectedSummaryCycleId),
           target_id: Number(selectedAdjustId), final_score: val, grade_override: gradeOverride, reason
         });
-        document.getElementById('modal-score-adjustment').classList.add('hidden');
-        document.getElementById('adjust-reason-input').value = '';
+        closeScoreAdjustmentModal();
         announceCentralChange();
         await loadCentralState();
         renderAdminSummaryTable();
