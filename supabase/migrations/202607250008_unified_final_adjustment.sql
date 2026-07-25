@@ -71,7 +71,9 @@ begin
     and evaluator.active is true
     and evaluator.can_evaluate is not false
     and target.active is true
-    and target.is_evaluatee is not false;
+    and target.is_evaluatee is not false
+  group by s.track_category_weights, s.performance_weight, s.collaboration_weight,
+    s.growth_weight, s.harmony_weight;
   if v_raw_score is null then raise exception 'Unable to calculate the source score'; end if;
 
   select * into v_previous
