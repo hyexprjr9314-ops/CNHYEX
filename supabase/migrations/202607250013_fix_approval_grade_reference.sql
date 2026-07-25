@@ -1,43 +1,5 @@
 begin;
 
-alter table public.evaluation_result_adjustments
-  add column if not exists grade_override text
-  check (grade_override is null or grade_override in ('S','A','B','C','D'));
-
-alter table public.evaluation_final_results
-  add column if not exists approved_grade text
-  check (approved_grade is null or approved_grade in ('S','A','B','C','D'));
-
-create or replace function public.governance_adjust_final_score(
-  p_cycle_id bigint,
-  p_target_id bigint,
-  p_final_score numeric,
-  p_grade_override text,
-  p_reason text,
-  p_actor_id uuid
-)
-returns jsonb language plpgsql security definer set search_path = public, pg_temp
-as $$
-declare v_result jsonb; v_grade text := nullif(upper(trim(coalesce(p_grade_override, ''))), '');
-begin
-  if v_grade is not null and v_grade not in ('S','A','B','C','D') then
-    raise exception 'Invalid approved grade';
-  end if;
-
-  v_result := public.governance_adjust_final_score(
-    p_cycle_id, p_target_id, p_final_score, p_reason, p_actor_id
-  );
-
-  update public.evaluation_result_adjustments
-  set grade_override = v_grade, updated_at = now()
-  where cycle_id = p_cycle_id and target_id = p_target_id and status = 'active';
-
-  return v_result || jsonb_build_object('grade_override', v_grade);
-end $$;
-
-revoke all on function public.governance_adjust_final_score(bigint,bigint,numeric,text,text,uuid) from public;
-grant execute on function public.governance_adjust_final_score(bigint,bigint,numeric,text,text,uuid) to authenticated;
-
 create or replace function public.governance_request_approval(
   p_cycle_id bigint, p_actor_id uuid, p_approver_ids uuid[]
 )

@@ -14,7 +14,8 @@ test('approved grade override preserves computed relative grade', async () => {
   ]);
   assert.match(sql, /add column if not exists grade_override/);
   assert.match(sql, /add column if not exists approved_grade/);
-  assert.match(sql, /coalesce\(a\.grade_override, r\.relative_grade\)/);
+  assert.match(sql, /where a\.cycle_id = r\.cycle_id and a\.target_id = r\.target_id/);
+  assert.doesNotMatch(sql, /join public\.evaluation_result_adjustments a[\s\S]*?r\.target_id/);
   assert.match(state, /p_grade_override: gradeOverride/);
   assert.match(admin, /grade: row\.approved_grade \|\| row\.relative_grade/);
   assert.match(mail, /finalResult\.approved_grade \|\| finalResult\.relative_grade/);
