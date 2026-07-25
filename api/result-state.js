@@ -5,6 +5,11 @@ import { ROLES } from './role-policy.js';
 const PRIVILEGED_ROLES = new Set([ROLES.admin, ROLES.executive]);
 const send = (res, status, payload) => res.status(status).json(payload);
 
+export function isFinalResultAdjusted(result = {}) {
+  return Number(result.raw_score) !== Number(result.effective_score)
+    || Boolean(result.approved_grade && result.approved_grade !== result.relative_grade);
+}
+
 function serviceClient() {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -61,6 +66,7 @@ async function aggregateTarget(service, cycleId, targetId) {
         assigned_count: null,
         submitted_count: null,
         adjustment: null,
+        adjusted: isFinalResultAdjusted(finalResult.data),
         relative_grade: finalResult.data.approved_grade || finalResult.data.relative_grade,
         calculated_grade: finalResult.data.relative_grade,
         scores: {
@@ -114,6 +120,7 @@ async function aggregateTarget(service, cycleId, targetId) {
     assigned_count: assigned.length,
     submitted_count: submitted.length,
     adjustment: adjustment.data || null,
+    adjusted: Boolean(adjustment.data),
     relative_grade: null,
     weights,
     category_labels: categoryLabels
@@ -206,7 +213,7 @@ export default async function handler(req, res) {
         weights: aggregate.weights,
         category_labels: aggregate.category_labels,
         scores: aggregate.complete && (privileged || released) ? aggregate.scores : null,
-        adjusted: Boolean(aggregate.adjustment),
+        adjusted: aggregate.adjusted,
         relative_grade: privileged || released ? aggregate.relative_grade : null,
         adjustment: privileged ? aggregate.adjustment : null,
         state: !aggregate.complete ? 'in_progress' : !privileged && !released ? 'not_published' : 'ready'

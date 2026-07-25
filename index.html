@@ -4885,7 +4885,7 @@
         const payload = await callResultStateApi('GET', { cycle_id: cycleId });
         if (requestId !== latestResultStateRequest) return;
         if (payload.adjusted) {
-          applyAdjustedResultMode(payload.adjustment?.final_grade || null);
+          applyAdjustedResultMode(payload.relative_grade || payload.adjustment?.grade_override || payload.adjustment?.final_grade || null);
           return;
         }
         if (payload.state === 'ready' && payload.scores) {

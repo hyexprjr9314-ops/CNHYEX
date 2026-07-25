@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
-import { hasUnresolvedActiveAdjustment, secondStageFinalScore } from '../api/result-state.js';
+import { hasUnresolvedActiveAdjustment, isFinalResultAdjusted, secondStageFinalScore } from '../api/result-state.js';
 
 const resultStateUrl = new URL('../api/result-state.js', import.meta.url);
 
@@ -45,7 +45,14 @@ test('closed personal results are read from the current immutable final-result v
   assert.match(source, /category_scores/);
 });
 
+test('finalized score or approved-grade changes keep personal category graphs private', () => {
+  assert.equal(isFinalResultAdjusted({ raw_score: 80, effective_score: 80, relative_grade: 'B', approved_grade: null }), false);
+  assert.equal(isFinalResultAdjusted({ raw_score: 80, effective_score: 85, relative_grade: 'B', approved_grade: 'B' }), true);
+  assert.equal(isFinalResultAdjusted({ raw_score: 80, effective_score: 80, relative_grade: 'B', approved_grade: 'A' }), true);
+});
+
 test('personal result UI passes the released grade into the score renderer', async () => {
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
   assert.match(html, /applyPublishedScores\(\{ \.\.\.payload\.scores, relative_grade: payload\.relative_grade \}\)/);
+  assert.match(html, /applyAdjustedResultMode\(payload\.relative_grade \|\| payload\.adjustment\?\.grade_override/);
 });
