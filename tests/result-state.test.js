@@ -5,7 +5,7 @@ import { hasUnresolvedActiveAdjustment, secondStageFinalScore } from '../api/res
 
 const resultStateUrl = new URL('../api/result-state.js', import.meta.url);
 
-test('approval readiness ignores cancelled adjustments and requires stage 2 for active adjustments', () => {
+test('approval readiness ignores cancelled adjustments and accepts final adjustments', () => {
   assert.equal(hasUnresolvedActiveAdjustment([]), false);
   assert.equal(hasUnresolvedActiveAdjustment([{ status: 'active', workflow_status: 'second_stage_adjusted' }]), false);
   assert.equal(hasUnresolvedActiveAdjustment([{ status: 'active', workflow_status: 'first_stage_adjusted' }]), true);
@@ -22,9 +22,10 @@ test('stage 2 accepts an explicit valid score or retains the first-stage score',
 
 test('result mutations are delegated only to atomic governance RPCs', async () => {
   const source = await readFile(resultStateUrl, 'utf8');
-  for (const rpc of ['governance_stage1_adjust', 'governance_stage2_adjust', 'governance_cancel_adjustment', 'governance_request_approval', 'governance_decide_approval', 'governance_publish_results']) {
+  for (const rpc of ['governance_adjust_final_score', 'governance_cancel_adjustment', 'governance_request_approval', 'governance_decide_approval', 'governance_publish_results']) {
     assert.match(source, new RegExp(rpc));
   }
+  assert.doesNotMatch(source, /governance_stage1_adjust|governance_stage2_adjust/);
   assert.doesNotMatch(source, /evaluation_cycle_approval_requests'\)\.insert/);
   assert.doesNotMatch(source, /evaluation_result_adjustments'\)\.upsert/);
 });

@@ -139,13 +139,12 @@ export function secondStageFinalScore(requestedScore, currentScore) {
   return Number.isFinite(candidate) && candidate >= 0 && candidate <= 100 ? candidate : null;
 }
 
-function mutationArguments(action, body, cycleId, actorId, rawScore = null, approverAuthIds = []) {
+function mutationArguments(action, body, cycleId, actorId, approverAuthIds = []) {
   const targetId = Number(body?.target_id);
   const reason = String(body?.reason || '').trim();
   const finalScore = body?.final_score === '' || body?.final_score === undefined ? null : Number(body?.final_score);
   switch (action) {
-    case 'adjust': return { p_cycle_id: cycleId, p_target_id: targetId, p_raw_score: rawScore, p_final_score: finalScore, p_reason: reason, p_actor_id: actorId };
-    case 'approve_adjustment': return { p_cycle_id: cycleId, p_target_id: targetId, p_final_score: finalScore, p_reason: reason, p_actor_id: actorId };
+    case 'adjust_final': return { p_cycle_id: cycleId, p_target_id: targetId, p_final_score: finalScore, p_reason: reason, p_actor_id: actorId };
     case 'cancel_adjustment': return { p_cycle_id: cycleId, p_target_id: targetId, p_reason: reason, p_actor_id: actorId };
     case 'request_internal_approval': return { p_cycle_id: cycleId, p_actor_id: actorId, p_approver_ids: approverAuthIds };
     case 'decide_internal_approval': return { p_cycle_id: cycleId, p_approved: body?.approved === true, p_reason: reason, p_actor_id: actorId };
@@ -156,8 +155,7 @@ function mutationArguments(action, body, cycleId, actorId, rawScore = null, appr
 }
 
 const RPC_BY_ACTION = Object.freeze({
-  adjust: 'governance_stage1_adjust',
-  approve_adjustment: 'governance_stage2_adjust',
+  adjust_final: 'governance_adjust_final_score',
   cancel_adjustment: 'governance_cancel_adjustment',
   request_internal_approval: 'governance_request_approval',
   decide_internal_approval: 'governance_decide_approval',
@@ -219,17 +217,15 @@ export default async function handler(req, res) {
     const rpcName = RPC_BY_ACTION[action];
     if (!rpcName) return send(res, 400, { error: 'Unsupported result management action.' });
 
-    let rawScore = null;
-    if (action === 'adjust') {
+    if (action === 'adjust_final') {
       const aggregate = await aggregateTarget(service, cycleId, Number(req.body?.target_id));
       if (!aggregate.complete) return send(res, 409, { error: 'All assigned evaluations must be complete before adjustment.' });
-      rawScore = aggregate.scores.total;
     }
     const approverAuthIds = action === 'request_internal_approval'
       ? await resolveApproverAuthIds(service, req.body?.approver_user_ids)
       : [];
     const rpc = await authenticatedRpcClient(accessToken)
-      .rpc(rpcName, mutationArguments(action, req.body, cycleId, authUser.id, rawScore, approverAuthIds));
+      .rpc(rpcName, mutationArguments(action, req.body, cycleId, authUser.id, approverAuthIds));
     if (rpc.error) throw Object.assign(new Error(rpc.error.message), { status: 409 });
     return send(res, 200, { data: rpc.data });
   } catch (error) {

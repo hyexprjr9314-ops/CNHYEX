@@ -4,13 +4,14 @@ import test from 'node:test';
 
 const indexUrl = new URL('../index.html', import.meta.url);
 
-test('management UI keeps executive and administrator controls separated', async () => {
+test('management UI gives administrators and executives one final-adjustment control', async () => {
   const index = await readFile(indexUrl, 'utf8');
 
   assert.equal((index.match(/async function handleLogout\(\)/g) || []).length, 1);
-  assert.match(index, /if \(roleInfo\.isExecutive\) \{\s*if \(scoreData\.workflow_status === 'first_stage_adjusted'\)/);
-  assert.match(index, /if \(!roleInfo\.isAdmin\) return ''/);
-  assert.match(index, /action: selectedAdjustmentMode === 'executive' \? 'approve_adjustment' : 'adjust'/);
+  assert.match(index, /if \(!roleInfo\.isAdmin && !roleInfo\.isExecutive\) return ''/);
+  assert.match(index, /action: 'adjust_final'/);
+  assert.match(index, /최종 점수 조정/);
+  assert.doesNotMatch(index, /2차 조정\/확정|1차 조정 대기/);
   assert.match(index, /updatePublishControlVisibility/);
   assert.match(index, /gradeStatusHeader/);
   assert.match(index, /function applyRoleBasedNavigationVisibility\(\)/);
@@ -37,6 +38,18 @@ test('question editor uses employee type only and removes department or relation
   for (const label of ['내부 평가', '내부 교류평가', '외부 평가', '부서장 평가', '부서장 교류평가']) {
     assert.match(index, new RegExp(label));
   }
+});
+
+test('progress and summary use the same server-backed evaluation detail modal', async () => {
+  const index = await readFile(indexUrl, 'utf8');
+  const detail = index.match(/async function openDetailEvalModal\(empId, requestedCycleId = null\) \{[\s\S]*?\n    \}/)?.[0] ?? '';
+
+  assert.match(index, /openDetailEvalModal\(\$\{row\.person\.id\}, \$\{cycleId\}\)/);
+  assert.match(index, /openDetailEvalModal\(\$\{emp\.id\}\)/);
+  assert.match(detail, /callEvaluationDetailApi\(cycleId, empId\)/);
+  assert.doesNotMatch(detail, /supabaseClient\.from\('evaluations'\)/);
+  assert.match(detail, /detail\.submitted_count/);
+  assert.match(detail, /if \(!item\.submitted\)/);
 });
 
 test('evaluation form selects questions only from the evaluatee employee type', async () => {

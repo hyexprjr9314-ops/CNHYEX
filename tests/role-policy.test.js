@@ -5,6 +5,8 @@ test('role matrix separates regular, executive, and admin actions', () => {
   assert.equal(canUseAdminAction('', 'adjust'), false);
   assert.equal(canUseAdminAction(ROLES.admin, 'adjust'), true);
   assert.equal(canUseAdminAction(ROLES.executive, 'adjust'), false);
-  assert.equal(canUseAdminAction(ROLES.executive, 'approve_adjustment'), true);
+  assert.equal(canUseAdminAction(ROLES.executive, 'adjust_final'), true);
+  assert.equal(canUseAdminAction(ROLES.admin, 'adjust_final'), true);
+  assert.equal(canUseAdminAction(ROLES.executive, 'cancel_adjustment'), true);
   assert.deepEqual(allowedAdminSubtabs(ROLES.executive), ['summary', 'history']);
 });

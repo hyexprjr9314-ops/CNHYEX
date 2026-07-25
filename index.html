@@ -2931,7 +2931,6 @@
     let allGoalsDb = [];
     let isResultPublished = false;
     let selectedAdjustId = null;
-    let selectedAdjustmentMode = 'admin';
     let approvalRequestsDb = [];
     let pendingApprovalNotifications = [];
 
@@ -3892,7 +3891,7 @@
             }).join('')}</div></details>`
           : '<span class="font-bold text-emerald-700">모두 완료</span>';
         return `<tr>
-          <td data-label="평가자" class="p-3 font-bold text-slate-900">${escapeHtml(row.person.name)}</td>
+          <td data-label="평가자" class="p-3 font-bold text-slate-900"><button type="button" onclick="openDetailEvalModal(${row.person.id}, ${cycleId})" class="font-extrabold text-brandTeal hover:underline">${escapeHtml(row.person.name)}</button></td>
           <td data-label="소속" class="p-3 text-slate-600">${escapeHtml([row.person.company, row.person.dept].filter(Boolean).join(' · '))}</td>
           <td data-label="배정" class="p-3 text-center">${row.rows.length}</td><td data-label="완료" class="p-3 text-center text-emerald-700">${row.completed}</td>
           <td data-label="미제출" class="p-3 text-center font-bold text-amber-700">${row.pending.length}</td><td data-label="진행률" class="p-3 text-center font-bold">${rowRate.toFixed(1)}%</td>
@@ -3908,7 +3907,7 @@
       if (targetBody) targetBody.innerHTML = visibleTargets.length ? visibleTargets.map(row => {
         const pending = row.rows.length - row.completed;
         const rowRate = row.rows.length ? row.completed / row.rows.length * 100 : 0;
-        return `<tr><td data-label="피평가자" class="p-3 font-bold text-slate-900">${escapeHtml(row.person.name)}</td>
+        return `<tr><td data-label="피평가자" class="p-3 font-bold text-slate-900"><button type="button" onclick="openDetailEvalModal(${row.person.id}, ${cycleId})" class="font-extrabold text-brandTeal hover:underline">${escapeHtml(row.person.name)}</button></td>
           <td data-label="소속" class="p-3 text-slate-600">${escapeHtml([row.person.company, row.person.dept].filter(Boolean).join(' · '))}</td>
           <td data-label="예정" class="p-3 text-center">${row.rows.length}</td><td data-label="수집" class="p-3 text-center text-emerald-700">${row.completed}</td>
           <td data-label="미수집" class="p-3 text-center font-bold text-amber-700">${pending}</td><td data-label="진행률" class="p-3 text-center font-bold">${rowRate.toFixed(1)}%</td></tr>`;
@@ -4752,6 +4751,19 @@
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || '평가 결과 요청에 실패했습니다.');
+      return payload;
+    }
+
+    async function callEvaluationDetailApi(cycleId, targetId) {
+      if (!supabaseClient) throw new Error('Supabase 연결이 없습니다.');
+      const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
+      if (sessionError || !sessionData.session) throw new Error('로그인이 필요합니다.');
+      const query = new URLSearchParams({ cycle_id: cycleId, target_id: targetId });
+      const response = await fetch(`/api/evaluation-detail?${query}`, {
+        headers: { 'Authorization': `Bearer ${sessionData.session.access_token}` }
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.error || '평가 상세 조회에 실패했습니다.');
       return payload;
     }
 
@@ -6787,14 +6799,9 @@
         if (!canAdjust) {
           return '<button type="button" disabled title="모든 배정 평가가 완료된 뒤 점수를 조정할 수 있습니다." class="bg-slate-900 text-xs px-2.5 py-1 rounded text-slate-500 font-bold border border-slate-800 cursor-not-allowed">평가 미완료</button>';
         }
-        if (roleInfo.isExecutive) {
-          if (scoreData.workflow_status === 'first_stage_adjusted') return `<button onclick="event.stopPropagation(); openScoreAdjustmentModal(usersDb.find(u=>u.id===${emp.id}), ${scorePath}, 'executive')" class="bg-indigo-600 hover:bg-indigo-500 text-xs px-2.5 py-1 rounded text-white font-bold border border-indigo-400 transition-colors">2차 조정/확정</button>`;
-          if (scoreData.workflow_status === 'second_stage_adjusted') return '<span class="inline-flex rounded border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-300">2차 확정</span>';
-          return '<span class="inline-flex rounded border border-slate-700 bg-slate-900 px-2.5 py-1 text-xs font-bold text-slate-400">1차 조정 대기</span>';
-        }
-        if (!roleInfo.isAdmin) return '';
-        if (scoreData.is_adjusted) return `<button onclick="event.stopPropagation(); openScoreAdjustmentModal(usersDb.find(u=>u.id===${emp.id}), ${scorePath}, 'admin')" class="adjust-action-edit text-xs px-2.5 py-1 rounded font-bold border transition-colors">조정 수정</button><button onclick="event.stopPropagation(); openScoreAdjustmentCancelModal(usersDb.find(u=>u.id===${emp.id}), ${scorePath})" class="adjust-action-cancel text-xs px-2.5 py-1 rounded font-bold border transition-colors">조정 취소</button>`;
-        return `<button onclick="event.stopPropagation(); openScoreAdjustmentModal(usersDb.find(u=>u.id===${emp.id}), ${scorePath}, 'admin')" class="bg-slate-800 hover:bg-slate-700 text-xs px-2.5 py-1 rounded text-slate-300 font-bold border border-slate-700">점수 입력/조정</button>`;
+        if (!roleInfo.isAdmin && !roleInfo.isExecutive) return '';
+        if (scoreData.is_adjusted) return `<button onclick="event.stopPropagation(); openScoreAdjustmentModal(usersDb.find(u=>u.id===${emp.id}), ${scorePath})" class="adjust-action-edit text-xs px-2.5 py-1 rounded font-bold border transition-colors">조정 수정</button><button onclick="event.stopPropagation(); openScoreAdjustmentCancelModal(usersDb.find(u=>u.id===${emp.id}), ${scorePath})" class="adjust-action-cancel text-xs px-2.5 py-1 rounded font-bold border transition-colors">조정 취소</button>`;
+        return `<button onclick="event.stopPropagation(); openScoreAdjustmentModal(usersDb.find(u=>u.id===${emp.id}), ${scorePath})" class="bg-indigo-600 hover:bg-indigo-500 text-xs px-2.5 py-1 rounded text-white font-bold border border-indigo-400 transition-colors">최종 점수 조정</button>`;
       }
 
       function renderAdminSummaryTable() {
@@ -6919,7 +6926,7 @@
       });
     }
 
-    async function openDetailEvalModal(empId) {
+    async function openDetailEvalModal(empId, requestedCycleId = null) {
       if (!currentLoggedInUser || (!currentLoggedInUser.isAdmin && !currentLoggedInUser.isExecutive)) {
         alert('피평가자 상세 360° 평가 내역은 임원 및 관리자 전용 기능입니다.');
         return;
@@ -6928,72 +6935,61 @@
       const emp = usersDb.find(u => String(u.id) === String(empId));
       if (!emp) return;
 
-      const cycleId = currentSelectedSummaryCycleId || 1;
+      const cycleId = Number(requestedCycleId || currentSelectedSummaryCycleId || 1);
       const cycleScores = cycleScoresDb[cycleId] || {};
       const scoreData = cycleScores[emp.id];
-      if (!scoreData) {
-        alert('서버에 제출된 평가 결과가 없습니다.');
+      let detail;
+      try {
+        detail = await callEvaluationDetailApi(cycleId, empId);
+      } catch (error) {
+        alert(`상세 평가 조회 실패: ${error.message}`);
         return;
       }
 
       document.getElementById('detail-modal-emp-name').innerText = `${emp.name} ${emp.role} 상세 360° 평가 리포트`;
       document.getElementById('detail-modal-emp-info').innerText = `${emp.company} • ${emp.dept} | ${emp.workplace} 근무`;
-      document.getElementById('detail-modal-raw-score').innerText = `${scoreData.raw.toFixed(1)}점`;
-      document.getElementById('detail-modal-final-score').innerText = `${scoreData.final.toFixed(1)}점`;
+      document.getElementById('detail-modal-raw-score').innerText = detail.complete && scoreData ? `${scoreData.raw.toFixed(1)}점` : '평가 진행 중';
+      document.getElementById('detail-modal-final-score').innerText = detail.complete && scoreData ? `${scoreData.final.toFixed(1)}점` : '-';
 
       const gradeBadgeEl = document.getElementById('detail-modal-grade-badge');
-      if (scoreData.grade === 'EX') {
-        gradeBadgeEl.className = 'font-bold text-xs text-amber-300';
-        gradeBadgeEl.innerText = '🪽 EX (ANOTHER LEVEL)';
-      } else if (scoreData.grade === 'S') {
-        gradeBadgeEl.className = 'font-bold text-xs text-cyan-300';
-        gradeBadgeEl.innerText = '💎 S Grade';
-      } else if (scoreData.grade === 'A') {
-        gradeBadgeEl.className = 'font-bold text-xs text-amber-400';
-        gradeBadgeEl.innerText = '🥇 A Grade';
-      } else {
-        gradeBadgeEl.className = 'font-bold text-xs text-slate-300';
-        gradeBadgeEl.innerText = `${scoreData.grade} Grade`;
-      }
-
-      const evaluationsResult = await supabaseClient.from('evaluations')
-        .select('matching_id,evaluator_id,perf_score,collab_score,growth_score,harmony_score,qualitative_comment')
-        .eq('cycle_id', cycleId).eq('target_id', empId).order('id');
-      if (evaluationsResult.error) {
-        alert(`상세 평가 조회 실패: ${evaluationsResult.error.message}`);
-        return;
-      }
-      const actualEvaluations = evaluationsResult.data || [];
-      document.getElementById('detail-modal-eval-count').innerText = `${actualEvaluations.length}명 제출 완료`;
+      gradeBadgeEl.className = 'font-bold text-xs text-slate-600';
+      gradeBadgeEl.innerText = detail.complete && scoreData?.grade ? `${scoreData.grade} Grade` : '등급 산정 전';
+      document.getElementById('detail-modal-eval-count').innerText = `${detail.submitted_count} / ${detail.assigned_count}명 제출 완료`;
 
       const listContainer = document.getElementById('detail-modal-evaluators-list');
-      listContainer.innerHTML = actualEvaluations.map(ev => {
-        const evaluator = usersDb.find(user => Number(user.id) === Number(ev.evaluator_id));
-        const matching = customManualMatchingsDb.find(row => Number(row.id) === Number(ev.matching_id));
-        const converted = Number(ev.perf_score) * categoryWeights.perf / 100
-          + Number(ev.collab_score) * categoryWeights.collab / 100
-          + Number(ev.growth_score) * categoryWeights.growth / 100
-          + Number(ev.harmony_score) * categoryWeights.harmony / 100;
-        return `
-        <div class="bg-slate-900/90 p-4 rounded-2xl border border-slate-800 space-y-3 shadow-md">
-          <div class="flex justify-between items-center border-b border-slate-800/80 pb-2.5">
-            <div class="flex items-center gap-2">
-              <span class="bg-brandTeal/20 text-brandTeal text-[10px] font-bold px-2 py-0.5 rounded-full border border-brandTeal/30">${escapeHtml(matching?.type || '서버 배정 평가')}</span>
-              <h4 class="text-xs font-bold text-white">${escapeHtml(evaluator ? `${evaluator.name} ${evaluator.role}` : `평가자 #${ev.evaluator_id}`)}</h4>
-              <span class="text-[11px] text-slate-400">(${escapeHtml(evaluator ? `${evaluator.dept} · ${evaluator.company}` : '')})</span>
+      listContainer.innerHTML = detail.assignments.map(item => {
+        const evaluator = item.evaluator || {};
+        if (!item.submitted) return `
+          <div class="rounded-2xl border border-amber-300 bg-amber-50 p-4">
+            <div class="flex items-center justify-between gap-3">
+              <strong class="text-sm text-slate-900">${escapeHtml(evaluator.name || `평가자 #${evaluator.id}`)}</strong>
+              <span class="rounded-full border border-amber-300 bg-white px-2 py-1 text-xs font-bold text-amber-700">미제출</span>
             </div>
-            <span class="text-xs font-mono font-bold text-amber-400">평가 환산: ${converted.toFixed(1)}점</span>
+            <p class="mt-1 text-xs text-slate-600">${escapeHtml([evaluator.company, evaluator.dept, item.type].filter(Boolean).join(' · '))}</p>
+          </div>`;
+        const scores = item.scores;
+        const converted = (Number(scores.performance) + Number(scores.collaboration) + Number(scores.growth) + Number(scores.harmony)) / 4;
+        return `
+        <div class="rounded-2xl border border-slate-300 bg-white p-4 space-y-3 shadow-sm">
+          <div class="flex justify-between items-center border-b border-slate-200 pb-2.5">
+            <div class="flex items-center gap-2">
+              <span class="bg-teal-50 text-teal-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-teal-200">${escapeHtml(item.type)}</span>
+              <h4 class="text-xs font-bold text-slate-900">${escapeHtml(`${evaluator.name || `평가자 #${evaluator.id}`} ${evaluator.role || ''}`)}</h4>
+              <span class="text-[11px] text-slate-500">(${escapeHtml([evaluator.dept, evaluator.company].filter(Boolean).join(' · '))})</span>
+            </div>
+            <span class="text-xs font-mono font-bold text-teal-700">평균: ${converted.toFixed(1)}점</span>
           </div>
 
-          <div class="grid grid-cols-3 gap-2 bg-slate-950/60 p-2.5 rounded-xl text-[11px] text-slate-300 text-center">
-            <div>성과: <strong class="text-white">${Number(ev.perf_score).toFixed(1)}점</strong></div>
-            <div>협업: <strong class="text-white">${Number(ev.collab_score).toFixed(1)}점</strong></div>
-            <div>성장: <strong class="text-white">${Number(ev.growth_score).toFixed(1)}점</strong></div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-50 p-2.5 rounded-xl text-[11px] text-slate-600 text-center">
+            <div>${escapeHtml(detail.category_labels?.[0] || '항목 1')}: <strong class="text-slate-900">${Number(scores.performance).toFixed(1)}점</strong></div>
+            <div>${escapeHtml(detail.category_labels?.[1] || '항목 2')}: <strong class="text-slate-900">${Number(scores.collaboration).toFixed(1)}점</strong></div>
+            <div>${escapeHtml(detail.category_labels?.[2] || '항목 3')}: <strong class="text-slate-900">${Number(scores.growth).toFixed(1)}점</strong></div>
+            <div>${escapeHtml(detail.category_labels?.[3] || '항목 4')}: <strong class="text-slate-900">${Number(scores.harmony).toFixed(1)}점</strong></div>
           </div>
 
-          <div class="bg-slate-950/40 p-3 rounded-xl border border-slate-800/60 space-y-1">
-            <span class="text-[11px] font-bold text-slate-400 block"><i class="fa-solid fa-comment-dots text-brandTeal mr-1"></i>서술형 피드백 코멘트:</span>
-            <p class="text-xs text-slate-200 leading-relaxed font-normal">"${escapeHtml(ev.qualitative_comment)}"</p>
+          <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1">
+            <span class="text-[11px] font-bold text-slate-500 block"><i class="fa-solid fa-comment-dots text-brandTeal mr-1"></i>서술형 피드백</span>
+            <p class="text-xs text-slate-800 leading-relaxed font-normal">"${escapeHtml(item.feedback || '')}"</p>
           </div>
         </div>
       `; }).join('');
@@ -7005,28 +7001,18 @@
       document.getElementById('modal-detail-evaluation').classList.add('hidden');
     }
 
-    function openScoreAdjustmentModal(emp, empScoreData, mode = 'admin') {
+    function openScoreAdjustmentModal(emp, empScoreData) {
       if (!emp || !empScoreData?.complete) {
         alert('모든 배정 평가가 완료된 피평가자만 점수를 조정할 수 있습니다.');
         return;
       }
-      if (mode === 'executive' && empScoreData.workflow_status !== 'first_stage_adjusted') {
-        alert('임원 2차 조정은 인사담당자의 1차 조정이 완료된 건에만 가능합니다.');
-        return;
-      }
       selectedAdjustId = emp.id;
-      selectedAdjustmentMode = mode;
       const curScore = empScoreData.final;
       document.getElementById('adjust-emp-name').innerText = `${emp.name} ${emp.role} (선택된 주기 점수: ${curScore}점)`;
       document.getElementById('adjust-score-input').value = curScore;
       document.getElementById('adjust-reason-input').value = '';
-      const isExecutiveReview = mode === 'executive';
-      document.getElementById('adjust-modal-title').innerText = isExecutiveReview
-        ? '⚖️ 2차 점수 조정/확정 (임원)'
-        : '⚙️ 1차 점수 조정 (관리자)';
-      document.getElementById('adjust-save-button').innerText = isExecutiveReview
-        ? '2차 조정/확정 저장'
-        : '조정 점수 저장';
+      document.getElementById('adjust-modal-title').innerText = '⚖️ 최종 점수 조정';
+      document.getElementById('adjust-save-button').innerText = '최종 조정 저장';
       document.getElementById('modal-score-adjustment').classList.remove('hidden');
       setTimeout(() => {
         const input = document.getElementById('adjust-score-input');
@@ -7066,7 +7052,7 @@
       const emp = usersDb.find(e => String(e.id) === String(selectedAdjustId));
       try {
         await callResultStateApi('POST', {
-          action: selectedAdjustmentMode === 'executive' ? 'approve_adjustment' : 'adjust',
+          action: 'adjust_final',
           cycle_id: Number(currentSelectedSummaryCycleId),
           target_id: Number(selectedAdjustId), final_score: val, reason
         });
@@ -7075,8 +7061,7 @@
         announceCentralChange();
         await loadCentralState();
         renderAdminSummaryTable();
-        const label = selectedAdjustmentMode === 'executive' ? '2차 조정/확정' : '1차 조정';
-        alert(`[${emp ? emp.name : '피평가자'}] ${label}이 서버에 기록되었습니다.`);
+        alert(`[${emp ? emp.name : '피평가자'}] 최종 점수 조정이 서버에 기록되었습니다.`);
       } catch (error) {
         alert(`점수 조정 저장 실패: ${error.message}`);
       }
