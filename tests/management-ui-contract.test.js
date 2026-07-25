@@ -104,6 +104,13 @@ test('matching studio exposes and synchronizes its own cycle selector', async ()
   assert.match(index, /function handleCycleSelectChange\(selectEl\)/);
   assert.match(index, /currentSelectedSummaryCycleId = cycleId/);
   assert.match(index, /id="history-close-cycle-select" onchange="handleCycleSelectChange\(this\)"/);
-  assert.match(index, /setSelectedEvaluationCycleId\(selectedEvaluationCycleId \|\| currentSelectValues \|\| sortedCycles\[0\]\.id\)/);
-  assert.match(index, /select\.value = String\(selectedCycleId\)/);
+  assert.match(index, /function isClosedEvaluationCycle\(cycle\)/);
+  assert.match(index, /const setupCycles = sortedCycles\.filter/);
+  assert.match(index, /const progressCycles = sortedCycles\.filter/);
+  assert.match(index, /const summaryCycles = progressCycles\.filter/);
+  assert.match(index, /cyclesDb\.filter\(cycle => !isClosedEvaluationCycle\(cycle\)\)\.forEach/);
+  assert.match(index, /\[\.\.\.select\.options\]\.some\(option => option\.value === String\(cycleId\)\)/);
+  assert.match(index, /const closedWithoutArchive = cyclesDb\.filter/);
+  assert.match(index, /확정 결과 없이 종료된 평가주기입니다/);
+  assert.doesNotMatch(index, /onclick="deleteArchivedHistory\(\$\{archive\.cycleId\}\)"/);
 });
