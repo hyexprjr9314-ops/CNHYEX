@@ -20,7 +20,8 @@ test('approval, bulk mail, and final grade controls are connected in their inten
   assert.match(index, /\$\{canSendGradeMail \? '' : 'disabled'\}/);
   assert.match(index, /const finalizedApprovalCycles = sortedCycles\.filter/);
   assert.match(index, /hasClosedArchiveForCycle\(cycle\.id\)/);
-  assert.match(index, /먼저 평가 마감 필요/);
+  assert.match(index, /최종 결과 확정과 전자결재 요청을 함께 처리합니다/);
+  assert.match(index, /const publishedHistoryDb = evaluationHistoryDb\.filter/);
   assert.match(index, /id="my-chart-card"[\s\S]*id="my-grade-card"/);
 });
 

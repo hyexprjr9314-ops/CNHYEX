@@ -1502,7 +1502,7 @@
             <i class="fa-solid fa-gears text-brandTeal"></i>
             <span>전사 인사평가 관리 카테고리</span>
           </h2>
-          <p class="text-xs text-slate-300 mt-1">평가 주기 생성, 질문/가중치 커스텀, 평가 권한 관리, 점수 집계 & 2차 조정, 평가 마감 및 과거 이력 관리</p>
+          <p class="text-xs text-slate-300 mt-1">평가 주기 생성, 질문/가중치 커스텀, 평가 권한 관리, 점수 집계 및 전자승인, 과거 이력 관리</p>
         </div>
 
         <div class="flex flex-wrap items-center gap-3">
@@ -1541,7 +1541,7 @@
         </button>
         <button onclick="switchAdminTab('history')" id="admin-tab-history" class="px-4 py-2 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-2">
           <i class="fa-solid fa-lock"></i>
-          <span>🔒 평가 마감 & 과거 이력</span>
+          <span>🔒 과거 평가 이력</span>
         </button>
       </div>
 
@@ -2162,22 +2162,9 @@
               </div>
               <h3 class="text-lg font-bold text-white flex items-center gap-2">
                 <i class="fa-solid fa-box-archive text-amber-400"></i>
-                <span>🔒 평가 마감 & 과거 이력 보관소</span>
+                <span>🔒 과거 평가 이력 보관소</span>
               </h3>
-              <p class="text-xs text-slate-300 mt-1">평가 항목을 선택하여 마감 처리하면 최종 점수 및 이력이 영구 보관용 스냅샷으로 생성되어 과거 이력으로 열람 가능합니다.</p>
-            </div>
-
-            <!-- Closing Action Box -->
-            <div class="bg-slate-900/90 p-4 rounded-xl border border-slate-700/80 space-y-2 text-xs w-full md:w-auto">
-              <label class="block font-bold text-slate-200">마감 대상 평가 주기 선택:</label>
-              <div class="flex gap-2">
-                <select id="history-close-cycle-select" onchange="handleCycleSelectChange(this)" class="bg-slate-800 border border-slate-700 text-xs font-bold text-white rounded-xl px-3 py-2 flex-grow">
-                  <!-- Dynamically Populated -->
-                </select>
-                <button onclick="handleCloseCycleSubmit()" class="bg-rose-600 hover:bg-rose-500 text-white font-bold px-4 py-2 rounded-xl transition flex items-center gap-1.5 shadow-lg shadow-rose-900/40 whitespace-nowrap">
-                  <i class="fa-solid fa-lock"></i> 평가 마감하기
-                </button>
-              </div>
+              <p class="text-xs text-slate-300 mt-1">전자결재 승인과 결과 공개가 완료된 평가 결과를 읽기 전용 이력으로 확인합니다.</p>
             </div>
           </div>
 
@@ -3207,7 +3194,7 @@
     function handleCycleSelectChange(selectEl) {
       const cycleId = setSelectedEvaluationCycleId(selectEl?.value);
       if (!cycleId) return;
-      ['question-cycle-select', 'perm-cycle-select', 'matching-cycle-select', 'progress-cycle-select', 'summary-cycle-select', 'history-close-cycle-select']
+      ['question-cycle-select', 'perm-cycle-select', 'matching-cycle-select', 'progress-cycle-select', 'summary-cycle-select']
         .forEach(id => {
           const select = document.getElementById(id);
           if (select && [...select.options].some(option => option.value === String(cycleId))) {
@@ -3244,7 +3231,6 @@
       const matchingSelect = document.getElementById('matching-cycle-select');
       const progressSelect = document.getElementById('progress-cycle-select');
       const summarySelect = document.getElementById('summary-cycle-select');
-      const historyCloseSelect = document.getElementById('history-close-cycle-select');
 
       if (!cyclesDb || cyclesDb.length === 0) return;
 
@@ -3264,7 +3250,6 @@
         ...progressCycles.filter(cycle => Object.keys(cycleScoresDb[cycle.id] || {}).length > 0),
         ...finalizedApprovalCycles
       ];
-      const closableCycles = sortedCycles.filter(cycle => ['진행중', '일시정지'].includes(cycle.status) && !isClosedEvaluationCycle(cycle));
       const publishedCycles = sortedCycles.filter(cycle => cycle.results_published === true && !isClosedEvaluationCycle(cycle));
       const preferredCycleId = selectedEvaluationCycleId || progressCycles[0]?.id || setupCycles[0]?.id;
 
@@ -3273,7 +3258,6 @@
       setCycleSelectOptions(matchingSelect, setupCycles, matchingSelect?.value || preferredCycleId);
       const progressCycleId = setCycleSelectOptions(progressSelect, progressCycles, progressSelect?.value || preferredCycleId);
       setCycleSelectOptions(summarySelect, summaryCycles, summarySelect?.value || progressCycleId);
-      setCycleSelectOptions(historyCloseSelect, closableCycles, historyCloseSelect?.value || progressCycleId);
       setSelectedEvaluationCycleId(progressCycleId || setupCycles[0]?.id);
 
       let myReportOptionsHtml = publishedCycles
@@ -3287,46 +3271,6 @@
       if (myReportSelect) myReportSelect.innerHTML = myReportOptionsHtml;
       if (myReportSelect && previousMyReportValue && [...myReportSelect.options].some(option => option.value === previousMyReportValue)) {
         myReportSelect.value = previousMyReportValue;
-      }
-    }
-
-    async function handleCloseCycleSubmit() {
-      if (!currentLoggedInUser.isAdmin && !currentLoggedInUser.isExecutive) {
-        alert('평가 마감 권한이 없습니다. (임원 및 관리자 전용)');
-        return;
-      }
-
-      const selectEl = document.getElementById('history-close-cycle-select');
-      if (!selectEl || !selectEl.value) {
-        alert('마감할 평가 주기를 선택해 주세요.');
-        return;
-      }
-
-      const cycleId = parseInt(selectEl.value);
-      const targetCycle = cyclesDb.find(c => c.id === cycleId);
-
-      if (!targetCycle) {
-        alert('유효한 평가 주기를 선택해 주세요.');
-        return;
-      }
-
-      if (targetCycle.status === '마감/보관됨') {
-        alert(`[${targetCycle.name}] 은(는) 이미 마감 및 보관 완료된 평가 주기입니다.`);
-        return;
-      }
-
-      if (!confirm(`정말로 평가 주기 [${targetCycle.name}] 을(를) 마감 처리하시겠습니까?\n\n마감 시 모든 최종 환산 점수가 과거 이력 스냅샷으로 영구 보관되며, 임원 및 관리자만 조회 가능한 보관소로 저장됩니다.`)) {
-        return;
-      }
-
-      try {
-        await callAdminStateApi({ action: 'cycle_close', cycle_id: cycleId });
-        announceCentralChange();
-        await loadFromServer();
-        renderCurrentCentralViews();
-        alert(`평가 주기 [${targetCycle.name}]이 서버에서 마감되고 영구 스냅샷으로 보관되었습니다.`);
-      } catch (error) {
-        alert(`평가 마감 실패: ${error.message}`);
       }
     }
 
@@ -3463,7 +3407,10 @@
       const countEl = document.getElementById('archived-cycles-count');
       if (!container) return;
 
-      const historyRows = evaluationHistoryDb.flatMap((archive, archiveIndex) => (archive.snapshot || []).map((person, rowIndex) => ({ ...person, archiveIndex, rowIndex, cycleName: archive.cycleName, closedAt: archive.closedAt })));
+      const publishedHistoryDb = evaluationHistoryDb.filter(archive =>
+        cyclesDb.find(cycle => Number(cycle.id) === Number(archive.cycleId))?.results_published === true
+      );
+      const historyRows = publishedHistoryDb.flatMap((archive, archiveIndex) => (archive.snapshot || []).map((person, rowIndex) => ({ ...person, archiveIndex, rowIndex, cycleName: archive.cycleName, closedAt: archive.closedAt })));
       ensureDirectoryToolbar('history', container, historyRows, {
         render: renderHistoryTable, placeholder: '평가 주기·이름·소속·부서·직급 검색', sortKey: 'closedAt', sortDirection: 'desc',
         companyValue: row => row.company, deptValue: row => row.dept,
@@ -3474,7 +3421,7 @@
         sortValues: { closedAt: row => row.closedAt, name: row => row.name, company: row => [row.company, row.dept].join(' '), score: row => Number(row.score || 0), grade: row => ({ EX: 0, S: 1, A: 2, B: 3, C: 4, D: 5 }[row.grade] ?? 99) }
       });
       const visibleHistoryRows = filterDirectoryItems('history', historyRows);
-      const visibleHistory = evaluationHistoryDb.map((archive, archiveIndex) => ({ ...archive, snapshot: visibleHistoryRows.filter(row => row.archiveIndex === archiveIndex) })).filter(archive => archive.snapshot.length > 0);
+      const visibleHistory = publishedHistoryDb.map((archive, archiveIndex) => ({ ...archive, snapshot: visibleHistoryRows.filter(row => row.archiveIndex === archiveIndex) })).filter(archive => archive.snapshot.length > 0);
       const archivedCycleIds = new Set(evaluationHistoryDb.map(archive => Number(archive.cycleId)));
       const closedWithoutArchive = cyclesDb.filter(cycle =>
         isClosedEvaluationCycle(cycle) && !archivedCycleIds.has(Number(cycle.id))
@@ -7266,7 +7213,6 @@
       }
       const role = currentLoggedInUser?.sys_role;
       const status = cycle.internal_approval_status || 'not_requested';
-      const hasClosedArchive = hasClosedArchiveForCycle(cycle.id);
       const label = { not_requested: '전자결재 미요청', requested: '전자결재 요청됨', approved: '전자결재 승인됨', rejected: '전자결재 반려됨' }[status] || status;
       const request = approvalRequestsDb.find(row => Number(row.cycle_id) === Number(cycle.id) && ['requested', 'pending'].includes(row.request_status))
         || approvalRequestsDb.find(row => Number(row.cycle_id) === Number(cycle.id));
@@ -7279,11 +7225,7 @@
           }).join(' → ')}</span>`
         : '';
       let actions = '';
-      if (role === '관리자' && ['not_requested', 'rejected'].includes(status)) {
-        actions = hasClosedArchive
-          ? '<button onclick="openApprovalLineModal()" class="px-3 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-black">전자결재 요청</button>'
-          : '<button type="button" disabled class="cursor-not-allowed rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 font-black text-slate-500" title="평가 마감 후 전자결재를 요청할 수 있습니다.">먼저 평가 마감 필요</button>';
-      }
+      if (role === '관리자' && ['not_requested', 'rejected'].includes(status)) actions = '<button onclick="openApprovalLineModal()" class="px-3 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-black" title="최종 결과 확정과 전자결재 요청을 함께 처리합니다.">전자결재 요청</button>';
       if (role === '관리자' && status === 'requested') actions = '<button onclick="recallInternalApproval()" class="px-3 py-2 rounded-lg border border-rose-400 bg-white text-rose-700 font-black hover:bg-rose-50">요청 회수</button>';
       const isMyTurn = role === '임원'
         && status === 'requested'
@@ -7318,7 +7260,6 @@
       const secondValue = document.getElementById('approval-step-two')?.value;
       const approverIds = [firstId, secondValue ? Number(secondValue) : null].filter(Boolean);
       if (!cycle || !firstId) return alert('1차 결재자를 선택해 주세요.');
-      if (!hasClosedArchiveForCycle(cycle.id)) return alert('평가 마감 및 최종 결과 보관을 먼저 완료해 주세요.');
       if (new Set(approverIds).size !== approverIds.length) return alert('같은 임원을 중복 지정할 수 없습니다.');
       if (!confirm(`[${cycle.name}] 지정한 ${approverIds.length}명의 결재선으로 요청하시겠습니까?`)) return;
       try {
