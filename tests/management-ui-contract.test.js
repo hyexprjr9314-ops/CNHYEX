@@ -52,6 +52,17 @@ test('progress and summary use the same server-backed evaluation detail modal', 
   assert.match(detail, /if \(!item\.submitted\)/);
 });
 
+test('central state applies score aggregates before optional settings UI work', async () => {
+  const index = await readFile(indexUrl, 'utf8');
+  const applyState = index.slice(
+    index.indexOf('function applyCentralState(payload)'),
+    index.indexOf('async function loadCentralState()')
+  );
+
+  assert.ok(applyState.indexOf('cycleScoresDb = payload.cycle_scores') >= 0);
+  assert.ok(applyState.indexOf('cycleScoresDb = payload.cycle_scores') < applyState.indexOf('selectWeightTrack(selectedWeightTrack)'));
+});
+
 test('evaluation form selects questions only from the evaluatee employee type', async () => {
   const index = await readFile(indexUrl, 'utf8');
   const renderer = index.match(/function renderPeerQuestions\(\) \{[\s\S]*?\n    \}/)?.[0] ?? '';

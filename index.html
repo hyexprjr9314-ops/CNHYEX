@@ -4602,6 +4602,9 @@
     }
 
     function applyCentralState(payload) {
+      if (payload.cycle_scores && typeof payload.cycle_scores === 'object') {
+        cycleScoresDb = payload.cycle_scores;
+      }
       const settings = payload.settings;
       if (settings) {
         categoryWeights = {
@@ -4632,9 +4635,6 @@
           closedAt: String(row.closed_at || '').slice(0, 10), closedBy: row.closed_by_name,
           snapshot: Array.isArray(row.snapshot) ? row.snapshot : []
         }));
-      }
-      if (payload.cycle_scores && typeof payload.cycle_scores === 'object') {
-        cycleScoresDb = payload.cycle_scores;
       }
       if (Array.isArray(payload.final_results)) {
         finalResultsByCycle = payload.final_results.reduce((byCycle, row) => {
