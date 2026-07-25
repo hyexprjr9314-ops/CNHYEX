@@ -75,8 +75,8 @@ async function sendGradeViaSmtp({ to, name, cycleName, grade }) {
   });
   await transport.sendMail({
     from, to,
-    subject: `[HR evaluation] ${cycleName} final grade notice`,
-    text: `${name}, your final grade for ${cycleName} is ${grade}. Log in to the HR evaluation system for the published result.`
+    subject: `[충남한양 인사평가] ${cycleName} 최종 평가등급 안내`,
+    text: `${name} 님, 안녕하세요.\n\n${cycleName}의 최종 평가등급은 ${grade}등급입니다.\n\n자세한 내용은 충남한양 인사평가 시스템의 '내 평가 결과 보기'에서 확인해 주세요.`
   });
 }
 

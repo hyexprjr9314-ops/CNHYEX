@@ -24,12 +24,16 @@ test('password reset idempotency is bounded by an hourly resend window', () => {
 });
 
 test('sent grade notices are returned to administrators and rendered as complete', async () => {
-  const [adminState, html] = await Promise.all([
+  const [adminState, html, mail] = await Promise.all([
     read('../api/admin-state.js'),
-    read('../index.html')
+    read('../index.html'),
+    read('../api/mail.js')
   ]);
   assert.match(adminState, /evaluation_mail_dispatch_audit[\s\S]*?eq\('mail_kind', 'grade_notice'\)[\s\S]*?eq\('dispatch_status', 'sent'\)/);
   assert.match(adminState, /grade_mail_dispatches: gradeMailDispatches\.data \|\| \[\]/);
   assert.match(html, /sentGradeMailKeys\.has/);
   assert.match(html, /fa-check[\s\S]*?발송 완료/);
+  assert.match(mail, /\[충남한양 인사평가\].*최종 평가등급 안내/);
+  assert.match(mail, /최종 평가등급은 \$\{grade\}등급입니다/);
+  assert.doesNotMatch(mail, /\[HR evaluation\]|final grade notice|your final grade/);
 });
