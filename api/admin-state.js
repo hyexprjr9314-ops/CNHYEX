@@ -149,7 +149,8 @@ function buildScores(evaluations, adjustments, settings, matchings = [], users =
     const assigned = assignedCounts.get(key) || rows.length;
     result[cycleId] ||= {};
     result[cycleId][targetId] = {
-      raw, final, grade: null, grade_status: null, is_adjusted: Boolean(adjustment), completed: rows.length,
+      raw, final, grade: null, calculated_grade: null, grade_override: adjustment?.grade_override || null,
+      grade_status: null, is_adjusted: Boolean(adjustment), completed: rows.length,
       assigned, complete: assigned > 0 && rows.length >= assigned,
       performance: Number(avg('perf_score').toFixed(2)), collaboration: Number(avg('collab_score').toFixed(2)),
       growth: Number(avg('growth_score').toFixed(2)), harmony: Number(avg('harmony_score').toFixed(2)),
@@ -295,7 +296,8 @@ export function applyRelativeGrades(cycleScores, users, archives) {
     for (const [targetId, score] of Object.entries(scoresByTarget)) {
       const target = usersById.get(Number(targetId));
       const finalGrade = finalGrades?.get(Number(targetId)) || null;
-      score.grade = finalGrade || provisionalGrades.get(Number(targetId)) || null;
+      score.calculated_grade = finalGrade || provisionalGrades.get(Number(targetId)) || null;
+      score.grade = score.grade_override || score.calculated_grade;
       score.grade_status = finalGrade ? 'final' : score.grade ? 'provisional' : null;
       score.category_labels = TRACK_CATEGORIES[targetTrack(target)] || TRACK_CATEGORIES.headquarters_member;
     }
@@ -320,7 +322,9 @@ export function applyImmutableFinalResults(cycleScores, finalResults, cyclesById
       ...live,
       raw: Number(row.raw_score),
       final: Number(row.effective_score),
-      grade: row.relative_grade,
+      calculated_grade: row.relative_grade,
+      grade_override: row.approved_grade && row.approved_grade !== row.relative_grade ? row.approved_grade : null,
+      grade: row.approved_grade || row.relative_grade,
       grade_status: 'final',
       complete: true,
       // Do not accidentally display live category averages next to a frozen
@@ -353,7 +357,7 @@ async function readState(service, profile) {
     service.from('employee_goals').select('*').order('created_at', { ascending: false }),
     service.from('users').select('id,active,can_evaluate,is_evaluatee,company,dept,workplace,role,type'),
     service.from('evaluation_cycles').select('id,result_version'),
-    service.from('evaluation_final_results').select('cycle_id,target_id,result_version,raw_score,effective_score,relative_grade,category_labels,category_scores'),
+    service.from('evaluation_final_results').select('cycle_id,target_id,result_version,raw_score,effective_score,relative_grade,approved_grade,category_labels,category_scores'),
     service.from('evaluation_cycle_approval_requests').select('id,cycle_id,request_status,requested_at,result_version').order('requested_at', { ascending: false }),
     service.from('evaluation_cycle_approval_steps').select('approval_request_id,step_order,approver_user_id,status,decided_at,decision_note').order('step_order')
   ]);

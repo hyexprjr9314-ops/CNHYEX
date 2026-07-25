@@ -2172,6 +2172,14 @@
           <input type="number" step="0.1" min="0" max="100" id="adjust-score-input" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-brandGold" onkeydown="if(event.key==='Enter') saveScoreAdjustment()">
         </div>
         <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">최종 승인등급 (선택)</label>
+          <select id="adjust-grade-input" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-brandGold">
+            <option value="">자동 산정등급 유지</option>
+            <option value="S">S 등급</option><option value="A">A 등급</option><option value="B">B 등급</option>
+            <option value="C">C 등급</option><option value="D">D 등급</option>
+          </select>
+        </div>
+        <div>
           <label class="block text-xs font-bold text-slate-300 mb-1">조정 사유 (필수, 10자 이상)</label>
           <textarea id="adjust-reason-input" rows="3" maxlength="1000" placeholder="객관적인 조정 근거를 입력해 주세요." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-brandGold"></textarea>
           <p class="mt-1 text-[10px] text-slate-500">조정 전후 점수, 조정자 및 시각과 함께 감사 이력으로 서버에 보관됩니다.</p>
@@ -6772,7 +6780,10 @@
         if (empScoreData) {
           rawScoreStr = `${empScoreData.raw.toFixed(1)}점`;
           finalScoreStr = `${empScoreData.final.toFixed(1)}점`;
-          isAdjustedStr = `<span class="${empScoreData.is_adjusted ? 'text-amber-400 font-bold' : 'text-slate-500'}">${empScoreData.is_adjusted ? '조정됨' : '미조정'}</span>`;
+          const gradeOverrideLabel = empScoreData.grade_override
+            ? ` · 등급 ${empScoreData.calculated_grade || '-'}→${empScoreData.grade_override}`
+            : '';
+          isAdjustedStr = `<span class="${empScoreData.is_adjusted ? 'text-amber-400 font-bold' : 'text-slate-500'}">${empScoreData.is_adjusted ? `조정됨${gradeOverrideLabel}` : '미조정'}</span>`;
 
           const g = empScoreData.grade;
           if (g === 'S') {
@@ -6927,6 +6938,7 @@
       const curScore = empScoreData.final;
       document.getElementById('adjust-emp-name').innerText = `${emp.name} ${emp.role} (선택된 주기 점수: ${curScore}점)`;
       document.getElementById('adjust-score-input').value = curScore;
+      document.getElementById('adjust-grade-input').value = empScoreData.grade_override || '';
       document.getElementById('adjust-reason-input').value = '';
       document.getElementById('adjust-modal-title').innerText = '⚖️ 최종 점수 조정';
       document.getElementById('adjust-save-button').innerText = '최종 조정 저장';
@@ -6956,6 +6968,7 @@
 
     async function saveScoreAdjustment() {
       const val = parseFloat(document.getElementById('adjust-score-input').value);
+      const gradeOverride = document.getElementById('adjust-grade-input').value || null;
       const reason = document.getElementById('adjust-reason-input').value.trim();
       if (isNaN(val) || val < 0 || val > 100) {
         alert('올바른 점수(0~100)를 입력하세요.');
@@ -6971,7 +6984,7 @@
         await callResultStateApi('POST', {
           action: 'adjust_final',
           cycle_id: Number(currentSelectedSummaryCycleId),
-          target_id: Number(selectedAdjustId), final_score: val, reason
+          target_id: Number(selectedAdjustId), final_score: val, grade_override: gradeOverride, reason
         });
         document.getElementById('modal-score-adjustment').classList.add('hidden');
         document.getElementById('adjust-reason-input').value = '';
@@ -7250,7 +7263,7 @@
         const values = [
           user.name,user.email,user.dept,user.workplace,user.role,user.type,
           Number(finalResult?.effective_score ?? score.final ?? 0).toFixed(1),
-          finalResult?.relative_grade || score.grade || '',
+          finalResult?.approved_grade || finalResult?.relative_grade || score.grade || '',
           finalResult ? '최종' : (score.grade_status === 'provisional' ? '예상' : ''),
           score.is_adjusted ? '조정됨' : '미조정',
           Number(finalResult?.raw_score ?? score.raw ?? 0).toFixed(1), score.completed || '',

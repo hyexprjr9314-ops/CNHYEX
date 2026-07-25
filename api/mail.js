@@ -110,7 +110,7 @@ async function dispatchGrade(service, actor, cycle, finalResult, target, retry) 
   const audit = await claimDispatch(service, record, retry);
   if (audit.duplicate) return { target_id: target.id, status: 'duplicate' };
   try {
-    await sendGradeViaSmtp({ to: target.email, name: target.name, cycleName: cycle.name, grade: finalResult.relative_grade });
+    await sendGradeViaSmtp({ to: target.email, name: target.name, cycleName: cycle.name, grade: finalResult.approved_grade || finalResult.relative_grade });
     await updateAudit(service, audit.audit.id, 'sent');
     return { target_id: target.id, status: 'sent' };
   } catch (error) {
@@ -150,12 +150,12 @@ export default async function handler(req, res) {
       .eq('id', cycleId).single();
     if (cycleResult.error) throw cycleResult.error;
     const finalResultQuery = await service.from('evaluation_final_results')
-      .select('target_id,result_version,relative_grade')
+      .select('target_id,result_version,relative_grade,approved_grade')
       .eq('cycle_id', cycleId)
       .eq('result_version', cycleResult.data.result_version);
     if (finalResultQuery.error) throw finalResultQuery.error;
     const finalByTarget = new Map((finalResultQuery.data || [])
-      .filter(row => row.relative_grade)
+      .filter(row => row.approved_grade || row.relative_grade)
       .map(row => [Number(row.target_id), row]));
     if (!finalByTarget.size || !canSendGradeNotice(cycleResult.data, { grade: 'available' })) {
       return send(res, 409, { error: 'Approved, published current final results are required before sending grade notices.' });

@@ -48,7 +48,7 @@ async function aggregateTarget(service, cycleId, targetId) {
   // edits to employees, questions, weights, or evaluations change this view.
   if (Number(cycle.data.result_version || 0) > 0) {
     const finalResult = await service.from('evaluation_final_results')
-      .select('raw_score,effective_score,relative_grade,category_labels,category_scores,result_version')
+      .select('raw_score,effective_score,relative_grade,approved_grade,category_labels,category_scores,result_version')
       .eq('cycle_id', cycleId)
       .eq('target_id', targetId)
       .eq('result_version', cycle.data.result_version)
@@ -61,7 +61,8 @@ async function aggregateTarget(service, cycleId, targetId) {
         assigned_count: null,
         submitted_count: null,
         adjustment: null,
-        relative_grade: finalResult.data.relative_grade,
+        relative_grade: finalResult.data.approved_grade || finalResult.data.relative_grade,
+        calculated_grade: finalResult.data.relative_grade,
         scores: {
           ...(finalResult.data.category_scores || {}),
           raw_total: Number(finalResult.data.raw_score),
@@ -78,7 +79,7 @@ async function aggregateTarget(service, cycleId, targetId) {
   const [matchings, evaluations, adjustment, settings, users] = await Promise.all([
     service.from('matchings').select('id,evaluator_id,target_id').eq('cycle_id', cycleId).eq('target_id', targetId),
     service.from('evaluations').select('matching_id,perf_score,collab_score,growth_score,harmony_score').eq('cycle_id', cycleId).eq('target_id', targetId),
-    service.from('evaluation_result_adjustments').select('id,raw_score,final_score,reason,status,workflow_status').eq('cycle_id', cycleId).eq('target_id', targetId).eq('status', 'active').maybeSingle(),
+    service.from('evaluation_result_adjustments').select('id,raw_score,final_score,grade_override,reason,status,workflow_status').eq('cycle_id', cycleId).eq('target_id', targetId).eq('status', 'active').maybeSingle(),
     service.from('evaluation_settings').select('performance_weight,collaboration_weight,growth_weight,harmony_weight,track_category_weights').eq('id', 1).single(),
     service.from('users').select('id,active,can_evaluate,is_evaluatee,company,dept,workplace,role,type')
   ]);
@@ -143,8 +144,9 @@ function mutationArguments(action, body, cycleId, actorId, approverAuthIds = [])
   const targetId = Number(body?.target_id);
   const reason = String(body?.reason || '').trim();
   const finalScore = body?.final_score === '' || body?.final_score === undefined ? null : Number(body?.final_score);
+  const gradeOverride = String(body?.grade_override || '').trim().toUpperCase() || null;
   switch (action) {
-    case 'adjust_final': return { p_cycle_id: cycleId, p_target_id: targetId, p_final_score: finalScore, p_reason: reason, p_actor_id: actorId };
+    case 'adjust_final': return { p_cycle_id: cycleId, p_target_id: targetId, p_final_score: finalScore, p_grade_override: gradeOverride, p_reason: reason, p_actor_id: actorId };
     case 'cancel_adjustment': return { p_cycle_id: cycleId, p_target_id: targetId, p_reason: reason, p_actor_id: actorId };
     case 'request_internal_approval': return { p_cycle_id: cycleId, p_actor_id: actorId, p_approver_ids: approverAuthIds };
     case 'decide_internal_approval': return { p_cycle_id: cycleId, p_approved: body?.approved === true, p_reason: reason, p_actor_id: actorId };
