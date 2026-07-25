@@ -97,6 +97,7 @@ test('manual matching commits the authoritative server response without a second
 test('matching studio exposes and synchronizes its own cycle selector', async () => {
   const index = await readFile(indexUrl, 'utf8');
 
+  assert.doesNotMatch(index, /MULTI-STAGE PIPELINE ENGINE|직군별 3~5단계 다단계/);
   assert.match(index, /id="matching-cycle-select"/);
   assert.match(index, /\['perm-cycle-select', 'matching-cycle-select'\]\.forEach/);
   assert.match(index, /getElementById\('matching-cycle-select'\)\?\.value \|\| document\.getElementById\('perm-cycle-select'\)\?\.value/);
