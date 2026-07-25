@@ -14,6 +14,16 @@ const ADMIN_ONLY = new Set([
 const EXECUTIVE_ALLOWED = new Set();
 const send = (res, status, payload) => res.status(status).json(payload);
 
+export async function fetchAllRows(buildQuery, pageSize = 1000) {
+  const rows = [];
+  for (let from = 0; ; from += pageSize) {
+    const result = await buildQuery().range(from, from + pageSize - 1);
+    if (result.error) return result;
+    rows.push(...(result.data || []));
+    if ((result.data || []).length < pageSize) return { data: rows, error: null };
+  }
+}
+
 function serviceClient() {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -336,9 +346,9 @@ async function readState(service, profile) {
   if (goalsResult.error) throw goalsResult.error;
   if (!PRIVILEGED.has(profile.sys_role)) return { settings: settingsResult.data, goals: goalsResult.data || [] };
   const [matchings, archives, evaluations, adjustments, allGoals, users, cycles, finalResults, approvalRequests, approvalSteps] = await Promise.all([
-    service.from('matchings').select('*').order('id'),
+    fetchAllRows(() => service.from('matchings').select('*').order('id')),
     service.from('evaluation_archives').select('*').order('closed_at', { ascending: false }),
-    service.from('evaluations').select('matching_id,cycle_id,target_id,perf_score,collab_score,growth_score,harmony_score'),
+    fetchAllRows(() => service.from('evaluations').select('matching_id,cycle_id,target_id,perf_score,collab_score,growth_score,harmony_score').order('id')),
     service.from('evaluation_result_adjustments').select('*'),
     service.from('employee_goals').select('*').order('created_at', { ascending: false }),
     service.from('users').select('id,active,can_evaluate,is_evaluatee,company,dept,workplace,role,type'),
