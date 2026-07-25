@@ -20,6 +20,12 @@ test('summary adjustment and grade-mail actions keep white labels and icons', as
   assert.match(html, /sendGradeNoticeEmail[\s\S]*?class="summary-action-white ml-1/);
 });
 
+test('adjustment cancellation warning uses readable dark red text', async () => {
+  const index = await readIndex();
+  assert.match(index, /\.adjust-cancel-warning\s*\{[\s\S]*?color: #991B1B !important/);
+  assert.match(index, /class="adjust-cancel-warning[^"]*"[\s\S]*?취소하면 최종 점수와 등급/);
+});
+
 test('internal approval UI collects an ordered executive line and supports recall', async () => {
   const index = await readIndex();
   assert.match(index, /id="modal-approval-line"/);
