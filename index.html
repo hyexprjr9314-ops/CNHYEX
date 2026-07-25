@@ -4873,6 +4873,10 @@
       const target = usersDb.find(user => Number(user.id) === Number(targetId));
       const cycle = cyclesDb.find(row => Number(row.id) === Number(currentSelectedSummaryCycleId));
       if (!target || !cycle) return;
+      if (cycle.results_published !== true || cycle.result_gate_open !== true || cycle.internal_approval_status !== 'approved') {
+        alert('전자승인과 최종 결과 공개가 완료된 후 평가등급 메일을 발송할 수 있습니다.');
+        return;
+      }
       await runMailAction(
         button,
         { action: 'grade_notice', cycle_id: Number(cycle.id), target_id: Number(target.id) },
@@ -6858,12 +6862,12 @@
       isResultPublished = selectedCycle?.results_published === true;
       updatePublishControlVisibility(selectedCycle);
       renderInternalApprovalControls();
+      const canSendGradeMail = checkUserRole(currentLoggedInUser).isAdmin
+        && selectedCycle?.results_published === true
+        && selectedCycle?.result_gate_open === true
+        && selectedCycle?.internal_approval_status === 'approved';
       const bulkGradeMailButton = document.getElementById('bulk-grade-mail-btn');
       if (bulkGradeMailButton) {
-        const canSendGradeMail = checkUserRole(currentLoggedInUser).isAdmin
-          && selectedCycle?.results_published === true
-          && selectedCycle?.result_gate_open === true
-          && selectedCycle?.internal_approval_status === 'approved';
         bulkGradeMailButton.classList.toggle('hidden', !checkUserRole(currentLoggedInUser).isAdmin);
         bulkGradeMailButton.disabled = !canSendGradeMail;
         bulkGradeMailButton.classList.toggle('opacity-50', !canSendGradeMail);
@@ -6939,7 +6943,7 @@
         const canViewDetails = currentLoggedInUser && (currentLoggedInUser.isAdmin || currentLoggedInUser.isExecutive);
         const scoreActionHtml = buildSummaryScoreAction(emp, empScoreData, isEvalOnly);
         const gradeMailActionHtml = checkUserRole(currentLoggedInUser).isAdmin && empScoreData?.grade
-          ? `<button type="button" onclick="event.stopPropagation(); sendGradeNoticeEmail(${emp.id}, event.currentTarget)" class="ml-1 rounded border border-violet-400 bg-violet-600 px-2.5 py-1 text-xs font-bold text-white transition hover:bg-violet-500" title="${emp.name}에게 최종 평가등급 메일 발송"><i class="fa-solid fa-envelope"></i><span class="sr-only">평가 결과 메일 발송</span></button>`
+          ? `<button type="button" ${canSendGradeMail ? '' : 'disabled'} onclick="event.stopPropagation(); sendGradeNoticeEmail(${emp.id}, event.currentTarget)" class="ml-1 rounded border border-violet-400 bg-violet-600 px-2.5 py-1 text-xs font-bold text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-40" title="${canSendGradeMail ? `${emp.name}에게 최종 평가등급 메일 발송` : '전자승인과 최종 결과 공개 완료 후 발송할 수 있습니다.'}"><i class="fa-solid fa-envelope"></i><span class="sr-only">평가 결과 메일 발송</span></button>`
           : '';
 
         

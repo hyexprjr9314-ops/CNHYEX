@@ -16,6 +16,8 @@ test('approval, bulk mail, and final grade controls are connected in their inten
   assert.match(index, /sendBulkGradeNoticeEmails\(\)/);
   assert.match(index, /action:\s*'grade_notice_bulk'/);
   assert.match(index, /sendGradeNoticeEmail\(\$\{emp\.id\}/);
+  assert.match(index, /cycle\.results_published !== true \|\| cycle\.result_gate_open !== true \|\| cycle\.internal_approval_status !== 'approved'/);
+  assert.match(index, /\$\{canSendGradeMail \? '' : 'disabled'\}/);
   assert.match(index, /id="my-chart-card"[\s\S]*id="my-grade-card"/);
 });
 
