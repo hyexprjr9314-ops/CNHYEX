@@ -25,14 +25,36 @@ test('management UI keeps executive and administrator controls separated', async
   assert.doesNotMatch(index, /tab\.className = "px-4 py-2 rounded-xl transition text-slate-400/);
 });
 
-test('question editor emits canonical tracks and resolves leaders before job-area tracks', async () => {
+test('question editor uses employee type only and removes department or relationship targeting', async () => {
   const index = await readFile(indexUrl, 'utf8');
-  for (const value of ['all', 'headquarters_member', 'headquarters_leader', 'branch_employee', 'mechanic']) {
+  for (const value of ['headquarters_member', 'headquarters_leader', 'mechanic']) {
     assert.match(index, new RegExp(`<option value="${value}">`));
   }
   const resolver = index.match(/function questionTrackForTarget\(target = \{\}\) \{[\s\S]*?\n    \}/)?.[0] ?? '';
-  assert.ok(resolver.indexOf('QUESTION_TRACKS.headquarters_leader') < resolver.indexOf('QUESTION_TRACKS.mechanic'));
+  assert.doesNotMatch(resolver, /role|dept|workplace/);
+  assert.doesNotMatch(index, /id="q-audience-in"|id="q-dept-in"|id="edit-q-audience"|id="edit-q-dept"/);
   assert.match(index, /function normalizeQuestionTrack\(track\)/);
+  for (const label of ['내부 평가', '내부 교류평가', '외부 평가', '부서장 평가', '부서장 교류평가']) {
+    assert.match(index, new RegExp(label));
+  }
+});
+
+test('evaluation form selects questions only from the evaluatee employee type', async () => {
+  const index = await readFile(indexUrl, 'utf8');
+  const renderer = index.match(/function renderPeerQuestions\(\) \{[\s\S]*?\n    \}/)?.[0] ?? '';
+
+  assert.match(renderer, /questionTrackForTarget\(emp\)/);
+  assert.match(renderer, /questionTrack === 'all' \|\| questionTrack === targetTrack\.key/);
+  assert.doesNotMatch(renderer, /targetDept|target_dept|workplace|relationshipType|audience/);
+});
+
+test('target list renders all five display-only relationship groups', async () => {
+  const index = await readFile(indexUrl, 'utf8');
+  const renderer = index.match(/function renderEmployeeGrid\(\) \{[\s\S]*?\n    \}/)?.[0] ?? '';
+
+  for (const key of ['internal', 'internal_exchange', 'external', 'leadership', 'leadership_exchange']) {
+    assert.match(renderer, new RegExp(`key: '${key}'`));
+  }
 });
 
 test('manual matching commits the authoritative server response without a second read', async () => {

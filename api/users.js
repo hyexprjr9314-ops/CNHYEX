@@ -5,7 +5,7 @@ import { canonicalPasswordResetRedirect } from './mail-delivery.js';
 import { isMutableDraftCycle } from './questions.js';
 
 const REQUIRED = ['name', 'email', 'company', 'dept', 'workplace', 'role', 'type', 'sys_role'];
-const ALLOWED_TYPES = new Set(['팀원급', '팀장급', '부서실장급', '임원급']);
+const ALLOWED_TYPES = new Set(['팀원급', '팀장/부서장급', '임원급', '정비사']);
 const ALLOWED_ROLES = new Set(['일반사용자', '관리자', '임원']);
 const ALLOWED_COMPANIES = new Set(['(주)한양고속', '(주)충남고속']);
 const SUPER_ADMIN_EMAIL = 'admin@cnhyex.com';
@@ -69,6 +69,16 @@ function validate(row) {
   return null;
 }
 
+function applyEmployeeTypePermissions(profile, previousType = null) {
+  if (profile.type === '임원급') {
+    profile.can_evaluate = false;
+    profile.is_evaluatee = false;
+  } else if (previousType === '임원급') {
+    profile.can_evaluate = true;
+    profile.is_evaluatee = true;
+  }
+}
+
 async function authorize(req, service) {
   const token = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
   if (!token) throw new Error('로그인이 필요합니다.');
@@ -114,6 +124,7 @@ export default async function handler(req, res) {
       const { data: existing, error: existingError } = await service.from('users')
         .select('auth_user_id,email,company,dept,workplace,role,type').eq('id', id).single();
       if (existingError) throw existingError;
+      applyEmployeeTypePermissions(profile, existing.type);
       await assertPersonnelClassificationMutable(service, existing, profile);
       const isSuperAdmin = existing?.email?.toLowerCase() === SUPER_ADMIN_EMAIL;
       if (isSuperAdmin) {
@@ -205,6 +216,7 @@ export default async function handler(req, res) {
         const { data: existing, error: findError } = await service.from('users')
           .select('id,company,dept,workplace,role,type').eq('email', row.email).maybeSingle();
         if (findError) throw findError;
+        applyEmployeeTypePermissions(profile, existing?.type);
         // CSV upsert must obey the same lifecycle classification guard as the
         // single-profile editor. New profiles are allowed; only a change to an
         // existing person's evaluation classification is blocked.

@@ -1422,10 +1422,10 @@
               <div>
                 <label class="block text-[11px] font-bold text-slate-400 mb-1">사원구분 (트랙)</label>
                 <select id="user-type-in" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white font-bold">
-                  <option value="팀원급">팀원급 (Track A)</option>
-                  <option value="팀장급">팀장급 (Track B)</option>
-                  <option value="부서실장급">부서실장급 (Track B)</option>
-                  <option value="임원">임원 (최종 2차 조정 권한 부여)</option>
+                  <option value="팀원급">팀원급</option>
+                  <option value="팀장/부서장급">팀장/부서장급</option>
+                  <option value="임원급">임원급 (평가 제외)</option>
+                  <option value="정비사">정비사</option>
                 </select>
               </div>
               <div>
@@ -1647,7 +1647,6 @@
             <select id="weight-track-select" onchange="selectWeightTrack(this.value)" class="w-full rounded-lg border border-slate-300 bg-white p-2.5 text-xs font-bold text-slate-800">
               <option value="headquarters_member">본사 팀원</option>
               <option value="headquarters_leader">본사 팀장·부서장급</option>
-              <option value="branch_employee">영업소 직원</option>
               <option value="mechanic">정비사</option>
             </select>
 
@@ -1695,35 +1694,9 @@
               <div>
                 <label class="block text-xs font-bold text-slate-300 mb-1">적용 대상 직군 🎯</label>
                 <select id="q-track-in" onchange="syncQuestionCategoryOptions('create')" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-amber-300 font-bold">
-                  <option value="all">📌 기본 필수질문 (전사)</option>
-                  <option value="headquarters_member">🏢 본사 팀원급</option>
+                  <option value="headquarters_member">🏢 팀원급</option>
                   <option value="headquarters_leader">👔 팀장/부서장급</option>
-                  <option value="branch_employee">🚌 영업소</option>
                   <option value="mechanic">🔧 정비사</option>
-                </select>
-              </div>
-
-              <div>
-                <label class="block text-xs font-bold text-slate-300 mb-1">평가 관계</label>
-                <select id="q-audience-in" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-violet-200 font-bold">
-                  <option value="all">전체 관계 공통</option>
-                  <option value="internal">내부 부서 평가</option>
-                  <option value="exchange">부서 간 교류 평가</option>
-                  <option value="leadership">리더십 평가</option>
-                </select>
-              </div>
-
-              <div>
-                <label class="block text-xs font-bold text-slate-300 mb-1">적용 부서 타깃 🏢</label>
-                <select id="q-dept-in" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-cyan-300 font-bold">
-                  <option value="전체">🏢 전체 부서 공통</option>
-                  <option value="인사총무">인사총무부</option>
-                  <option value="경리">경리부</option>
-                  <option value="안전관리">안전관리부</option>
-                  <option value="사업">사업부</option>
-                  <option value="차량">차량부</option>
-                  <option value="정비">정비부</option>
-                  <option value="영업소">영업소 현장</option>
                 </select>
               </div>
 
@@ -1779,17 +1752,11 @@
               <button onclick="filterQuestionTrack('전체')" id="q-track-tab-전체" class="px-3 py-1.5 rounded-lg bg-brandTeal text-white transition">
                 🌐 전체
               </button>
-              <button onclick="filterQuestionTrack('기본 필수질문')" id="q-track-tab-기본 필수질문" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white transition">
-                📌 기본 필수질문
-              </button>
               <button onclick="filterQuestionTrack('본사 팀원급')" id="q-track-tab-본사 팀원급" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white transition">
                 🏢 본사 팀원급
               </button>
               <button onclick="filterQuestionTrack('팀장/부서장급')" id="q-track-tab-팀장/부서장급" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white transition">
                 👔 팀장/부서장급
-              </button>
-              <button onclick="filterQuestionTrack('영업소')" id="q-track-tab-영업소" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white transition">
-                🚌 영업소
               </button>
               <button onclick="filterQuestionTrack('정비사')" id="q-track-tab-정비사" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white transition">
                 🔧 정비사
@@ -2501,9 +2468,9 @@
           <label class="block text-[11px] font-bold text-slate-400 mb-1">사원구분</label>
           <select id="edit-user-type" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white font-bold">
             <option value="팀원급">팀원급</option>
-            <option value="팀장급">팀장급</option>
-            <option value="부서실장급">부서실장급</option>
+            <option value="팀장/부서장급">팀장/부서장급</option>
             <option value="임원급">임원급</option>
+            <option value="정비사">정비사</option>
           </select>
         </div>
         <div>
@@ -2780,35 +2747,9 @@
           <div>
             <label class="block text-xs font-bold text-slate-300 mb-1">적용 대상 직군 🎯</label>
             <select id="edit-q-track" onchange="syncQuestionCategoryOptions('edit')" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-amber-300 font-bold">
-              <option value="all">📌 기본 필수질문</option>
-              <option value="headquarters_member">🏢 본사 팀원급</option>
+              <option value="headquarters_member">🏢 팀원급</option>
               <option value="headquarters_leader">👔 팀장/부서장급</option>
-              <option value="branch_employee">🚌 영업소</option>
               <option value="mechanic">🔧 정비사</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="block text-xs font-bold text-slate-300 mb-1">평가 관계</label>
-            <select id="edit-q-audience" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-violet-200 font-bold">
-              <option value="all">전체 관계 공통</option>
-              <option value="internal">내부 부서 평가</option>
-              <option value="exchange">부서 간 교류 평가</option>
-              <option value="leadership">리더십 평가</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="block text-xs font-bold text-slate-300 mb-1">적용 부서 타깃 🏢</label>
-            <select id="edit-q-dept" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-cyan-300 font-bold">
-              <option value="전체">🏢 전체 부서 공통</option>
-              <option value="인사총무">인사총무부</option>
-              <option value="경리">경리부</option>
-              <option value="안전관리">안전관리부</option>
-              <option value="사업">사업부</option>
-              <option value="차량">차량부</option>
-              <option value="정비">정비부</option>
-              <option value="영업소">영업소 현장</option>
             </select>
           </div>
 
@@ -2996,7 +2937,7 @@
 
     const QUESTION_TRACKS = Object.freeze({
       all: { key: 'all', label: '전사 공통', categories: ['성과', '협업', '성장', '조화'] },
-      headquarters_member: { key: 'headquarters_member', label: '본사 팀원급', categories: ['성과', '협업', '성장', '조화'] },
+      headquarters_member: { key: 'headquarters_member', label: '팀원급', categories: ['성과', '협업', '성장', '조화'] },
       headquarters_leader: { key: 'headquarters_leader', label: '팀장/부서장급', categories: ['리더십', '팀원 육성', '소통', '전략적 사고'] },
       branch_employee: { key: 'branch_employee', label: '영업소 직원', categories: ['비상대응', '소통 협력', '솔선 수범', '갈등 해소'] },
       mechanic: { key: 'mechanic', label: '정비사', categories: ['역량 개발', '정비 능력', '책임/주인의식', '안전의식'] }
@@ -3005,7 +2946,7 @@
       all: 'all', '기본 필수질문': 'all', '전사 공통': 'all',
       headquarters_member: 'headquarters_member', '본사 팀원급': 'headquarters_member',
       headquarters_leader: 'headquarters_leader', '팀장/부서장급': 'headquarters_leader', '팀장·부서장급': 'headquarters_leader',
-      branch_employee: 'branch_employee', '영업소': 'branch_employee', '영업소 직원': 'branch_employee',
+      branch_employee: 'headquarters_member', '영업소': 'headquarters_member', '영업소 직원': 'headquarters_member',
       mechanic: 'mechanic', '정비사': 'mechanic'
     });
     function normalizeQuestionTrack(track) {
@@ -3015,13 +2956,9 @@
       return QUESTION_TRACKS[normalizeQuestionTrack(track)].label;
     }
     function questionTrackForTarget(target = {}) {
-      const dept = String(target.dept || '');
-      const workplace = String(target.workplace || '');
-      const role = String(target.role || '');
       const type = String(target.type || '');
-      if (['팀장급', '부서실장급', '임원급'].includes(type) || /(팀장|부장|실장|본부장|소장|지점장|센터장|이사|상무|전무|대표|임원)/.test(role)) return QUESTION_TRACKS.headquarters_leader;
-      if (dept.includes('정비')) return QUESTION_TRACKS.mechanic;
-      if (workplace.includes('영업소') || dept.includes('영업소')) return QUESTION_TRACKS.branch_employee;
+      if (type === '정비사') return QUESTION_TRACKS.mechanic;
+      if (['팀장/부서장급', '팀장급', '부서실장급'].includes(type)) return QUESTION_TRACKS.headquarters_leader;
       return QUESTION_TRACKS.headquarters_member;
     }
     function syncQuestionCategoryOptions(mode, selectedCategory = null) {
@@ -5100,81 +5037,47 @@
       renderEmployeeGrid();
     }
 
+    // Relationship labels describe the assignment, but never select questions.
     function resolveEvaluationRelationship(evaluator, target) {
       const sameCompany = String(evaluator?.company || '').trim() === String(target?.company || '').trim();
       const sameDept = String(evaluator?.dept || '').trim() === String(target?.dept || '').trim();
-      const evaluatorWorkplace = String(evaluator?.workplace || '').trim();
-      const targetWorkplace = String(target?.workplace || '').trim();
-      const sameBranch = sameCompany
-        && evaluatorWorkplace !== ''
-        && evaluatorWorkplace === targetWorkplace
-        && targetWorkplace.includes('영업소');
-      const targetRole = String(target?.role || '');
-      const isLeadershipTarget = target?.type === '팀장급'
-        || /(팀장|부장|소장|지점장|센터장|실장|본부장|임원|이사|대표)/.test(targetRole);
-
-      if (isLeadershipTarget && sameCompany && (sameDept || sameBranch)) {
-        return {
-          key: 'leadership',
-          title: '부서장 리더십 평가',
-          description: '같은 조직의 팀장·부서장을 대상으로 리더십, 공정성, 의사결정과 구성원 육성을 평가합니다.',
-          icon: 'fa-people-group',
-          tone: 'purple'
-        };
-      }
-      if (sameCompany && (sameDept || sameBranch)) {
-        return {
-          key: 'internal',
-          title: '내부 부서 평가',
-          description: '같은 부서 또는 같은 영업소에서 직접 관찰한 업무수행, 책임감과 협업 행동을 평가합니다.',
-          icon: 'fa-building-user',
-          tone: 'teal'
-        };
-      }
-      return {
-        key: 'exchange',
-        title: '부서 간 교류 평가',
-        description: '다른 부서·영업소와의 실제 업무 교류를 바탕으로 의사소통, 지원과 협업 태도를 평가합니다.',
-        icon: 'fa-arrows-left-right-to-line',
-        tone: 'blue'
-      };
-    }
-
-    // Canonical relationship presentation. Server-provided relationshipType is
-    // authoritative; the fallback mirrors api/evaluation-classification.js.
-    function resolveEvaluationRelationship(evaluator, target) {
-      const sameCompany = String(evaluator?.company || '').trim() === String(target?.company || '').trim();
-      const sameDept = String(evaluator?.dept || '').trim() === String(target?.dept || '').trim();
-      const targetRole = String(target?.role || '');
-      const evaluatorRole = String(evaluator?.role || '');
-      const targetIsLeader = ['팀장급', '부서실장급', '임원급'].includes(target?.type)
-        || /(팀장|부장|실장|소장|지점장|센터장|본부장|임원|이사|상무|전무|대표)/.test(targetRole);
-      const evaluatorIsLeader = ['팀장급', '부서실장급', '임원급'].includes(evaluator?.type)
-        || /(팀장|부장|실장|소장|지점장|센터장|본부장|임원|이사|상무|전무|대표)/.test(evaluatorRole);
-      const relationshipKey = ['internal', 'exchange', 'leadership'].includes(target?.relationshipType)
-        ? target.relationshipType
-        : evaluatorIsLeader && targetIsLeader && !sameDept
-          ? 'exchange'
-          : targetIsLeader
-            ? 'leadership'
-            : sameCompany && sameDept
+      const leaderTypes = ['팀장/부서장급', '팀장급', '부서실장급'];
+      const targetIsLeader = leaderTypes.includes(target?.type);
+      const evaluatorIsLeader = leaderTypes.includes(evaluator?.type);
+      const relationshipKey = evaluatorIsLeader && targetIsLeader
+        ? 'leadership_exchange'
+        : targetIsLeader
+          ? 'leadership'
+          : !sameCompany
+            ? 'external'
+            : sameDept
               ? 'internal'
-              : 'exchange';
+              : 'internal_exchange';
       return {
+        leadership_exchange: {
+          key: 'leadership_exchange', title: '부서장 교류평가',
+          description: '팀장·부서장급 상호 간 협업, 소통과 조직 운영 태도를 평가합니다.',
+          icon: 'fa-user-tie', tone: 'purple'
+        },
         leadership: {
-          key: 'leadership', title: '리더십 평가',
+          key: 'leadership', title: '부서장 평가',
           description: '팀원 관점에서 팀장·부서장의 리더십, 소통, 공정한 의사결정과 구성원 육성을 평가합니다.',
           icon: 'fa-people-group', tone: 'purple'
         },
         internal: {
-          key: 'internal', title: '동일 부서 내부 평가',
+          key: 'internal', title: '내부 평가',
           description: '같은 소속사·부서에서 직접 관찰한 업무수행, 책임감과 협업 행동을 평가합니다.',
           icon: 'fa-building-user', tone: 'teal'
         },
-        exchange: {
-          key: 'exchange', title: '부서·계열사 교류 평가',
-          description: '다른 부서 또는 계열사와의 실제 업무 교류를 바탕으로 의사소통, 지원과 협업 태도를 평가합니다.',
+        internal_exchange: {
+          key: 'internal_exchange', title: '내부 교류평가',
+          description: '같은 소속사의 다른 부서와 수행한 업무 협력과 소통을 평가합니다.',
           icon: 'fa-arrows-left-right-to-line', tone: 'blue'
+        },
+        external: {
+          key: 'external', title: '외부 평가',
+          description: '다른 소속사 구성원과 수행한 업무 협력과 소통을 평가합니다.',
+          icon: 'fa-building-circle-arrow-right', tone: 'blue'
         }
       }[relationshipKey];
     }
@@ -5182,21 +5085,16 @@
     function resolveEvaluationStage(evaluator, target) {
       const targetContext = `${target?.company || ''} ${target?.dept || ''} ${target?.workplace || ''}`;
       const relationship = resolveEvaluationRelationship(evaluator, target).key;
-      const targetRole = String(target?.role || '');
-      const evaluatorRole = String(evaluator?.role || '');
-      const targetIsLeader = ['팀장급', '부서실장급', '임원급'].includes(target?.type)
-        || /(팀장|부장|실장|소장|지점장|센터장|본부장|임원|이사|상무|전무|대표)/.test(targetRole);
-      const evaluatorIsExecutive = evaluator?.sysRole === '임원' || evaluator?.type === '임원급'
-        || /(임원|이사|상무|전무|대표)/.test(evaluatorRole);
-      const evaluatorIsLeader = evaluatorIsExecutive || ['팀장급', '부서실장급'].includes(evaluator?.type)
-        || /(팀장|부장|실장|소장|지점장|센터장|본부장)/.test(evaluatorRole);
+      const targetIsLeader = ['팀장/부서장급', '팀장급', '부서실장급'].includes(target?.type);
+      const evaluatorIsExecutive = evaluator?.sysRole === '임원' || evaluator?.type === '임원급';
+      const evaluatorIsLeader = ['팀장/부서장급', '팀장급', '부서실장급'].includes(evaluator?.type);
 
       if (targetIsLeader) {
         if (evaluatorIsExecutive) return { track: '팀장·부서장급 리더십 평가', stage: 3, total: 3, label: '임원 최종 평가 및 종결' };
-        if (relationship === 'exchange' || evaluatorIsLeader) return { track: '팀장·부서장급 리더십 평가', stage: 2, total: 3, label: '타 부서장 간 협업 태스크 교류 평가' };
+        if (relationship === 'leadership_exchange' || evaluatorIsLeader) return { track: '팀장·부서장급 리더십 평가', stage: 2, total: 3, label: '타 부서장 간 협업 태스크 교류 평가' };
         return { track: '팀장·부서장급 리더십 평가', stage: 1, total: 3, label: '소속 부서원 상향 리더십 평가' };
       }
-      if (targetContext.includes('정비')) {
+      if (target?.type === '정비사') {
         if (evaluatorIsExecutive) return { track: '정비사 파트 실무 평가', stage: 3, total: 3, label: '임원 최종 평가 및 종결' };
         if (evaluatorIsLeader) return { track: '정비사 파트 실무 평가', stage: 2, total: 3, label: '부서장·현장 직접 평가' };
         return { track: '정비사 파트 실무 평가', stage: 1, total: 3, label: '차량·안전실 내부 실무 평가' };
@@ -5259,7 +5157,7 @@
       if (isAdminOrExecutive && currentSelectedEmpTrackFilter !== '전체') {
         targetEmployees = targetEmployees.filter(emp => {
           const isTechnician = emp.dept.includes('정비');
-          const isManager = emp.type === '팀장급' || emp.role.includes('팀장') || emp.role.includes('부장');
+          const isManager = ['팀장/부서장급', '팀장급', '부서실장급'].includes(emp.type);
           const isBranch = emp.workplace.includes('영업소') || emp.dept.includes('영업소');
 
           if (currentSelectedEmpTrackFilter === '정비사') return isTechnician;
@@ -5290,8 +5188,10 @@
 
       const relationshipGroupDefinitions = [
         { key: 'internal', tone: 'teal' },
-        { key: 'exchange', tone: 'blue' },
-        { key: 'leadership', tone: 'purple' }
+        { key: 'internal_exchange', tone: 'blue' },
+        { key: 'external', tone: 'blue' },
+        { key: 'leadership', tone: 'purple' },
+        { key: 'leadership_exchange', tone: 'purple' }
       ];
       targetEmployees.forEach(emp => {
         emp.evaluationRelationship = resolveEvaluationRelationship(loggedInUserObj, emp);
@@ -5351,7 +5251,7 @@
 
         // Resolve Pipeline Track Info & Sequential Stage Unlocking
         const isTechnician = emp.dept.includes('정비');
-        const isManager = emp.type === '팀장급' || emp.role.includes('팀장') || emp.role.includes('부장');
+        const isManager = ['팀장/부서장급', '팀장급', '부서실장급'].includes(emp.type);
         const isBranch = emp.workplace.includes('영업소') || emp.dept.includes('영업소');
 
         const stageInfo = resolveEvaluationStage(loggedInUserObj, emp);
@@ -5494,15 +5394,7 @@
       const emp = currentTargetEmp;
       if (!emp) return;
 
-      const dept = emp.dept || '인사총무';
-      const isManager = emp.type === '팀장급' || emp.role.includes('팀장') || emp.role.includes('부장');
-      const isBranch = emp.workplace.includes('영업소') || emp.dept.includes('영업소');
-      const isTechnician = emp.dept.includes('정비');
-
-      let targetTrackName = "본사 팀원급";
-      if (isTechnician) targetTrackName = "정비사";
-      else if (isManager) targetTrackName = "팀장/부서장급";
-      else if (isBranch) targetTrackName = "영업소";
+      const targetTrack = questionTrackForTarget(emp);
 
       // Dynamically query matching questions from customQuestionsDb
       const selectedCycleId = Number(emp.cycleId);
@@ -5511,10 +5403,8 @@
         // Cycle check
         if (q.cycleId && String(q.cycleId) !== String(selectedCycleId)) return false;
 
-        const trackMatch = (q.targetTrack === '기본 필수질문') || (q.targetTrack === targetTrackName);
-        const deptMatch = (!q.targetDept || q.targetDept === '전체') || emp.dept.includes(q.targetDept);
-
-        return trackMatch && deptMatch;
+        const questionTrack = normalizeQuestionTrack(q.targetTrack);
+        return questionTrack === 'all' || questionTrack === targetTrack.key;
       });
 
       currentMatchedScoringQuestionIds = matchedQuestions.filter(q => q.type !== '서술형').map(q => Number(q.id));
@@ -5526,7 +5416,7 @@
         <div class="flex items-center gap-2">
           <span class="bg-brandTeal/20 text-brandTeal border border-brandTeal/40 px-2.5 py-0.5 rounded-full font-bold text-[10px]">SMART DYNAMIC MATCH</span>
           <span class="font-bold text-white">
-            적용 대상 트랙: <strong class="text-brandGold font-black">${targetTrackName}</strong> (${dept} • ${emp.workplace})
+            적용 대상 사원구분: <strong class="text-brandGold font-black">${targetTrack.label}</strong>
           </span>
         </div>
         <span class="text-slate-300 text-[11px]">
@@ -5538,7 +5428,7 @@
       if (matchedQuestions.length === 0) {
         const emptyNotice = document.createElement('div');
         emptyNotice.className = 'p-6 bg-slate-900/60 rounded-xl border border-slate-800 text-center text-slate-400 text-xs';
-        emptyNotice.innerText = '해당 피평가자의 직군/부서에 등록된 5지선다 질문이 없습니다. 관리자에게 질문 구성을 요청해 주세요.';
+        emptyNotice.innerText = '해당 피평가자의 사원구분에 등록된 질문이 없습니다. 관리자에게 질문 구성을 요청해 주세요.';
         container.appendChild(emptyNotice);
         return;
       }
@@ -5771,7 +5661,8 @@
       document.getElementById('edit-user-dept').value = user.dept;
       document.getElementById('edit-user-workplace').value = user.workplace;
       document.getElementById('edit-user-role').value = user.role;
-      document.getElementById('edit-user-type').value = user.type;
+      document.getElementById('edit-user-type').value =
+        ['팀장급', '부서실장급'].includes(user.type) ? '팀장/부서장급' : user.type;
       document.getElementById('edit-user-sysrole').value = user.sysRole || '일반사용자';
       document.getElementById('edit-user-joindate').value = user.joindate;
       document.getElementById('edit-user-phone').value = user.phone;
@@ -6345,7 +6236,7 @@
     function filterQuestionTrack(trackName) {
       currentSelectedQuestionTrack = trackName;
 
-      ['전체', '기본 필수질문', '본사 팀원급', '팀장/부서장급', '영업소', '정비사'].forEach(t => {
+      ['전체', '본사 팀원급', '팀장/부서장급', '정비사'].forEach(t => {
         const btn = document.getElementById(`q-track-tab-${t}`);
         if (btn) {
           if (t === trackName) {
@@ -6443,8 +6334,6 @@
       }
       const category = document.getElementById('q-category-in').value;
       const targetTrack = normalizeQuestionTrack(document.getElementById('q-track-in').value);
-      const targetDept = document.getElementById('q-dept-in').value;
-      const audience = document.getElementById('q-audience-in').value;
       const type = document.getElementById('q-type-in').value;
       const weight = parseFloat(document.getElementById('q-weight-in').value) || 0;
       const text = document.getElementById('q-text-in').value.trim();
@@ -6454,7 +6343,7 @@
       try {
         await callAdminStateApi({
           action: 'question_create', cycle_id: cycleId, category, target_track: targetTrack,
-          target_dept: targetDept, audience, type, weight, max_score: 5, text, required, is_default
+          target_dept: '전체', audience: 'all', type, weight, max_score: 5, text, required, is_default
         });
         announceCentralChange();
         await loadFromServer();
@@ -6477,7 +6366,6 @@
       document.getElementById('edit-q-id').value = q.id;
       document.getElementById('edit-q-category').value = q.category || '성과';
       document.getElementById('edit-q-track').value = q.targetTrack || '기본 필수질문';
-      document.getElementById('edit-q-dept').value = q.targetDept || '전체';
       document.getElementById('edit-q-type').value = q.type || '5지선다형';
       document.getElementById('edit-q-text').value = q.text || '';
       document.getElementById('edit-q-weight').value = q.weight !== undefined ? q.weight : 10.0;
@@ -6507,7 +6395,7 @@
         action: 'question_update', id: q.id, cycle_id: q.cycleId || q.cycle_id,
         category: document.getElementById('edit-q-category').value,
         target_track: document.getElementById('edit-q-track').value,
-        target_dept: document.getElementById('edit-q-dept').value,
+        target_dept: '전체', audience: 'all',
         type: document.getElementById('edit-q-type').value,
         text: document.getElementById('edit-q-text').value.trim(),
         weight: parseFloat(document.getElementById('edit-q-weight').value) || 0,
@@ -6546,13 +6434,20 @@
 
     // CSV Template Download & Upload Handler for Questions
     function downloadCSVQuestionTemplate() {
-      const csvHeader = "\uFEFF카테고리,적용직군,적용부서,질문유형,가중치(%),질문내용,필수여부,기본질문여부\n";
+      const csvHeader = "\uFEFF카테고리,사원구분,질문유형,가중치(%),질문내용,필수여부,기본질문여부\n";
       const sampleRows = [
-        "성과,본사 팀원급,경리,5지선다형,33.3,월간 정산 마감 준수 및 결산 정확도가 우수한가요?,Y,Y\n",
-        "협업,본사 팀원급,인사총무,5지선다형,33.3,유관부서 긴급 요청 시 원활하고 친절하게 협업하나요?,Y,Y\n",
-        "성장,팀장/부서장급,전체,5지선다형,33.4,팀원들의 성장을 이끄는 리더십과 피드백 전달력이 탁월한가요?,Y,Y\n",
-        "조화,영업소,전체,5지선다형,10.0,영업소 현장 동료 및 조원들과의 상호 조화와 안전 수칙을 준수하나요?,Y,Y\n",
-        "성과,정비사,정비,5지선다형,40.0,차량 정비 점검 완결성 및 긴급 정비 처리 속도가 우수한가요?,Y,Y\n"
+        "성과,팀원급,5지선다형,25,담당 업무 목표를 책임감 있게 달성하나요?,Y,Y\n",
+        "협업,팀원급,5지선다형,25,동료 및 유관부서와 원활하게 협업하나요?,Y,Y\n",
+        "성장,팀원급,5지선다형,25,업무 역량 향상을 위해 지속적으로 노력하나요?,Y,Y\n",
+        "조화,팀원급,5지선다형,25,조직의 규칙을 지키며 긍정적인 관계를 형성하나요?,Y,Y\n",
+        "리더십,팀장/부서장급,5지선다형,25,명확한 방향을 제시하고 책임 있게 의사결정하나요?,Y,Y\n",
+        "팀원 육성,팀장/부서장급,5지선다형,25,구성원의 성장을 지원하고 적절한 피드백을 제공하나요?,Y,Y\n",
+        "소통,팀장/부서장급,5지선다형,25,구성원 및 유관부서와 투명하게 소통하나요?,Y,Y\n",
+        "전략적 사고,팀장/부서장급,5지선다형,25,조직 목표를 고려하여 우선순위와 실행 방향을 정하나요?,Y,Y\n",
+        "역량 개발,정비사,5지선다형,25,정비 기술과 관련 지식을 지속적으로 향상하나요?,Y,Y\n",
+        "정비 능력,정비사,5지선다형,25,점검과 정비를 정확하고 신속하게 수행하나요?,Y,Y\n",
+        "책임/주인의식,정비사,5지선다형,25,차량 상태와 정비 결과에 책임감을 보이나요?,Y,Y\n",
+        "안전의식,정비사,5지선다형,25,작업 절차와 안전수칙을 철저히 준수하나요?,Y,Y\n"
       ].join("");
 
       const blob = new Blob([csvHeader + sampleRows], { type: 'text/csv;charset=utf-8;' });
@@ -6577,11 +6472,11 @@
           if (!cycleId) throw new Error('질문을 등록할 평가 주기를 선택해 주세요.');
           const questions = rows.slice(1).map(cols => ({
             cycle_id: cycleId,
-            category: cols[0] || '성과', target_track: cols[1] || '기본 필수질문',
-            target_dept: cols[2] || '전체', type: cols[3] || '5지선다형',
-            weight: Number(cols[4]), text: cols[5],
-            required: (cols[6] || 'Y').toUpperCase() === 'Y',
-            is_default: (cols[7] || 'Y').toUpperCase() === 'Y'
+            category: cols[0] || '성과', target_track: cols[1] || '팀원급',
+            target_dept: '전체', audience: 'all', type: cols[2] || '5지선다형',
+            weight: Number(cols[3]), text: cols[4],
+            required: (cols[5] || 'Y').toUpperCase() === 'Y',
+            is_default: (cols[6] || 'Y').toUpperCase() === 'Y'
           }));
           const { data: sessionData } = await supabaseClient.auth.getSession();
           if (!sessionData.session) throw new Error('로그인이 필요합니다.');

@@ -1,5 +1,4 @@
-const LEADER_TYPES = new Set(['\uD300\uC7A5\uAE09', '\uBD80\uC11C\uC2E4\uC7A5\uAE09', '\uC784\uC6D0\uAE09']);
-const LEADER_ROLE_PATTERN = /(\uD300\uC7A5|\uBD80\uC7A5|\uC2E4\uC7A5|\uBCF8\uBD80\uC7A5|\uC18C\uC7A5|\uC9C0\uC810\uC7A5|\uC13C\uD130\uC7A5|\uC774\uC0AC|\uC0C1\uBB34|\uC804\uBB34|\uB300\uD45C|\uC784\uC6D0)/;
+const LEADER_TYPES = new Set(['\uD300\uC7A5/\uBD80\uC11C\uC7A5\uAE09', '\uD300\uC7A5\uAE09', '\uBD80\uC11C\uC2E4\uC7A5\uAE09']);
 export const TRACKS = Object.freeze({ headquarters_member: 'headquarters_member', headquarters_leader: 'headquarters_leader', branch_employee: 'branch_employee', mechanic: 'mechanic' });
 export const DEFAULT_TRACK = 'all';
 export const TRACK_ALIASES = Object.freeze({
@@ -8,13 +7,14 @@ export const TRACK_ALIASES = Object.freeze({
   '전사 공통': DEFAULT_TRACK,
   headquarters_member: TRACKS.headquarters_member,
   '본사 팀원급': TRACKS.headquarters_member,
+  '팀원급': TRACKS.headquarters_member,
   headquarters_leader: TRACKS.headquarters_leader,
   '팀장/부서장급': TRACKS.headquarters_leader,
   '팀장·부서장급': TRACKS.headquarters_leader,
   '팀장급': TRACKS.headquarters_leader,
-  branch_employee: TRACKS.branch_employee,
-  '영업소': TRACKS.branch_employee,
-  '영업소 직원': TRACKS.branch_employee,
+  branch_employee: TRACKS.headquarters_member,
+  '영업소': TRACKS.headquarters_member,
+  '영업소 직원': TRACKS.headquarters_member,
   mechanic: TRACKS.mechanic,
   '정비사': TRACKS.mechanic
 });
@@ -26,8 +26,7 @@ export const TRACK_CATEGORIES = Object.freeze({
 });
 export function isLeader(user = {}) {
   const employeeType = String(user.type || '').trim();
-  const role = String(user.role || '');
-  return LEADER_TYPES.has(employeeType) || LEADER_ROLE_PATTERN.test(role);
+  return LEADER_TYPES.has(employeeType);
 }
 
 export function normalizeTrack(track, fallback = DEFAULT_TRACK) {
@@ -35,12 +34,9 @@ export function normalizeTrack(track, fallback = DEFAULT_TRACK) {
 }
 
 export function targetTrack(user = {}) {
-  const workplaceText = `${user.company || ''} ${user.dept || ''} ${user.workplace || ''}`;
-  // Leadership is a role, not a workplace. A branch or maintenance leader
-  // therefore receives the leadership question set before job-area routing.
-  if (isLeader(user)) return TRACKS.headquarters_leader;
-  if (workplaceText.includes('\uC815\uBE44')) return TRACKS.mechanic;
-  if (workplaceText.includes('\uC601\uC5C5\uC18C')) return TRACKS.branch_employee;
+  const employeeType = String(user.type || '').trim();
+  if (employeeType === '\uC815\uBE44\uC0AC') return TRACKS.mechanic;
+  if (LEADER_TYPES.has(employeeType)) return TRACKS.headquarters_leader;
   return TRACKS.headquarters_member;
 }
 
@@ -52,7 +48,7 @@ export function relationshipType(evaluator = {}, target = {}) {
   const evaluatorCompany = String(evaluator.company || '').trim();
   const targetCompany = String(target.company || '').trim();
 
-  if (evaluatorIsLeader && targetIsLeader && evaluatorDepartment !== targetDepartment) return 'exchange';
+  if (evaluatorIsLeader && targetIsLeader) return 'exchange';
   if (targetIsLeader) return 'leadership';
   return evaluatorCompany === targetCompany && evaluatorDepartment === targetDepartment ? 'internal' : 'exchange';
 }

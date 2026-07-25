@@ -6,6 +6,7 @@ const send = (res, status, payload) => res.status(status).json(payload);
 
 const APPROVAL_NOT_REQUESTED = 'not_requested';
 const DRAFT_CYCLE_STATUSES = new Set(['\uCD08\uC548', 'draft', 'not_started']);
+const PAUSED_CYCLE_STATUSES = new Set(['\uC77C\uC2DC\uC815\uC9C0', 'paused']);
 
 export function isMutableDraftCycle(cycle = {}) {
   return DRAFT_CYCLE_STATUSES.has(String(cycle.status || '').trim())
@@ -16,8 +17,8 @@ export function normalizeQuestionRows(rawQuestions) {
   return rawQuestions.map(raw => ({
     cycle_id: Number(raw.cycle_id), category: String(raw.category || '').trim(),
     target_track: normalizeTrack(raw.target_track),
-    target_dept: String(raw.target_dept || '\uC804\uCCB4').trim(), type: String(raw.type || '5\uC9C0\uC120\uB2E4\uD615').trim(),
-    audience: String(raw.audience || 'all').trim(), weight: Number(raw.weight), text: String(raw.text || '').trim(),
+    target_dept: '\uC804\uCCB4', type: String(raw.type || '5\uC9C0\uC120\uB2E4\uD615').trim(),
+    audience: 'all', weight: Number(raw.weight), text: String(raw.text || '').trim(),
     required: raw.required !== false, is_default: raw.is_default !== false, max_score: 5
   }));
 }
@@ -30,11 +31,23 @@ export async function assertQuestionCyclesMutable(service, cycleIds) {
   const response = await service.from('evaluation_cycles').select('id,status,internal_approval_status').in('id', uniqueCycleIds);
   if (response.error) throw response.error;
   const byId = new Map((response.data || []).map(cycle => [Number(cycle.id), cycle]));
+  const pausedCycleIds = [];
   for (const cycleId of uniqueCycleIds) {
     const cycle = byId.get(cycleId);
     if (!cycle) throw Object.assign(new Error(`\uD3C9\uAC00 \uC8FC\uAE30 #${cycleId}\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.`), { status: 404 });
-    if (!isMutableDraftCycle(cycle)) {
-      throw Object.assign(new Error('\uCD08\uC548(\uBBF8\uC2DC\uC791) \uC0C1\uD0DC\uC758 \uD3C9\uAC00 \uC8FC\uAE30\uC5D0\uC11C\uB9CC \uC9C8\uBB38\uC744 \uBCC0\uACBD\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4.'), { status: 409 });
+    if (isMutableDraftCycle(cycle)) continue;
+    if (PAUSED_CYCLE_STATUSES.has(String(cycle.status || '').trim())
+        && String(cycle.internal_approval_status || APPROVAL_NOT_REQUESTED) === APPROVAL_NOT_REQUESTED) {
+      pausedCycleIds.push(cycleId);
+      continue;
+    }
+    throw Object.assign(new Error('\uCD08\uC548 \uB610\uB294 \uC544\uC9C1 \uC81C\uCD9C\uC774 \uC5C6\uB294 \uC77C\uC2DC\uC815\uC9C0 \uC8FC\uAE30\uC5D0\uC11C\uB9CC \uC9C8\uBB38\uC744 \uBCC0\uACBD\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4.'), { status: 409 });
+  }
+  if (pausedCycleIds.length) {
+    const submitted = await service.from('evaluations').select('id', { count: 'exact', head: true }).in('cycle_id', pausedCycleIds);
+    if (submitted.error) throw submitted.error;
+    if (submitted.count > 0) {
+      throw Object.assign(new Error('\uC774\uBBF8 \uC81C\uCD9C\uB41C \uD3C9\uAC00\uAC00 \uC788\uC5B4 \uC77C\uC2DC\uC815\uC9C0 \uC8FC\uAE30\uC758 \uC9C8\uBB38\uC744 \uBCC0\uACBD\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.'), { status: 409 });
     }
   }
   return uniqueCycleIds;
@@ -63,9 +76,6 @@ export default async function handler(req, res) {
     await assertQuestionCyclesMutable(service, rows.map(row => row.cycle_id));
     const results = [];
     for (const row of rows) {
-      if (!['all', 'internal', 'exchange', 'leadership'].includes(row.audience)) {
-        results.push({ text: row.text, status: 'failed', message: '질문 대상 관계는 all, internal, exchange, leadership 중 하나여야 합니다.' }); continue;
-      }
       if (!row.cycle_id || !row.category || !row.text || !Number.isFinite(row.weight) || row.weight < 0 || row.weight > 100) {
         results.push({ text: row.text, status: 'failed', message: '필수값 또는 가중치 오류' }); continue;
       }

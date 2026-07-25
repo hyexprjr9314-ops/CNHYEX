@@ -14,6 +14,27 @@ function cycleService(cycles) {
   };
 }
 
+function mutableCycleService(cycles, submitted = 0) {
+  return {
+    from(table) {
+      if (table === 'evaluation_cycles') {
+        return {
+          select() { return this; },
+          in() { return Promise.resolve({ data: cycles, error: null }); }
+        };
+      }
+      assert.equal(table, 'evaluations');
+      return {
+        select(_columns, options) {
+          assert.equal(options.head, true);
+          return this;
+        },
+        in() { return Promise.resolve({ count: submitted, error: null }); }
+      };
+    }
+  };
+}
+
 test('CSV question rows normalize the same defaults as the question editor', () => {
   const [row] = normalizeQuestionRows([{ cycle_id: '7', category: '성과', weight: '25', text: '질문' }]);
   assert.deepEqual(row, {
@@ -33,13 +54,21 @@ test('CSV question import rejects a closed or approval-pending cycle before writ
   );
 });
 
-test('CSV question import accepts only a known draft cycle', async () => {
+test('CSV question import accepts a draft or an untouched paused cycle', async () => {
   assert.deepEqual(
     await assertQuestionCyclesMutable(cycleService([{ id: 7, status: '초안', internal_approval_status: 'not_requested' }]), [7, '7']),
     [7]
   );
   await assert.rejects(
     () => assertQuestionCyclesMutable(cycleService([{ id: 7, status: '진행중', internal_approval_status: 'not_requested' }]), [7]),
+    error => error.status === 409
+  );
+  assert.deepEqual(
+    await assertQuestionCyclesMutable(mutableCycleService([{ id: 7, status: '일시정지', internal_approval_status: 'not_requested' }]), [7]),
+    [7]
+  );
+  await assert.rejects(
+    () => assertQuestionCyclesMutable(mutableCycleService([{ id: 7, status: '일시정지', internal_approval_status: 'not_requested' }], 1), [7]),
     error => error.status === 409
   );
   await assert.rejects(() => assertQuestionCyclesMutable(cycleService([]), [7]), error => error.status === 404);

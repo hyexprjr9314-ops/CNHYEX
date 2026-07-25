@@ -83,13 +83,10 @@ function questionPayload(body) {
     cycle_id: Number(body.cycle_id || body.cycleId), category: String(body.category || '').trim(),
     text: String(body.text || '').trim(), weight: Number(body.weight),
     type: String(body.type || '5지선다형').trim(), target_track: normalizeTrack(body.target_track || body.targetTrack),
-    target_dept: String(body.target_dept || body.targetDept || '전체').trim(),
-    audience: String(body.audience || 'all').trim(), required: body.required !== false,
+    target_dept: '전체',
+    audience: 'all', required: body.required !== false,
     is_default: body.is_default !== false, max_score: Number(body.max_score || 5), updated_at: new Date().toISOString()
   };
-  if (!['all', 'internal', 'exchange', 'leadership'].includes(row.audience)) {
-    throw Object.assign(new Error('질문 대상 관계는 전체, 내부, 교류, 리더십 중 하나여야 합니다.'), { status: 400 });
-  }
   if (!row.cycle_id || !row.category || !row.text || !Number.isFinite(row.weight) || row.weight < 0 || row.weight > 100) {
     throw Object.assign(new Error('질문의 평가 주기, 카테고리, 내용 및 0~100 가중치가 필요합니다.'), { status: 400 });
   }
@@ -197,6 +194,21 @@ export async function assertGlobalConfigurationMutable(service) {
   if (hasLockedCurrentCycle) {
     throw Object.assign(new Error('진행 중이거나 승인 절차가 시작된 평가 주기가 있어 전체 가중치를 변경할 수 없습니다.'), { status: 409 });
   }
+}
+
+async function assertQuestionCycleMutable(service, cycleId) {
+  const cycle = await service.from('evaluation_cycles')
+    .select('id,status,internal_approval_status')
+    .eq('id', cycleId)
+    .single();
+  if (cycle.error) throw cycle.error;
+  if (isMutableDraftCycle(cycle.data)) return;
+  if (cycle.data.status === '일시정지' && cycle.data.internal_approval_status === 'not_requested') {
+    const submitted = await service.from('evaluations').select('id', { count: 'exact', head: true }).eq('cycle_id', cycleId);
+    if (submitted.error) throw submitted.error;
+    if (submitted.count === 0) return;
+  }
+  throw Object.assign(new Error('초안 또는 아직 제출이 없는 일시정지 주기에서만 질문을 변경할 수 있습니다.'), { status: 409 });
 }
 
 async function generateAutoMatchings(service, cycleId) {
@@ -509,9 +521,12 @@ export default async function handler(req, res) {
     if (ADMIN_ONLY.has(action) && profile.sys_role !== ROLES.admin) return send(res, 403, { error: '인사관리자 전용 기능입니다.' });
     const guardedCycleId = Number(req.body?.cycle_id || req.body?.cycleId || req.body?.id);
     let matchingMode = null;
-    if (['cycle_update', 'cycle_delete', 'cycle_activate', 'question_create', 'question_update', 'question_delete'].includes(action)) {
-      const questionCycleId = action.startsWith('question_') ? Number(req.body?.cycle_id || req.body?.cycleId) : guardedCycleId;
-      if (questionCycleId) await assertCycleMutable(service, questionCycleId);
+    if (['cycle_update', 'cycle_delete', 'cycle_activate'].includes(action)) {
+      if (guardedCycleId) await assertCycleMutable(service, guardedCycleId);
+    }
+    if (['question_create', 'question_update', 'question_delete'].includes(action)) {
+      const questionCycleId = Number(req.body?.cycle_id || req.body?.cycleId);
+      if (questionCycleId) await assertQuestionCycleMutable(service, questionCycleId);
     }
     if (['matching_toggle', 'matching_replace', 'matching_generate', 'matching_mode_update'].includes(action) && guardedCycleId) {
       matchingMode = await matchingCycleMode(service, guardedCycleId, action, req.body);
@@ -587,16 +602,16 @@ export default async function handler(req, res) {
     } else if (action === 'question_update') {
       const existingQuestion = await service.from('evaluation_questions').select('cycle_id').eq('id', Number(req.body.id)).single();
       if (existingQuestion.error) throw existingQuestion.error;
-      await assertCycleMutable(service, existingQuestion.data.cycle_id);
+      await assertQuestionCycleMutable(service, existingQuestion.data.cycle_id);
       const requestedCycleId = Number(req.body?.cycle_id || req.body?.cycleId);
       if (requestedCycleId && requestedCycleId !== Number(existingQuestion.data.cycle_id)) {
-        await assertCycleMutable(service, requestedCycleId);
+        await assertQuestionCycleMutable(service, requestedCycleId);
       }
       result = await service.from('evaluation_questions').update(questionPayload(req.body)).eq('id', Number(req.body.id)).select().single();
     } else if (action === 'question_delete') {
       const existingQuestion = await service.from('evaluation_questions').select('cycle_id').eq('id', Number(req.body.id)).single();
       if (existingQuestion.error) throw existingQuestion.error;
-      await assertCycleMutable(service, existingQuestion.data.cycle_id);
+      await assertQuestionCycleMutable(service, existingQuestion.data.cycle_id);
       const used = await service.from('evaluation_answers').select('id', { count: 'exact', head: true }).eq('question_id', Number(req.body.id));
       if (used.error) throw used.error;
       if (used.count > 0) return send(res, 409, { error: '제출 답변이 연결된 질문은 삭제할 수 없습니다.' });
