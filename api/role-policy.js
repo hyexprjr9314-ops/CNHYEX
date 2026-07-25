@@ -1,8 +1,8 @@
 export const ROLES = Object.freeze({ admin: '\uAD00\uB9AC\uC790', executive: '\uC784\uC6D0' });
 const ADMIN_SUBTABS = Object.freeze(['dashboard', 'summary', 'history', 'settings']);
 const EXECUTIVE_SUBTABS = Object.freeze(['summary', 'history']);
-const SHARED_PRIVILEGED_ACTIONS = new Set(['adjust_final', 'cancel_adjustment']);
-const EXECUTIVE_ACTIONS = new Set(['publish', 'decide_internal_approval']);
+const SHARED_PRIVILEGED_ACTIONS = new Set(['adjust_final', 'cancel_adjustment', 'publish']);
+const EXECUTIVE_ACTIONS = new Set(['decide_internal_approval']);
 const ADMIN_ACTIONS = new Set(['request_internal_approval']);
 
 export function roleLevel(role) {

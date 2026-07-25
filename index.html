@@ -7126,9 +7126,10 @@
       const button = document.getElementById('admin-publish-toggle-btn');
       const label = document.getElementById('admin-publish-status-text');
       if (!button || !label) return;
-      const isExecutive = checkUserRole(currentLoggedInUser).isExecutive;
-      button.classList.toggle('hidden', !isExecutive);
-      if (!isExecutive) return;
+      const roleInfo = checkUserRole(currentLoggedInUser);
+      const canManagePublication = roleInfo.isAdmin || roleInfo.isExecutive;
+      button.classList.toggle('hidden', !canManagePublication);
+      if (!canManagePublication) return;
       const cycle = selectedCycle || cyclesDb.find(row => Number(row.id) === Number(currentSelectedSummaryCycleId));
       const canPublish = isResultPublished || (
         cycle?.status === '마감/보관됨'
