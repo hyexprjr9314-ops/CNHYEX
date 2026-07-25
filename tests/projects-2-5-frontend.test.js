@@ -12,6 +12,14 @@ test('bulk action buttons keep white labels and icons in the white theme', async
   }
 });
 
+test('summary adjustment and grade-mail actions keep white labels and icons', async () => {
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  assert.match(html, /\.summary-action-white,[\s\S]*?\.summary-action-white \*[\s\S]*?color: #FFFFFF !important/);
+  assert.match(html, /id="bulk-grade-mail-btn"[\s\S]*?class="summary-action-white/);
+  assert.match(html, /class="summary-action-white bg-indigo-600[\s\S]*?>최종 점수 조정<\/button>/);
+  assert.match(html, /sendGradeNoticeEmail[\s\S]*?class="summary-action-white ml-1/);
+});
+
 test('internal approval UI collects an ordered executive line and supports recall', async () => {
   const index = await readIndex();
   assert.match(index, /id="modal-approval-line"/);

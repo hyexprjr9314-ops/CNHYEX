@@ -807,6 +807,10 @@
     [class~="bg-purple-600"] * {
       color: #FFFFFF !important;
     }
+    .summary-action-white,
+    .summary-action-white * {
+      color: #FFFFFF !important;
+    }
     #employee-card-grid .glass-card:hover {
       border-color: var(--brand) !important;
     }
@@ -2014,7 +2018,7 @@
                 <i class="fa-solid fa-file-csv"></i>
                 <span>선택 주기 전체 리포트 CSV</span>
               </button>
-              <button id="bulk-grade-mail-btn" type="button" onclick="sendBulkGradeNoticeEmails()" class="bg-violet-600 hover:bg-violet-500 text-white font-bold px-3.5 py-2 rounded-xl transition text-xs flex items-center gap-2 shadow-lg shadow-violet-900/30">
+              <button id="bulk-grade-mail-btn" type="button" onclick="sendBulkGradeNoticeEmails()" class="summary-action-white bg-violet-600 hover:bg-violet-500 text-white font-bold px-3.5 py-2 rounded-xl transition text-xs flex items-center gap-2 shadow-lg shadow-violet-900/30">
                 <i class="fa-solid fa-envelopes-bulk"></i>
                 <span>평가 결과 메일 일괄 발송</span>
               </button>
@@ -6729,7 +6733,7 @@
         }
         if (!roleInfo.isAdmin && !roleInfo.isExecutive) return '';
         if (scoreData.is_adjusted) return `<button onclick="event.stopPropagation(); openScoreAdjustmentModal(usersDb.find(u=>u.id===${emp.id}), ${scorePath})" class="adjust-action-edit text-xs px-2.5 py-1 rounded font-bold border transition-colors">조정 수정</button><button onclick="event.stopPropagation(); openScoreAdjustmentCancelModal(usersDb.find(u=>u.id===${emp.id}), ${scorePath})" class="adjust-action-cancel text-xs px-2.5 py-1 rounded font-bold border transition-colors">조정 취소</button>`;
-        return `<button onclick="event.stopPropagation(); openScoreAdjustmentModal(usersDb.find(u=>u.id===${emp.id}), ${scorePath})" class="bg-indigo-600 hover:bg-indigo-500 text-xs px-2.5 py-1 rounded text-white font-bold border border-indigo-400 transition-colors">최종 점수 조정</button>`;
+        return `<button onclick="event.stopPropagation(); openScoreAdjustmentModal(usersDb.find(u=>u.id===${emp.id}), ${scorePath})" class="summary-action-white bg-indigo-600 hover:bg-indigo-500 text-xs px-2.5 py-1 rounded text-white font-bold border border-indigo-400 transition-colors">최종 점수 조정</button>`;
       }
 
       function renderAdminSummaryTable() {
@@ -6830,7 +6834,7 @@
         const canViewDetails = currentLoggedInUser && (currentLoggedInUser.isAdmin || currentLoggedInUser.isExecutive);
         const scoreActionHtml = buildSummaryScoreAction(emp, empScoreData, isEvalOnly);
         const gradeMailActionHtml = checkUserRole(currentLoggedInUser).isAdmin && empScoreData?.grade
-          ? `<button type="button" ${canSendGradeMail ? '' : 'disabled'} onclick="event.stopPropagation(); sendGradeNoticeEmail(${emp.id}, event.currentTarget)" class="ml-1 rounded border border-violet-400 bg-violet-600 px-2.5 py-1 text-xs font-bold text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-40" title="${canSendGradeMail ? `${emp.name}에게 최종 평가등급 메일 발송` : '전자승인과 최종 결과 공개 완료 후 발송할 수 있습니다.'}"><i class="fa-solid fa-envelope"></i><span class="sr-only">평가 결과 메일 발송</span></button>`
+          ? `<button type="button" ${canSendGradeMail ? '' : 'disabled'} onclick="event.stopPropagation(); sendGradeNoticeEmail(${emp.id}, event.currentTarget)" class="summary-action-white ml-1 rounded border border-violet-400 bg-violet-600 px-2.5 py-1 text-xs font-bold text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-40" title="${canSendGradeMail ? `${emp.name}에게 최종 평가등급 메일 발송` : '전자승인과 최종 결과 공개 완료 후 발송할 수 있습니다.'}"><i class="fa-solid fa-envelope"></i><span class="sr-only">평가 결과 메일 발송</span></button>`
           : '';
 
         
