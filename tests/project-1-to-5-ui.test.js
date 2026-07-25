@@ -22,6 +22,11 @@ test('approval, bulk mail, and final grade controls are connected in their inten
   assert.match(index, /hasClosedArchiveForCycle\(cycle\.id\)/);
   assert.match(index, /최종 결과 확정과 전자결재 요청을 함께 처리합니다/);
   assert.match(index, /const publishedHistoryDb = evaluationHistoryDb\.filter/);
+  assert.match(index, /function toggleArchivedHistory\(cycleId\)/);
+  assert.match(index, /function downloadArchivedCycleCSV\(cycleId\)/);
+  assert.match(index, /String\(right\.closedAt \|\| ''\)\.localeCompare\(String\(left\.closedAt \|\| ''\)\)/);
+  assert.match(index, /onclick="toggleArchivedHistory\(\$\{Number\(archive\.cycleId\)\}\)"/);
+  assert.match(index, /onclick="event\.stopPropagation\(\); downloadArchivedCycleCSV\(\$\{Number\(archive\.cycleId\)\}\)"/);
   assert.match(index, /id="my-chart-card"[\s\S]*id="my-grade-card"/);
 });
 

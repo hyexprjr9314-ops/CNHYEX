@@ -2853,6 +2853,7 @@
     let approvalRequestsDb = [];
     let pendingApprovalNotifications = [];
     let sentGradeMailKeys = new Set();
+    let expandedHistoryCycleId = null;
 
     const QUESTION_TRACKS = Object.freeze({
       all: { key: 'all', label: '전사 공통', categories: ['성과', '협업', '성장', '조화'] },
@@ -3335,6 +3336,36 @@
         });
       });
     }
+
+    function toggleArchivedHistory(cycleId) {
+      expandedHistoryCycleId = Number(expandedHistoryCycleId) === Number(cycleId) ? null : Number(cycleId);
+      renderHistoryTable();
+    }
+
+    function downloadArchivedCycleCSV(cycleId) {
+      const archive = evaluationHistoryDb.find(item => Number(item.cycleId) === Number(cycleId));
+      if (!archive) return alert('보관된 평가 결과를 찾지 못했습니다.');
+      const finalResults = finalResultsByCycle[Number(cycleId)] || {};
+      const escapeCsv = value => `"${String(value ?? '').replace(/"/g, '""')}"`;
+      const rows = (archive.snapshot || []).map(person => {
+        const finalResult = finalResults[Number(person.id)] || {};
+        return [
+          archive.cycleName, archive.closedAt, person.name, person.company, person.dept, person.role,
+          finalResult.raw_score ?? person.raw_score ?? person.score,
+          finalResult.effective_score ?? person.score,
+          finalResult.approved_grade || finalResult.relative_grade || person.grade,
+          person.is_adjusted ? '조정' : '미조정'
+        ].map(escapeCsv).join(',');
+      });
+      const csv = `평가주기,마감일,성명,소속사,부서,직급,원점수,최종점수,최종등급,조정여부\n${rows.join('\n')}`;
+      const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `${archive.cycleName}_${archive.closedAt}_평가결과.csv`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+    }
+
     function renderHistoryTable() {
       const container = document.getElementById('archived-history-container');
       const countEl = document.getElementById('archived-cycles-count');
@@ -3342,6 +3373,9 @@
 
       const publishedHistoryDb = evaluationHistoryDb.filter(archive =>
         cyclesDb.find(cycle => Number(cycle.id) === Number(archive.cycleId))?.results_published === true
+      ).sort((left, right) =>
+        String(right.closedAt || '').localeCompare(String(left.closedAt || ''))
+        || Number(right.cycleId) - Number(left.cycleId)
       );
       const historyRows = publishedHistoryDb.flatMap((archive, archiveIndex) => (archive.snapshot || []).map((person, rowIndex) => ({ ...person, archiveIndex, rowIndex, cycleName: archive.cycleName, closedAt: archive.closedAt })));
       ensureDirectoryToolbar('history', container, historyRows, {
@@ -3382,7 +3416,8 @@
 
       visibleHistory.forEach(archive => {
         const div = document.createElement('div');
-        div.className = 'bg-slate-900/90 p-5 rounded-2xl border border-slate-800 space-y-4 shadow-xl';
+        const expanded = Number(expandedHistoryCycleId) === Number(archive.cycleId);
+        div.className = 'bg-slate-900/90 p-3 rounded-xl border border-slate-800 shadow-sm';
 
         let rowsHtml = archive.snapshot.map(s => {
           let badge = `<span class="bg-slate-800 text-slate-300 font-bold px-2 py-0.5 rounded text-[10px]">${s.grade} Grade</span>`;
@@ -3402,18 +3437,19 @@
         }).join('');
 
         div.innerHTML = `
-          <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 border-b border-slate-800 pb-3">
-            <div>
-              <div class="flex items-center gap-2 mb-1">
-                <span class="bg-brandTeal/20 text-brandTeal border border-brandTeal/30 px-2 py-0.5 rounded text-[10px] font-bold">Closed</span>
-                <span class="text-xs text-slate-400 font-bold">마감일: ${archive.closedAt}</span>
-              </div>
-              <h3 class="text-base font-bold text-white">${escapeHtml(archive.cycleName)}</h3>
-              <p class="text-xs text-slate-400 mt-1">🔒 최종 확정자: ${archive.closedBy}</p>
-            </div>
-            <span class="bg-slate-200 text-slate-700 border border-slate-400 px-2 py-1 rounded text-[10px] font-bold">읽기 전용</span>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="toggleArchivedHistory(${Number(archive.cycleId)})" class="min-w-0 flex-1 flex items-center gap-3 text-left">
+              <i class="fa-solid fa-chevron-${expanded ? 'down' : 'right'} text-brandTeal"></i>
+              <span class="min-w-0 flex-1">
+                <strong class="block truncate text-sm text-white">${escapeHtml(archive.cycleName)}</strong>
+                <span class="text-xs text-slate-400">마감 ${escapeHtml(archive.closedAt)} · ${archive.snapshot.length}명</span>
+              </span>
+            </button>
+            <button type="button" onclick="event.stopPropagation(); downloadArchivedCycleCSV(${Number(archive.cycleId)})" class="bg-brandBlue hover:bg-blue-600 text-white font-bold px-3 py-2 rounded-lg text-xs whitespace-nowrap">
+              <i class="fa-solid fa-file-csv mr-1"></i>CSV
+            </button>
           </div>
-          <div class="overflow-x-auto">
+          <div class="${expanded ? '' : 'hidden'} overflow-x-auto mt-3 pt-3 border-t border-slate-800">
             <table class="w-full text-left border-collapse text-xs">
               <thead>
                 <tr class="border-b border-slate-800 text-slate-400">
