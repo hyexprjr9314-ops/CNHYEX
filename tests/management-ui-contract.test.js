@@ -108,6 +108,7 @@ test('matching studio exposes and synchronizes its own cycle selector', async ()
   assert.doesNotMatch(index, /id="history-close-cycle-select"/);
   assert.doesNotMatch(index, /handleCloseCycleSubmit\(\)/);
   assert.match(index, /function isClosedEvaluationCycle\(cycle\)/);
+  assert.match(index, /const publishedCycles = sortedCycles\.filter\(cycle => cycle\.results_published === true\);/);
   assert.match(index, /const setupCycles = sortedCycles\.filter/);
   assert.match(index, /const progressCycles = sortedCycles\.filter/);
   assert.match(index, /const finalizedApprovalCycles = sortedCycles\.filter/);

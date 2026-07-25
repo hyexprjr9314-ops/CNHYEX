@@ -3175,7 +3175,7 @@
         ...progressCycles.filter(cycle => Object.keys(cycleScoresDb[cycle.id] || {}).length > 0),
         ...finalizedApprovalCycles
       ];
-      const publishedCycles = sortedCycles.filter(cycle => cycle.results_published === true && !isClosedEvaluationCycle(cycle));
+      const publishedCycles = sortedCycles.filter(cycle => cycle.results_published === true);
       const preferredCycleId = selectedEvaluationCycleId || progressCycles[0]?.id || setupCycles[0]?.id;
 
       setCycleSelectOptions(questionSelect, setupCycles, questionSelect?.value || preferredCycleId);
