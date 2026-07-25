@@ -3448,6 +3448,11 @@
             <button type="button" onclick="event.stopPropagation(); downloadArchivedCycleCSV(${Number(archive.cycleId)})" class="bg-brandBlue hover:bg-blue-600 text-white font-bold px-3 py-2 rounded-lg text-xs whitespace-nowrap">
               <i class="fa-solid fa-file-csv mr-1"></i>CSV
             </button>
+            ${currentLoggedInUser?.isSuperAdmin ? `
+              <button type="button" onclick="event.stopPropagation(); runEmergencyCycleAction(${Number(archive.cycleId)}, 'cycle_hard_delete')" class="bg-rose-700 hover:bg-rose-800 text-white font-bold px-3 py-2 rounded-lg text-xs whitespace-nowrap">
+                <i class="fa-solid fa-trash-can mr-1"></i>완전 삭제
+              </button>
+            ` : ''}
           </div>
           <div class="${expanded ? '' : 'hidden'} overflow-x-auto mt-3 pt-3 border-t border-slate-800">
             <table class="w-full text-left border-collapse text-xs">
@@ -5974,6 +5979,7 @@
         await loadFromServer();
         populateCycleSelects();
         renderCyclesList();
+        if (currentActiveSubtab === 'history') renderHistoryTable();
       } catch (error) {
         alert(`평가주기 ${label} 실패: ${error.message}`);
       }
