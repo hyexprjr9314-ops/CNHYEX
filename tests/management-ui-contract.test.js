@@ -79,7 +79,7 @@ test('target list renders all five display-only relationship groups', async () =
   for (const key of ['internal', 'internal_exchange', 'external', 'leadership', 'leadership_exchange']) {
     assert.match(renderer, new RegExp(`key: '${key}'`));
   }
-  assert.doesNotMatch(index, /평가 관계: \$\{myCurrentStageText\}/);
+  assert.doesNotMatch(index, /fa-user-check mr-1"><\/i> \$\{myCurrentStageText\}/);
 });
 
 test('manual matching commits the authoritative server response without a second read', async () => {
