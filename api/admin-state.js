@@ -349,7 +349,7 @@ async function readState(service, profile) {
   if (settingsResult.error) throw settingsResult.error;
   if (goalsResult.error) throw goalsResult.error;
   if (!PRIVILEGED.has(profile.sys_role)) return { settings: settingsResult.data, goals: goalsResult.data || [] };
-  const [matchings, archives, evaluations, adjustments, allGoals, users, cycles, finalResults, approvalRequests, approvalSteps] = await Promise.all([
+  const [matchings, archives, evaluations, adjustments, allGoals, users, cycles, finalResults, approvalRequests, approvalSteps, gradeMailDispatches] = await Promise.all([
     fetchAllRows(() => service.from('matchings').select('*').order('id')),
     service.from('evaluation_archives').select('*').order('closed_at', { ascending: false }),
     fetchAllRows(() => service.from('evaluations').select('matching_id,cycle_id,target_id,perf_score,collab_score,growth_score,harmony_score').order('id')),
@@ -359,9 +359,15 @@ async function readState(service, profile) {
     service.from('evaluation_cycles').select('id,result_version'),
     service.from('evaluation_final_results').select('cycle_id,target_id,result_version,raw_score,effective_score,relative_grade,approved_grade,category_labels,category_scores'),
     service.from('evaluation_cycle_approval_requests').select('id,cycle_id,request_status,requested_at,result_version').order('requested_at', { ascending: false }),
-    service.from('evaluation_cycle_approval_steps').select('approval_request_id,step_order,approver_user_id,status,decided_at,decision_note').order('step_order')
+    service.from('evaluation_cycle_approval_steps').select('approval_request_id,step_order,approver_user_id,status,decided_at,decision_note').order('step_order'),
+    profile.sys_role === ROLES.admin
+      ? fetchAllRows(() => service.from('evaluation_mail_dispatch_audit')
+          .select('cycle_id,target_id,result_version,dispatched_at')
+          .eq('mail_kind', 'grade_notice')
+          .eq('dispatch_status', 'sent'))
+      : Promise.resolve({ data: [], error: null })
   ]);
-  for (const result of [matchings, archives, evaluations, adjustments, allGoals, users, cycles, finalResults, approvalRequests, approvalSteps]) if (result.error) throw result.error;
+  for (const result of [matchings, archives, evaluations, adjustments, allGoals, users, cycles, finalResults, approvalRequests, approvalSteps, gradeMailDispatches]) if (result.error) throw result.error;
   const userMap = new Map((users.data || []).map(user => [Number(user.id), user]));
   const eligibleMatchings = (matchings.data || []).filter(row => {
     const evaluator = userMap.get(Number(row.evaluator_id));
@@ -428,6 +434,7 @@ async function readState(service, profile) {
     eligible_matching_ids: eligibleMatchings.map(row => Number(row.id)),
     archives: archives.data || [], cycle_scores: cycleScores,
     final_results: currentFinalResults,
+    grade_mail_dispatches: gradeMailDispatches.data || [],
     approval_requests: approvalLines,
     pending_approval_notifications: pendingApprovalNotifications
   };

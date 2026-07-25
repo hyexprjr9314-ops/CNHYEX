@@ -2849,6 +2849,7 @@
     let selectedAdjustId = null;
     let approvalRequestsDb = [];
     let pendingApprovalNotifications = [];
+    let sentGradeMailKeys = new Set();
 
     const QUESTION_TRACKS = Object.freeze({
       all: { key: 'all', label: '전사 공통', categories: ['성과', '협업', '성장', '조화'] },
@@ -4575,6 +4576,9 @@
       }
       if (Array.isArray(payload.goals)) goalsDb = payload.goals;
       if (Array.isArray(payload.all_goals)) allGoalsDb = payload.all_goals;
+      sentGradeMailKeys = new Set((payload.grade_mail_dispatches || []).map(row =>
+        `${Number(row.cycle_id)}:${Number(row.target_id)}:${Number(row.result_version)}`
+      ));
       approvalRequestsDb = Array.isArray(payload.approval_requests) ? payload.approval_requests : [];
       pendingApprovalNotifications = Array.isArray(payload.pending_approval_notifications) ? payload.pending_approval_notifications : [];
       showPendingApprovalToasts();
@@ -4726,6 +4730,10 @@
       }
       try {
         const result = await callMailApi(params);
+        if (params.action?.startsWith('grade_notice')) {
+          await loadCentralState();
+          renderAdminSummaryTable();
+        }
         alert(`메일 발송 처리가 완료되었습니다.\n${formatMailDispatchSummary(result.summary)}`);
       } catch (error) {
         alert(`메일 발송 실패: ${error.message}`);
@@ -6833,8 +6841,13 @@
 
         const canViewDetails = currentLoggedInUser && (currentLoggedInUser.isAdmin || currentLoggedInUser.isExecutive);
         const scoreActionHtml = buildSummaryScoreAction(emp, empScoreData, isEvalOnly);
+        const gradeMailSent = sentGradeMailKeys.has(
+          `${Number(currentSelectedSummaryCycleId)}:${Number(emp.id)}:${Number(selectedCycle?.result_version)}`
+        );
         const gradeMailActionHtml = checkUserRole(currentLoggedInUser).isAdmin && empScoreData?.grade
-          ? `<button type="button" ${canSendGradeMail ? '' : 'disabled'} onclick="event.stopPropagation(); sendGradeNoticeEmail(${emp.id}, event.currentTarget)" class="summary-action-white ml-1 rounded border border-violet-400 bg-violet-600 px-2.5 py-1 text-xs font-bold text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-40" title="${canSendGradeMail ? `${emp.name}에게 최종 평가등급 메일 발송` : '전자승인과 최종 결과 공개 완료 후 발송할 수 있습니다.'}"><i class="fa-solid fa-envelope"></i><span class="sr-only">평가 결과 메일 발송</span></button>`
+          ? gradeMailSent
+            ? `<button type="button" disabled class="summary-action-white ml-1 rounded border border-emerald-500 bg-emerald-600 px-2.5 py-1 text-xs font-bold" title="${emp.name}에게 최종 평가등급 메일 발송 완료"><i class="fa-solid fa-check"></i><span class="ml-1">발송 완료</span></button>`
+            : `<button type="button" ${canSendGradeMail ? '' : 'disabled'} onclick="event.stopPropagation(); sendGradeNoticeEmail(${emp.id}, event.currentTarget)" class="summary-action-white ml-1 rounded border border-violet-400 bg-violet-600 px-2.5 py-1 text-xs font-bold text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-40" title="${canSendGradeMail ? `${emp.name}에게 최종 평가등급 메일 발송` : '전자승인과 최종 결과 공개 완료 후 발송할 수 있습니다.'}"><i class="fa-solid fa-envelope"></i><span class="sr-only">평가 결과 메일 발송</span></button>`
           : '';
 
         
