@@ -63,8 +63,9 @@ test('super administrator can hard-delete a closed cycle only after exact-name c
   assert.match(api, /cycle_hard_delete: 'governance_hard_delete_cycle'/);
   assert.match(api, /args\.p_confirmation/);
   assert.match(index, /roleInfo\.isSuperAdmin && isClosed[\s\S]*cycle_hard_delete/);
-  assert.match(index, /currentLoggedInUser\?\.isSuperAdmin[\s\S]*runEmergencyCycleAction\(\$\{Number\(archive\.cycleId\)\}, 'cycle_hard_delete'\)/);
-  assert.match(index, /const confirmation = hardDelete \? cycle\?\.name : phrase/);
+  assert.match(index, /closedWithoutArchive\.forEach[\s\S]*checkUserRole\(currentLoggedInUser\)\.isSuperAdmin[\s\S]*runEmergencyCycleAction\(\$\{Number\(cycle\.id\)\}, 'cycle_hard_delete'\)/);
+  assert.match(index, /checkUserRole\(currentLoggedInUser\)\.isSuperAdmin[\s\S]*runEmergencyCycleAction\(\$\{Number\(archive\.cycleId\)\}, 'cycle_hard_delete'\)/);
+  assert.match(index, /const confirmation = hardDelete \? \(cycle\?\.name \|\| cycle\?\.cycleName\) : phrase/);
   assert.match(index, /currentActiveSubtab === 'history'\) renderHistoryTable\(\)/);
 });
 

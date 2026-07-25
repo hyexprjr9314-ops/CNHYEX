@@ -3404,9 +3404,16 @@
         const div = document.createElement('div');
         div.className = 'bg-slate-900/90 p-5 rounded-2xl border border-slate-800 shadow-xl';
         div.innerHTML = `
-          <div class="flex items-center gap-2 mb-2">
-            <span class="bg-slate-200 text-slate-700 border border-slate-400 px-2 py-0.5 rounded text-[10px] font-bold">읽기 전용</span>
-            <span class="text-xs text-slate-400 font-bold">${escapeHtml(cycle.status)}</span>
+          <div class="flex items-center justify-between gap-2 mb-2">
+            <div class="flex items-center gap-2">
+              <span class="bg-slate-200 text-slate-700 border border-slate-400 px-2 py-0.5 rounded text-[10px] font-bold">읽기 전용</span>
+              <span class="text-xs text-slate-400 font-bold">${escapeHtml(cycle.status)}</span>
+            </div>
+            ${checkUserRole(currentLoggedInUser).isSuperAdmin ? `
+              <button type="button" onclick="runEmergencyCycleAction(${Number(cycle.id)}, 'cycle_hard_delete')" class="bg-rose-700 hover:bg-rose-800 text-white font-bold px-3 py-2 rounded-lg text-xs whitespace-nowrap">
+                <i class="fa-solid fa-trash-can mr-1"></i>완전 삭제
+              </button>
+            ` : ''}
           </div>
           <h3 class="text-base font-bold text-white">${escapeHtml(cycle.name)}</h3>
           <p class="text-xs text-slate-400 mt-1">${escapeHtml(cycle.desc || '확정 결과 없이 종료된 평가주기입니다.')}</p>
@@ -3448,7 +3455,7 @@
             <button type="button" onclick="event.stopPropagation(); downloadArchivedCycleCSV(${Number(archive.cycleId)})" class="bg-brandBlue hover:bg-blue-600 text-white font-bold px-3 py-2 rounded-lg text-xs whitespace-nowrap">
               <i class="fa-solid fa-file-csv mr-1"></i>CSV
             </button>
-            ${currentLoggedInUser?.isSuperAdmin ? `
+            ${checkUserRole(currentLoggedInUser).isSuperAdmin ? `
               <button type="button" onclick="event.stopPropagation(); runEmergencyCycleAction(${Number(archive.cycleId)}, 'cycle_hard_delete')" class="bg-rose-700 hover:bg-rose-800 text-white font-bold px-3 py-2 rounded-lg text-xs whitespace-nowrap">
                 <i class="fa-solid fa-trash-can mr-1"></i>완전 삭제
               </button>
@@ -5986,12 +5993,13 @@
     }
 
     async function runEmergencyCycleAction(cycleId, action) {
-      const cycle = cyclesDb.find(item => Number(item.id) === Number(cycleId));
+      const cycle = cyclesDb.find(item => Number(item.id) === Number(cycleId))
+        || evaluationHistoryDb.find(item => Number(item.cycleId) === Number(cycleId));
       const hardDelete = action === 'cycle_hard_delete';
       const phrase = hardDelete ? '완전 삭제' : action === 'cycle_force_close' ? '강제 종료' : '평가주기 취소';
       const reason = prompt(`[최고 관리자] ${phrase} 사유를 입력해 주세요.`);
       if (!reason?.trim()) return;
-      const confirmation = hardDelete ? cycle?.name : phrase;
+      const confirmation = hardDelete ? (cycle?.name || cycle?.cycleName) : phrase;
       if (prompt(`확인을 위해 "${confirmation}"을(를) 정확히 입력해 주세요.`) !== confirmation) return;
       try {
         await callAdminStateApi({ action, cycle_id: Number(cycleId), reason: reason.trim(), confirmation });
