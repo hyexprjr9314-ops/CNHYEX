@@ -74,6 +74,10 @@ test('grade basis explains relative, EX, and approved override results without e
 
 test('personal result UI passes the released grade into the score renderer', async () => {
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  const renderer = html.match(/function renderMyResults\(\) \{[\s\S]*?\n    \}/)?.[0] || '';
+  assert.match(renderer, /const descriptionEl = document\.getElementById\('my-grade-description'\)/);
+  assert.ok(renderer.indexOf('const descriptionEl') < renderer.indexOf('if (descriptionEl)'));
+  assert.ok(renderer.indexOf('if (descriptionEl)') < renderer.indexOf('loadServerResultState(parseInt(selectedVal))'));
   assert.match(html, /applyPublishedScores\(\{ \.\.\.payload\.scores, relative_grade: payload\.relative_grade \}, payload\.grade_basis\)/);
   assert.match(html, /applyAdjustedResultMode\(payload\.relative_grade \|\| payload\.adjustment\?\.grade_override[\s\S]+payload\.grade_basis\)/);
 });
