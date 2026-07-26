@@ -1654,6 +1654,7 @@
             <select id="weight-track-select" onchange="selectWeightTrack(this.value)" class="w-full rounded-lg border border-slate-300 bg-white p-2.5 text-xs font-bold text-slate-800">
               <option value="headquarters_member">본사 팀원</option>
               <option value="headquarters_leader">본사 팀장·부서장급</option>
+              <option value="branch_employee">영업소 직원</option>
               <option value="mechanic">정비사</option>
             </select>
 
@@ -1703,6 +1704,7 @@
                 <select id="q-track-in" onchange="syncQuestionCategoryOptions('create')" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-amber-300 font-bold">
                   <option value="headquarters_member">🏢 팀원급</option>
                   <option value="headquarters_leader">👔 팀장/부서장급</option>
+                  <option value="branch_employee">🚌 영업소 직원</option>
                   <option value="mechanic">🔧 정비사</option>
                 </select>
               </div>
@@ -2668,6 +2670,7 @@
             <select id="edit-q-track" onchange="syncQuestionCategoryOptions('edit')" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-amber-300 font-bold">
               <option value="headquarters_member">🏢 팀원급</option>
               <option value="headquarters_leader">👔 팀장/부서장급</option>
+              <option value="branch_employee">🚌 영업소 직원</option>
               <option value="mechanic">🔧 정비사</option>
             </select>
           </div>
@@ -2866,7 +2869,7 @@
       all: 'all', '기본 필수질문': 'all', '전사 공통': 'all',
       headquarters_member: 'headquarters_member', '본사 팀원급': 'headquarters_member',
       headquarters_leader: 'headquarters_leader', '팀장/부서장급': 'headquarters_leader', '팀장·부서장급': 'headquarters_leader',
-      branch_employee: 'headquarters_member', '영업소': 'headquarters_member', '영업소 직원': 'headquarters_member',
+      branch_employee: 'branch_employee', '영업소': 'branch_employee', '영업소 직원': 'branch_employee',
       mechanic: 'mechanic', '정비사': 'mechanic'
     });
     function normalizeQuestionTrack(track) {
@@ -2879,6 +2882,7 @@
       const type = String(target.type || '');
       if (type === '정비사') return QUESTION_TRACKS.mechanic;
       if (['팀장/부서장급', '팀장급', '부서실장급'].includes(type)) return QUESTION_TRACKS.headquarters_leader;
+      if (`${target.workplace || ''} ${target.dept || ''}`.includes('영업소')) return QUESTION_TRACKS.branch_employee;
       return QUESTION_TRACKS.headquarters_member;
     }
     function syncQuestionCategoryOptions(mode, selectedCategory = null) {

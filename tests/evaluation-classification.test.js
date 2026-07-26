@@ -2,7 +2,9 @@ import test from 'node:test'; import assert from 'node:assert/strict';
 import { isLeader, normalizeTrack, normalizedCategory, relationshipType, targetTrack, TRACKS, TRACK_CATEGORIES } from '../api/evaluation-classification.js';
 test('classification covers tracks and relationship precedence', () => {
   assert.equal(targetTrack({ type: '정비사', dept: '총무' }), TRACKS.mechanic);
-  assert.equal(targetTrack({ type: '팀원급', workplace: '부산영업소' }), TRACKS.headquarters_member);
+  assert.equal(targetTrack({ type: '팀원급', workplace: '부산영업소' }), TRACKS.branch_employee);
+  assert.equal(targetTrack({ type: '팀장/부서장급', workplace: '부산영업소' }), TRACKS.headquarters_leader);
+  assert.equal(targetTrack({ type: '정비사', workplace: '부산영업소' }), TRACKS.mechanic);
   assert.equal(targetTrack({ type: '팀원급', role: '부장' }), TRACKS.headquarters_member);
   assert.equal(targetTrack({ type: '팀장/부서장급', role: '대리' }), TRACKS.headquarters_leader);
   assert.equal(targetTrack({ role: '대리' }), TRACKS.headquarters_member);
@@ -20,7 +22,7 @@ test('classification covers tracks and relationship precedence', () => {
   assert.equal(normalizedCategory('소통 / 협력'), '소통 협력');
   assert.equal(normalizeTrack('기본 필수질문'), 'all');
   assert.equal(normalizeTrack('팀장·부서장급'), TRACKS.headquarters_leader);
-  assert.equal(normalizeTrack('영업소 직원'), TRACKS.headquarters_member);
+  assert.equal(normalizeTrack('영업소 직원'), TRACKS.branch_employee);
   assert.equal(normalizeTrack('unrecognized'), 'all');
   assert.deepEqual(TRACK_CATEGORIES.mechanic, ['역량 개발', '정비 능력', '책임/주인의식', '안전의식']);
 });

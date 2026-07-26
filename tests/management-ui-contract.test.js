@@ -26,13 +26,15 @@ test('management UI gives administrators and executives one final-adjustment con
   assert.doesNotMatch(index, /tab\.className = "px-4 py-2 rounded-xl transition text-slate-400/);
 });
 
-test('question editor uses employee type only and removes department or relationship targeting', async () => {
+test('question editor exposes all four employee tracks and removes relationship targeting', async () => {
   const index = await readFile(indexUrl, 'utf8');
-  for (const value of ['headquarters_member', 'headquarters_leader', 'mechanic']) {
+  for (const value of ['headquarters_member', 'headquarters_leader', 'branch_employee', 'mechanic']) {
     assert.match(index, new RegExp(`<option value="${value}">`));
   }
   const resolver = index.match(/function questionTrackForTarget\(target = \{\}\) \{[\s\S]*?\n    \}/)?.[0] ?? '';
-  assert.doesNotMatch(resolver, /role|dept|workplace/);
+  assert.match(resolver, /workplace.*dept.*영업소/);
+  assert.ok(resolver.indexOf("type === '정비사'") < resolver.indexOf("includes('영업소')"));
+  assert.ok(resolver.indexOf('팀장/부서장급') < resolver.indexOf("includes('영업소')"));
   assert.doesNotMatch(index, /id="q-audience-in"|id="q-dept-in"|id="edit-q-audience"|id="edit-q-dept"/);
   assert.match(index, /function normalizeQuestionTrack\(track\)/);
   for (const label of ['내부 평가', '내부 교류평가', '외부 평가', '부서장 평가', '부서장 교류평가']) {

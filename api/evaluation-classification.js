@@ -12,9 +12,9 @@ export const TRACK_ALIASES = Object.freeze({
   '팀장/부서장급': TRACKS.headquarters_leader,
   '팀장·부서장급': TRACKS.headquarters_leader,
   '팀장급': TRACKS.headquarters_leader,
-  branch_employee: TRACKS.headquarters_member,
-  '영업소': TRACKS.headquarters_member,
-  '영업소 직원': TRACKS.headquarters_member,
+  branch_employee: TRACKS.branch_employee,
+  '영업소': TRACKS.branch_employee,
+  '영업소 직원': TRACKS.branch_employee,
   mechanic: TRACKS.mechanic,
   '정비사': TRACKS.mechanic
 });
@@ -37,6 +37,7 @@ export function targetTrack(user = {}) {
   const employeeType = String(user.type || '').trim();
   if (employeeType === '\uC815\uBE44\uC0AC') return TRACKS.mechanic;
   if (LEADER_TYPES.has(employeeType)) return TRACKS.headquarters_leader;
+  if (`${user.workplace || ''} ${user.dept || ''}`.includes('\uC601\uC5C5\uC18C')) return TRACKS.branch_employee;
   return TRACKS.headquarters_member;
 }
 
