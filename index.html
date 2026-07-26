@@ -7080,7 +7080,14 @@
           isAdjustedStr = `<span class="${empScoreData.is_adjusted ? 'text-amber-400 font-bold' : 'text-slate-500'}">${empScoreData.is_adjusted ? `조정됨${gradeOverrideLabel}` : '미조정'}</span>`;
 
           const g = empScoreData.grade;
-          if (g === 'S') {
+          if (g === 'EX') {
+            gradeBadgeHtml = `
+              <div class="inline-flex items-center gap-1.5 glitter-another-level border px-2.5 py-1 rounded-xl shadow-md">
+                <span class="text-sm">🪽</span>
+                <span class="font-black text-xs grade-label-ex">EX · ANOTHER LEVEL</span>
+              </div>
+            `;
+          } else if (g === 'S') {
             gradeBadgeHtml = `
               <div class="relative inline-flex items-center gap-1.5 glitter-diamond border border-cyan-400/80 px-3 py-1 rounded-xl shadow-lg shadow-cyan-900/40">
                 <i class="fa-solid fa-gem text-cyan-300 text-sm animate-spin3d"></i>
