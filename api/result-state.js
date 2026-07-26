@@ -265,7 +265,7 @@ export default async function handler(req, res) {
         scores: aggregate.complete && (privileged || released) ? aggregate.scores : null,
         adjusted: aggregate.adjusted,
         relative_grade: privileged || released ? aggregate.relative_grade : null,
-        grade_basis: privileged || released ? aggregate.grade_basis || null : null,
+        grade_basis: privileged ? aggregate.grade_basis || null : null,
         adjustment: privileged ? aggregate.adjustment : null,
         state: !aggregate.complete ? 'in_progress' : !privileged && !released ? 'not_published' : 'ready'
       });

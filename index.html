@@ -112,6 +112,35 @@
       display: inline-block;
       transform-style: preserve-3d;
     }
+    .grade-result-card.grade-reveal {
+      animation: grade-card-reveal 720ms cubic-bezier(.2,.8,.2,1) both;
+    }
+    .grade-result-icon {
+      display: inline-block;
+      transform-style: preserve-3d;
+      animation: grade-icon-reveal 900ms cubic-bezier(.2,.8,.2,1) both,
+        grade-icon-idle 4s ease-in-out 900ms infinite;
+    }
+    .grade-icon-ex {
+      animation: grade-icon-reveal 900ms cubic-bezier(.2,.8,.2,1) both,
+        ex-wing-float 2.2s ease-in-out 900ms infinite;
+    }
+    .grade-icon-s, .grade-icon-a {
+      animation: grade-icon-reveal 900ms cubic-bezier(.2,.8,.2,1) both,
+        spin3D 4s linear 900ms infinite;
+    }
+    @keyframes grade-card-reveal {
+      from { opacity: .55; transform: translateY(10px) scale(.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes grade-icon-reveal {
+      from { opacity: 0; transform: perspective(500px) translateY(14px) rotateY(-150deg) scale(.72); }
+      to { opacity: 1; transform: perspective(500px) translateY(0) rotateY(0) scale(1); }
+    }
+    @keyframes grade-icon-idle {
+      0%, 100% { transform: perspective(500px) translateY(0) rotateY(-3deg); }
+      50% { transform: perspective(500px) translateY(-5px) rotateY(3deg); }
+    }
 
     /* White-theme grade surfaces: preserve grade identity without washing out text. */
     .glitter-diamond {
@@ -136,6 +165,11 @@
       background-size: 300% 300%;
       border-color: #A855F7 !important;
       box-shadow: 0 3px 14px rgba(124, 58, 237, 0.22) !important;
+    }
+    .grade-result-card.grade-reveal.glitter-another-level {
+      animation: grade-card-reveal 720ms cubic-bezier(.2,.8,.2,1) both,
+        ex-aura 2.8s ease-in-out 720ms infinite,
+        ex-prism 7s linear 720ms infinite;
     }
     .glitter-another-level > * { position: relative; z-index: 1; }
     .glitter-another-level::after {
@@ -524,9 +558,15 @@
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
       }
-      .glitter-another-level, .glitter-another-level::after, .ex-wing-motion {
+      .glitter-another-level, .glitter-another-level::after, .ex-wing-motion,
+      .grade-result-card.grade-reveal, .grade-result-icon {
         animation: none !important;
       }
+    }
+
+    @media (min-width: 768px) {
+      #my-result-cards.adjusted-result-layout #my-adjusted-notice { order: 1; }
+      #my-result-cards.adjusted-result-layout #my-grade-card { order: 2; }
     }
 
     @media (max-width: 640px) {
@@ -1329,7 +1369,7 @@
         </div>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div id="my-result-cards" class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- Category Chart Card (Hidden if Executive 2nd Score Adjustment applied) -->
         <div id="my-chart-card" class="glass-card rounded-2xl p-6 border border-slate-800 space-y-4">
           <div class="flex justify-between items-center">
@@ -1387,14 +1427,10 @@
           </div>
           <strong id="my-grade-title" class="text-3xl font-black text-slate-800">평가 진행 중</strong>
           <p id="my-grade-description" class="max-w-md text-sm leading-relaxed text-slate-500">모든 평가와 결과 공개 절차가 완료되면 최종 등급이 표시됩니다.</p>
-          <div id="my-grade-reason" class="hidden w-full max-w-md rounded-2xl border border-white/80 bg-white/75 px-4 py-3 text-left shadow-sm backdrop-blur-sm">
-            <span class="block text-[11px] font-black tracking-[0.08em] text-slate-700">평가등급 책정 사유</span>
-            <p id="my-grade-reason-text" class="mt-1 text-sm font-semibold leading-relaxed text-slate-700"></p>
-          </div>
         </div>
 
         <!-- Executive Adjusted Notice Card (Displayed ONLY when Executive 2nd Adjustment applied) -->
-        <div id="my-adjusted-notice" class="hidden md:col-span-2 glass-card rounded-2xl p-6 border border-amber-500/40 bg-amber-950/20 space-y-4">
+        <div id="my-adjusted-notice" class="hidden glass-card rounded-2xl p-6 border border-amber-500/40 bg-amber-950/20 space-y-4">
           <div class="flex items-center gap-3 border-b border-amber-500/30 pb-3">
             <div class="w-10 h-10 bg-amber-500/20 text-brandGold rounded-xl flex items-center justify-center text-lg">
               <i class="fa-solid fa-user-shield"></i>
@@ -2224,6 +2260,7 @@
         <div>
           <span class="text-slate-400 block text-[11px]">평가 등급</span>
           <span class="font-bold text-xs" id="detail-modal-grade-badge">S Grade</span>
+          <p id="detail-modal-grade-basis" class="mt-1 text-[11px] font-semibold leading-relaxed text-slate-300">책정 사유 산정 전</p>
         </div>
         <div>
           <span class="text-slate-400 block text-[11px]">제출 완료 평가자</span>
@@ -5025,44 +5062,35 @@
       );
     }
 
-    function renderGradeBasis(gradeBasis) {
-      const container = document.getElementById('my-grade-reason');
-      const text = document.getElementById('my-grade-reason-text');
-      if (!container || !text) return;
-      const reason = String(gradeBasis?.text || '').trim();
-      container.classList.toggle('hidden', !reason);
-      text.textContent = reason;
-    }
-
-    function renderGradeResultCard(grade, gradeBasis = null) {
+    function renderGradeResultCard(grade) {
       const normalized = String(grade || '').toUpperCase();
       const card = document.getElementById('my-grade-card');
       const title = document.getElementById('my-grade-title');
       const medal = document.getElementById('my-medal-container');
       const description = document.getElementById('my-grade-description');
       const ui = {
-        EX: ['glitter-another-level border-2', '<span class="ex-wing-motion">🪽</span>', 'grade-label-ex'],
-        S: ['glitter-diamond border', '<i class="fa-solid fa-gem text-cyan-300 text-6xl"></i>', 'grade-label-s'],
-        A: ['glitter-gold border', '<i class="fa-solid fa-award text-amber-300 text-6xl"></i>', 'grade-label-a'],
-        B: ['border border-slate-300 bg-gradient-to-br from-white to-slate-100', '<i class="fa-solid fa-medal text-slate-500 text-6xl"></i>', 'text-slate-800'],
-        C: ['grade-surface-c border', '<i class="fa-solid fa-shield grade-icon-c text-6xl"></i>', 'grade-label-c'],
-        D: ['border border-stone-300 bg-gradient-to-br from-white to-stone-100', '<i class="fa-solid fa-cube text-stone-500 text-6xl"></i>', 'text-stone-800']
+        EX: ['glitter-another-level border-2', '<span class="grade-result-icon grade-icon-ex text-6xl">🪽</span>', 'grade-label-ex'],
+        S: ['glitter-diamond border', '<i class="grade-result-icon grade-icon-s fa-solid fa-gem text-cyan-500 text-6xl"></i>', 'grade-label-s'],
+        A: ['glitter-gold border', '<i class="grade-result-icon grade-icon-a fa-solid fa-award text-amber-500 text-6xl"></i>', 'grade-label-a'],
+        B: ['border border-slate-300 bg-gradient-to-br from-white to-slate-100', '<i class="grade-result-icon grade-icon-b fa-solid fa-medal text-slate-500 text-6xl"></i>', 'text-slate-800'],
+        C: ['grade-surface-c border', '<i class="grade-result-icon grade-icon-c fa-solid fa-shield text-6xl"></i>', 'grade-label-c'],
+        D: ['border border-stone-300 bg-gradient-to-br from-white to-stone-100', '<i class="grade-result-icon grade-icon-d fa-solid fa-cube text-stone-500 text-6xl"></i>', 'text-stone-800']
       }[normalized];
       if (!ui) return;
-      if (card) card.className = `grade-result-card ${ui[0]} p-7 rounded-3xl text-center flex flex-col items-center justify-center gap-5 transition-all shadow-2xl relative overflow-hidden`;
+      if (card) card.className = `grade-result-card grade-reveal ${ui[0]} p-7 rounded-3xl text-center flex flex-col items-center justify-center gap-5 transition-all shadow-2xl relative overflow-hidden`;
       if (medal) medal.innerHTML = ui[1];
       if (title) {
         title.className = `grade-result-mark font-black ${ui[2]}`;
         title.textContent = normalized;
       }
       if (description) description.textContent = '최종 확정·공개된 인사평가 등급입니다.';
-      renderGradeBasis(gradeBasis);
     }
 
-    function applyPublishedScores(scores, gradeBasis = null) {
+    function applyPublishedScores(scores) {
       const cardEl = document.getElementById('my-grade-card');
       const chartCard = document.getElementById('my-chart-card');
       const adjustedNotice = document.getElementById('my-adjusted-notice');
+      document.getElementById('my-result-cards')?.classList.remove('adjusted-result-layout');
       if (chartCard) chartCard.classList.remove('hidden');
       if (adjustedNotice) adjustedNotice.classList.add('hidden');
       const mapping = [
@@ -5080,7 +5108,7 @@
         ? String(relativeGrade).toUpperCase()
         : null;
       if (!grade) { applyAdjustedResultMode(null); return; }
-      renderGradeResultCard(grade, gradeBasis);
+      renderGradeResultCard(grade);
       mapping.forEach(([prefix, value]) => {
         const valueEl = document.getElementById(`my-${prefix}-val`);
         const barEl = document.getElementById(`my-${prefix}-bar`);
@@ -5089,23 +5117,23 @@
       });
     }
 
-    function applyAdjustedResultMode(finalGrade = null, gradeBasis = null) {
+    function applyAdjustedResultMode(finalGrade = null) {
       const chartCard = document.getElementById('my-chart-card');
       const adjustedNotice = document.getElementById('my-adjusted-notice');
       const cardEl = document.getElementById('my-grade-card');
       const titleEl = document.getElementById('my-grade-title');
       const medalEl = document.getElementById('my-medal-container');
       const totalEl = document.getElementById('my-total-score');
+      document.getElementById('my-result-cards')?.classList.add('adjusted-result-layout');
       if (chartCard) chartCard.classList.add('hidden');
       if (adjustedNotice) adjustedNotice.classList.remove('hidden');
       if (totalEl) totalEl.textContent = '점수 비공개';
-      renderGradeBasis(gradeBasis);
 
       const grade = ['EX', 'S', 'A', 'B', 'C', 'D'].includes(String(finalGrade || '').toUpperCase())
         ? String(finalGrade).toUpperCase()
         : null;
       if (grade) {
-        renderGradeResultCard(grade, gradeBasis);
+        renderGradeResultCard(grade);
         return;
       }
       const gradeUi = {
@@ -5163,16 +5191,15 @@
 
     async function loadServerResultState(cycleId) {
       const requestId = ++latestResultStateRequest;
-      renderGradeBasis(null);
       try {
         const payload = await callResultStateApi('GET', { cycle_id: cycleId });
         if (requestId !== latestResultStateRequest) return;
         if (payload.adjusted) {
-          applyAdjustedResultMode(payload.relative_grade || payload.adjustment?.grade_override || payload.adjustment?.final_grade || null, payload.grade_basis);
+          applyAdjustedResultMode(payload.relative_grade || payload.adjustment?.grade_override || payload.adjustment?.final_grade || null);
           return;
         }
         if (payload.state === 'ready' && payload.scores) {
-          applyPublishedScores({ ...payload.scores, relative_grade: payload.relative_grade }, payload.grade_basis);
+          applyPublishedScores({ ...payload.scores, relative_grade: payload.relative_grade });
         }
       } catch (error) {
         console.warn('평가 결과를 불러오지 못했습니다:', error);
@@ -7226,9 +7253,16 @@
       const cycleId = Number(requestedCycleId || currentSelectedSummaryCycleId || 1);
       const cycleScores = cycleScoresDb[cycleId] || {};
       const scoreData = cycleScores[emp.id];
+      const showGradeBasis = currentActiveSubtab === 'summary';
       let detail;
+      let resultState;
       try {
-        detail = await callEvaluationDetailApi(cycleId, empId);
+        [detail, resultState] = await Promise.all([
+          callEvaluationDetailApi(cycleId, empId),
+          showGradeBasis
+            ? callResultStateApi('GET', { cycle_id: cycleId, target_id: empId }).catch(() => null)
+            : Promise.resolve(null)
+        ]);
       } catch (error) {
         alert(`상세 평가 조회 실패: ${error.message}`);
         return;
@@ -7242,6 +7276,9 @@
       const gradeBadgeEl = document.getElementById('detail-modal-grade-badge');
       gradeBadgeEl.className = 'font-bold text-xs text-slate-600';
       gradeBadgeEl.innerText = detail.complete && scoreData?.grade ? `${scoreData.grade} Grade` : '등급 산정 전';
+      const gradeBasisEl = document.getElementById('detail-modal-grade-basis');
+      gradeBasisEl.classList.toggle('hidden', !showGradeBasis);
+      gradeBasisEl.innerText = resultState?.grade_basis?.text || '최종 등급 확정 후 책정 사유가 표시됩니다.';
       document.getElementById('detail-modal-eval-count').innerText = `${detail.submitted_count} / ${detail.assigned_count}명 제출 완료`;
 
       const listContainer = document.getElementById('detail-modal-evaluators-list');

@@ -72,12 +72,38 @@ test('grade basis explains relative, EX, and approved override results without e
   assert.match(overridden.text, /산정등급 B에서.*A등급/);
 });
 
-test('personal result UI passes the released grade into the score renderer', async () => {
+test('grade basis remains privileged and is shown only in the admin detail surface', async () => {
+  const source = await readFile(resultStateUrl, 'utf8');
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
   const renderer = html.match(/function renderMyResults\(\) \{[\s\S]*?\n    \}/)?.[0] || '';
   assert.match(renderer, /const descriptionEl = document\.getElementById\('my-grade-description'\)/);
   assert.ok(renderer.indexOf('const descriptionEl') < renderer.indexOf('if (descriptionEl)'));
   assert.ok(renderer.indexOf('if (descriptionEl)') < renderer.indexOf('loadServerResultState(parseInt(selectedVal))'));
-  assert.match(html, /applyPublishedScores\(\{ \.\.\.payload\.scores, relative_grade: payload\.relative_grade \}, payload\.grade_basis\)/);
-  assert.match(html, /applyAdjustedResultMode\(payload\.relative_grade \|\| payload\.adjustment\?\.grade_override[\s\S]+payload\.grade_basis\)/);
+  assert.match(source, /grade_basis: privileged \? aggregate\.grade_basis \|\| null : null/);
+  assert.doesNotMatch(html, /id="my-grade-reason"/);
+  assert.doesNotMatch(html, /function renderGradeBasis/);
+  assert.match(html, /id="detail-modal-grade-basis"/);
+  assert.match(html, /const showGradeBasis = currentActiveSubtab === 'summary'/);
+  assert.match(html, /showGradeBasis\s*\?\s*callResultStateApi/);
+  assert.match(html, /classList\.toggle\('hidden', !showGradeBasis\)/);
+  assert.match(html, /callResultStateApi\('GET', \{ cycle_id: cycleId, target_id: empId \}\)/);
+});
+
+test('personal final grade card uses reveal and accessible repeating grade motion', async () => {
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  assert.match(html, /@keyframes grade-card-reveal/);
+  assert.match(html, /@keyframes grade-icon-idle/);
+  assert.match(html, /grade-result-card grade-reveal/);
+  assert.match(html, /grade-result-icon grade-icon-/);
+  assert.match(html, /@media \(prefers-reduced-motion: reduce\)/);
+});
+
+test('adjusted personal results keep the notice and final grade in the two-column result grid', async () => {
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  assert.match(html, /id="my-result-cards" class="grid grid-cols-1 md:grid-cols-2/);
+  assert.doesNotMatch(html, /id="my-adjusted-notice" class="[^"]*md:col-span-2/);
+  assert.match(html, /adjusted-result-layout #my-adjusted-notice \{ order: 1/);
+  assert.match(html, /adjusted-result-layout #my-grade-card \{ order: 2/);
+  assert.match(html, /classList\.add\('adjusted-result-layout'\)/);
+  assert.match(html, /classList\.remove\('adjusted-result-layout'\)/);
 });
