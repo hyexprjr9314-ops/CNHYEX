@@ -575,7 +575,7 @@
       right: 1.25rem;
       bottom: 0.75rem;
       z-index: 40;
-      width: min(26rem, calc(100vw - 1.5rem));
+      width: min(28rem, calc(100vw - 1.5rem));
       pointer-events: none;
     }
     #mascot-guide.is-visible .mascot-guide-card {
@@ -583,16 +583,13 @@
     }
     .mascot-guide-card {
       pointer-events: auto;
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 7.5rem;
-      align-items: end;
-      gap: 0.25rem;
+      position: relative;
+      min-height: 10.5rem;
+      padding: 0 7.75rem 1.25rem 0;
     }
     .mascot-guide-bubble {
       position: relative;
-      align-self: start;
-      margin-top: 0.5rem;
-      margin-bottom: 4.5rem;
+      width: auto;
       border: 1px solid rgba(13, 148, 136, 0.35);
       border-radius: 1.25rem 1.25rem 0.35rem 1.25rem;
       background: rgba(255, 255, 255, 0.98);
@@ -611,12 +608,16 @@
       clip-path: polygon(0 0, 100% 100%, 0 100%);
     }
     .mascot-guide-image {
-      width: 100%;
-      align-self: end;
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      width: 8.25rem;
+      max-height: 11rem;
+      object-fit: contain;
       transform-origin: bottom center;
-      mix-blend-mode: multiply;
       filter: drop-shadow(0 12px 12px rgba(15, 23, 42, 0.2));
-      animation: mascot-guide-talk 1.5s ease-in-out 0.55s 2;
+      will-change: transform;
+      animation: mascot-guide-talk 2.4s ease-in-out 0.55s infinite;
     }
     #mascot-guide.is-celebrating .mascot-guide-image {
       animation: mascot-guide-celebrate 1.05s ease-in-out 2;
@@ -657,10 +658,13 @@
         width: calc(100vw - 1rem);
       }
       .mascot-guide-card {
-        grid-template-columns: minmax(0, 1fr) 5.75rem;
+        min-height: 8.5rem;
+        padding-right: 5.25rem;
+        padding-bottom: 0.75rem;
       }
-      .mascot-guide-bubble {
-        margin-bottom: 3.25rem;
+      .mascot-guide-image {
+        width: 5.75rem;
+        max-height: 8.5rem;
       }
       body {
         padding-bottom: 5.5rem;
@@ -5402,7 +5406,7 @@
     function mascotForCurrentUser() {
       const isHanyang = String(currentLoggedInUser?.company || '').includes('한양');
       return {
-        src: isHanyang ? 'assets/mascot-hanyang.jpg' : 'assets/mascot-chungnam.jpg',
+        src: isHanyang ? 'assets/mascot-hanyang-transparent.png' : 'assets/mascot-chungnam-transparent.png',
         name: isHanyang ? '하냥이' : '충남이'
       };
     }
@@ -5460,6 +5464,7 @@
     function showPendingEvaluationGuide(assignments) {
       try {
         if (currentActiveView !== 'list' || !currentLoggedInUser || !Array.isArray(assignments)) return;
+        if (checkUserRole(currentLoggedInUser).isPrivileged) return;
         if (!cyclesDb.some(cycle => cycle.status === '진행중' && !isClosedEvaluationCycle(cycle))) return;
         const pending = assignments.filter(item => Number(item.completed || 0) === 0);
         if (!pending.length) return;
@@ -5518,6 +5523,28 @@
       });
       const target = step?.target ? document.querySelector(step.target) : null;
       if (target) target.classList.add('mascot-target-highlight');
+    }
+
+    function showPrivilegedHomeGuide() {
+      try {
+        if (currentActiveView !== 'list' || !currentLoggedInUser) return;
+        const roleInfo = checkUserRole(currentLoggedInUser);
+        if (!roleInfo.isPrivileged) return;
+        const guideRole = roleInfo.isAdmin ? 'admin' : 'executive';
+        const sessionKey = `cnhy_mascot_home_v1_${currentLoggedInUser.id}_${guideRole}`;
+        if (sessionStorage.getItem(sessionKey)) return;
+        sessionStorage.setItem(sessionKey, '1');
+        const message = roleInfo.isAdmin
+          ? '관리자님, 평가 업무는 평가관리에서 시작합니다. 질문 구성 → 권한 확인 → 평가자 배정 → 사전점검 순서로 안내해 드릴게요.'
+          : '임원님, 평가 현황과 결재 요청은 평가관리에서 확인할 수 있습니다. 지금 필요한 검토 단계로 안내해 드릴게요.';
+        showMascotGuideStep(message, {
+          label: roleInfo.isAdmin ? '평가관리 시작하기' : '평가 현황·결재 보기',
+          view: 'evalmanage',
+          target: '#nav-tab-evalmanage'
+        });
+      } catch (error) {
+        console.warn('Optional mascot home guide skipped:', error);
+      }
     }
 
     function showAdminMascotGuide(subtab) {
@@ -5776,6 +5803,7 @@
       if (compEl) compEl.innerText = `${completedAssignmentCount} 건`;
       renderLoggedInWelcome(totalAssignmentCount);
       showNoActiveEvaluationGuide();
+      showPrivilegedHomeGuide();
 
       let targetEmployees = [...allTargetEmployees];
 

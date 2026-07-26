@@ -3,17 +3,29 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 const indexUrl = new URL('../index.html', import.meta.url);
+const hanyangMascotUrl = new URL('../assets/mascot-hanyang-transparent.png', import.meta.url);
+const chungnamMascotUrl = new URL('../assets/mascot-chungnam-transparent.png', import.meta.url);
 
 test('contextual mascot guide remains optional, accessible, and isolated from evaluation submission', async () => {
   const html = await readFile(indexUrl, 'utf8');
   assert.match(html, /id="mascot-guide"[\s\S]*role="status"[\s\S]*aria-live="polite"/);
-  assert.match(html, /assets\/mascot-hanyang\.jpg/);
-  assert.match(html, /assets\/mascot-chungnam\.jpg/);
+  assert.match(html, /assets\/mascot-hanyang-transparent\.png/);
+  assert.match(html, /assets\/mascot-chungnam-transparent\.png/);
   assert.match(html, /id="mascot-guide-action"[\s\S]*runMascotGuideAction/);
-  assert.match(html, /mascot-guide-bubble[\s\S]*mix-blend-mode:\s*multiply/);
+  assert.doesNotMatch(html, /mascot-guide-bubble[\s\S]*mix-blend-mode:\s*multiply/);
+  assert.match(html, /mascot-guide-image[\s\S]*position:\s*absolute[\s\S]*object-fit:\s*contain/);
+  assert.match(html, /mascot-guide-talk 2\.4s[\s\S]*infinite/);
   assert.match(html, /prefers-reduced-motion[\s\S]*#mascot-guide\.is-visible/);
   assert.match(html, /submit_evaluation_central[\s\S]*if \(submitError\)[\s\S]*showMascotGuide\(/);
   assert.doesNotMatch(html, /mascot-guide[\s\S]{0,500}z-index:\s*9999/);
+});
+
+test('mascot assets use real alpha transparency', async () => {
+  for (const assetUrl of [hanyangMascotUrl, chungnamMascotUrl]) {
+    const png = await readFile(assetUrl);
+    assert.equal(png.toString('ascii', 1, 4), 'PNG');
+    assert.equal(png[25], 6, `${assetUrl.pathname} must be an RGBA PNG`);
+  }
 });
 
 test('administrator mascot guide is read-only, state-aware, and isolated from management actions', async () => {
@@ -42,4 +54,13 @@ test('executive and inactive-cycle mascot guides remain role-scoped and read-onl
   assert.match(executiveGuide, /current_approver_user_id[\s\S]*승인·반려 위치 보기/);
   assert.match(executiveGuide, /cnhy_mascot_executive_/);
   assert.doesNotMatch(executiveGuide, /callAdminStateApi|callResultStateApi/);
+});
+
+test('privileged users are guided from the first list view into evaluation management', async () => {
+  const html = await readFile(indexUrl, 'utf8');
+  assert.match(html, /function showPrivilegedHomeGuide\(\)[\s\S]*currentActiveView !== 'list'[\s\S]*roleInfo\.isPrivileged/);
+  assert.match(html, /관리자님, 평가 업무는 평가관리에서 시작합니다/);
+  assert.match(html, /평가관리 시작하기[\s\S]*view: 'evalmanage'[\s\S]*target: '#nav-tab-evalmanage'/);
+  assert.match(html, /renderLoggedInWelcome\(totalAssignmentCount\);[\s\S]*showNoActiveEvaluationGuide\(\);[\s\S]*showPrivilegedHomeGuide\(\);/);
+  assert.match(html, /function showPendingEvaluationGuide\(assignments\)[\s\S]*checkUserRole\(currentLoggedInUser\)\.isPrivileged/);
 });
