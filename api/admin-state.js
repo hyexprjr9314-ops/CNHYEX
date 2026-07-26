@@ -3,6 +3,7 @@ import { buildRelativeGradePlan, cohortKeyForUser } from './relative-grading.js'
 import { ROLES } from './role-policy.js';
 import { normalizeTrack, relationshipType, targetTrack, TRACK_CATEGORIES } from './evaluation-classification.js';
 import { isMutableDraftCycle } from './questions.js';
+import { planAutoMatchings } from './auto-matching.js';
 
 const PRIVILEGED = new Set([ROLES.admin, ROLES.executive]);
 const SUPER_ADMIN_EMAIL = 'admin@cnhyex.com';
@@ -222,47 +223,33 @@ async function assertQuestionCycleMutable(service, cycleId) {
   throw Object.assign(new Error('초안 또는 아직 제출이 없는 일시정지 주기에서만 질문을 변경할 수 있습니다.'), { status: 409 });
 }
 
-async function generateAutoMatchings(service, cycleId) {
+async function generateAutoMatchings(service, rpcClient, cycleId, actorId) {
   const [users, existing, submitted] = await Promise.all([
-    service.from('users').select('id,company,dept,workplace,role,type,can_evaluate,is_evaluatee,active').eq('active', true),
-    service.from('matchings').select('id,evaluator_id,target_id,type').eq('cycle_id', cycleId),
+    service.from('users').select('id,name,company,dept,workplace,role,type,sys_role,can_evaluate,is_evaluatee,active').eq('active', true),
+    service.from('matchings').select('id,evaluator_id,target_id,type,relationship_type').eq('cycle_id', cycleId),
     service.from('evaluations').select('matching_id').eq('cycle_id', cycleId)
   ]);
   for (const query of [users, existing, submitted]) if (query.error) return query;
-  const evaluators = (users.data || []).filter(user => user.can_evaluate === true);
-  const targets = (users.data || []).filter(user => user.is_evaluatee === true);
-  const desired = new Map();
-  for (const evaluator of evaluators) {
-    const evaluatorIsBranch = String(evaluator.workplace || '').includes('영업소') || String(evaluator.dept || '').includes('영업소');
-    for (const target of targets) {
-      if (evaluator.id === target.id) continue;
-      const targetIsBranch = String(target.workplace || '').includes('영업소') || String(target.dept || '').includes('영업소');
-      const eligible = evaluatorIsBranch ? evaluator.company === target.company : !targetIsBranch;
-      if (eligible) desired.set(`${evaluator.id}:${target.id}`, {
-        cycle_id: cycleId, evaluator_id: evaluator.id, target_id: target.id,
-        type: '알고리즘 자동 지정', relationship_type: relationshipType(evaluator, target), updated_at: new Date().toISOString()
-      });
-    }
-  }
-  const submittedIds = new Set((submitted.data || []).map(row => Number(row.matching_id)));
-  const obsoleteIds = (existing.data || []).filter(row =>
-    row.type === '알고리즘 자동 지정'
-    && !desired.has(`${row.evaluator_id}:${row.target_id}`)
-    && !submittedIds.has(Number(row.id))
-  ).map(row => row.id);
-  if (obsoleteIds.length) {
-    const removed = await service.from('matchings').delete().in('id', obsoleteIds);
-    if (removed.error) return removed;
-  }
-  const rows = [...desired.values()];
-  if (rows.length) {
-    const inserted = await service.from('matchings').upsert(rows, {
-      onConflict: 'cycle_id,evaluator_id,target_id',
-      ignoreDuplicates: true
-    });
-    if (inserted.error) return inserted;
-  }
-  return { data: { inserted: rows.length, removed: obsoleteIds.length, desired: desired.size }, error: null };
+  const plan = planAutoMatchings({
+    cycleId,
+    users: users.data || [],
+    existing: existing.data || [],
+    submittedMatchingIds: (submitted.data || []).map(row => row.matching_id)
+  });
+  const saved = await rpcClient.rpc('governance_replace_auto_matchings', {
+    p_cycle_id: cycleId,
+    p_matchings: plan.generated,
+    p_actor_id: actorId
+  });
+  if (saved.error) return saved;
+  return {
+    data: {
+      ...saved.data,
+      generated: plan.generated.length,
+      shortages: plan.shortages
+    },
+    error: null
+  };
 }
 
 export function applyRelativeGrades(cycleScores, users, archives) {
@@ -581,6 +568,7 @@ export default async function handler(req, res) {
     } else if (action === 'cycle_create') {
       const payload = cyclePayload(req.body);
       payload.status = '초안';
+      payload.auto_matching_enabled = false;
       result = await service.from('evaluation_cycles').insert(payload).select().single();
     } else if (action === 'cycle_update') {
       const cycleId = Number(req.body.id);
@@ -730,7 +718,8 @@ export default async function handler(req, res) {
       const enabled = req.body.enabled !== false;
       if (!cycleId) return send(res, 400, { error: '평가 주기가 필요합니다.' });
       if (enabled) {
-        const generated = await generateAutoMatchings(service, cycleId);
+        const accessToken = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+        const generated = await generateAutoMatchings(service, authenticatedRpcClient(accessToken), cycleId, authUser.id);
         if (generated.error) throw generated.error;
       }
       result = await service.from('evaluation_cycles')
@@ -741,7 +730,8 @@ export default async function handler(req, res) {
     } else if (action === 'matching_generate') {
       const cycleId = Number(req.body.cycle_id);
       if (!cycleId) return send(res, 400, { error: '평가 주기가 필요합니다.' });
-      result = await generateAutoMatchings(service, cycleId);
+      const accessToken = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+      result = await generateAutoMatchings(service, authenticatedRpcClient(accessToken), cycleId, authUser.id);
     } else if (action === 'cycle_close') {
       const accessToken = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
       return send(res, 200, { archive: await closeCycle(service, authenticatedRpcClient(accessToken), Number(req.body.cycle_id), authUser) });

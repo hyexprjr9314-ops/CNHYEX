@@ -1835,24 +1835,24 @@
             <div>
               <div class="flex items-center gap-2 mb-1">
                 <span class="bg-purple-500/20 text-purple-300 border border-purple-500/40 text-[10px] font-bold px-2.5 py-0.5 rounded-full">MATCHING ENGINE CONFIG</span>
-                <span class="text-xs text-purple-300 font-bold" id="matching-mode-status-text">⚡ 현재 모드: 자동 격리 매칭 모드 (알고리즘 가동 중)</span>
+                <span class="text-xs text-purple-300 font-bold" id="matching-mode-status-text">자동 초안 생성 후 드래그앤드롭으로 검토·수정</span>
               </div>
               <h3 class="text-xl font-black text-white flex items-center gap-2">
                 <i class="fa-solid fa-wand-magic-sparkles text-purple-400"></i>
                 <span>전사 동료평가 매칭 알고리즘 제어 센터</span>
               </h3>
-              <p class="text-xs text-slate-300 mt-1">자동 격리 알고리즘을 끄고 관리자가 100% 수동 지정 매칭으로 전환할 수 있습니다.</p>
+              <p class="text-xs text-slate-300 mt-1">직군별 정원과 평가자 업무량을 기준으로 초안을 만들고, 관리자가 자유롭게 보완합니다.</p>
             </div>
-            <button onclick="toggleAutoMatchingMode()" id="toggle-matching-mode-btn" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold px-4 py-2.5 rounded-xl text-xs shadow-lg transition flex items-center gap-2 border border-purple-400/40">
-              <i class="fa-solid fa-toggle-on text-base"></i>
-              <span>자동 매칭 삭제 및 100% 수동 모드 전환</span>
+            <button onclick="generateQuotaMatchingDraft()" id="toggle-matching-mode-btn" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold px-4 py-2.5 rounded-xl text-xs shadow-lg transition flex items-center gap-2 border border-purple-400/40">
+              <i class="fa-solid fa-wand-magic-sparkles text-base"></i>
+              <span>정원 기반 자동 초안 생성</span>
             </button>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-slate-300">
             <div class="bg-slate-900/90 p-4 rounded-xl border border-slate-800 space-y-1.5">
               <p class="font-bold text-brandTeal flex items-center gap-1.5">
-                <i class="fa-solid fa-robot"></i> 1) 자동 격리 매칭 모드
+                <i class="fa-solid fa-robot"></i> 1) 정원 기반 자동 초안
               </p>
               <p class="text-slate-400 text-[11px] leading-relaxed">
                 영업소 지점 직원은 동일 소속사(한양-한양, 충남-충남)끼리만 자동 배치되며, 본사 스태프는 양사 간 자유 교차 매칭됩니다.
@@ -1860,7 +1860,7 @@
             </div>
             <div class="bg-slate-900/90 p-4 rounded-xl border border-slate-800 space-y-1.5">
               <p class="font-bold text-amber-400 flex items-center gap-1.5">
-                <i class="fa-solid fa-hand-pointer"></i> 2) 100% 관리자 수동 매칭 모드 (알고리즘 OFF)
+                <i class="fa-solid fa-hand-pointer"></i> 2) 관리자 검토·수정
               </p>
               <p class="text-slate-400 text-[11px] leading-relaxed">
                 자동 규칙이 완전히 비활성화되며, 아래 <strong>드래그앤드롭 매칭 작업대에서 관리자가 저장한 관계</strong>로만 평가가 실시됩니다.
@@ -3896,7 +3896,6 @@
     }
 
     // Manual Matching Management State & Logic
-    let isAutoMatchingEnabled = true;
     let selectedEvaluatorForMatching = null;
     let customManualMatchingsDb = [];
     let stagedMatchingTargetIds = null;
@@ -3911,10 +3910,7 @@
       return Number(document.getElementById('matching-cycle-select')?.value || document.getElementById('perm-cycle-select')?.value || currentSelectedSummaryCycleId || cyclesDb[0]?.id);
     }
 
-    function syncSelectedCycleMatchingMode() {
-      const cycle = cyclesDb.find(row => Number(row.id) === getSelectedMatchingCycleId());
-      isAutoMatchingEnabled = cycle?.auto_matching_enabled !== false;
-    }
+    function syncSelectedCycleMatchingMode() {}
 
     function getServerMatchingTargetIds(evaluatorId = selectedEvaluatorForMatching, cycleId = getSelectedMatchingCycleId()) {
       return customManualMatchingsDb
@@ -3978,38 +3974,32 @@
       else renderPermissionsTable();
     }
 
-    async function toggleAutoMatchingMode() {
+    async function generateQuotaMatchingDraft() {
       if (hasStagedMatchingChanges()) {
-        const shouldDiscard = confirm('저장하지 않은 수동 매칭 변경사항이 있습니다. 변경사항을 취소하고 매칭 모드를 전환하시겠습니까?');
+        const shouldDiscard = confirm('저장하지 않은 수동 매칭 변경사항이 있습니다. 변경사항을 취소하고 자동 초안을 생성하시겠습니까?');
         if (!shouldDiscard) return;
         resetStagedMatchingState();
       }
-      const nextValue = !isAutoMatchingEnabled;
       const cycleId = getSelectedMatchingCycleId();
       const cycle = cyclesDb.find(row => Number(row.id) === cycleId);
-      const isPaused = cycle?.status === '일시정지';
-      if (!['초안', 'draft', 'not_started', '일시정지'].includes(String(cycle?.status || ''))) {
-        alert('진행 중인 평가주기의 배정을 바로 변경할 수 없습니다.\n평가주기 관리에서 먼저 일시정지한 뒤 다시 시도해 주세요.');
+      if (!['초안', 'draft', 'not_started'].includes(String(cycle?.status || ''))) {
+        alert('자동 초안은 시작 전 평가주기에서만 생성할 수 있습니다.');
         return;
       }
-      const reason = isPaused
-        ? String(prompt('일시정지 중 매칭 모드 변경 사유를 5자 이상 입력해 주세요.') || '').trim()
-        : '';
-      if (isPaused && reason.length < 5) {
-        alert('일시정지 중 매칭 모드 변경 사유는 5자 이상 필요합니다.');
-        return;
-      }
+      if (!confirm('기존 수동 배정과 제출 자료는 유지하고, 자동 배정 초안만 다시 계산합니다. 계속하시겠습니까?')) return;
       try {
-        const response = await callAdminStateApi({ action: 'matching_mode_update', cycle_id: cycleId, enabled: nextValue, reason });
-        cycle.auto_matching_enabled = response.data?.auto_matching_enabled !== false;
-        isAutoMatchingEnabled = cycle.auto_matching_enabled;
+        const response = await callAdminStateApi({ action: 'matching_generate', cycle_id: cycleId });
         announceCentralChange();
         await loadCentralState();
         renderManualMatchingTable();
         renderEmployeeGrid();
-        alert(`[매칭 모드 변경] 중앙 서버의 매칭 모드가 ${isAutoMatchingEnabled ? '자동' : '수동'}으로 변경되었습니다.`);
+        const shortages = Array.isArray(response.data?.shortages) ? response.data.shortages : [];
+        const shortageText = shortages.length
+          ? `\n후보 부족 ${shortages.length}건은 수동으로 보완해 주세요.`
+          : '\n후보 부족 없이 생성되었습니다.';
+        alert(`자동 배정 초안 ${Number(response.data?.generated || 0)}건을 생성했습니다.${shortageText}`);
       } catch (error) {
-        alert(`매칭 모드 변경 실패: ${error.message}`);
+        alert(`자동 배정 초안 생성 실패: ${error.message}`);
       }
     }
 
@@ -4020,16 +4010,12 @@
       const toggleBtn = document.getElementById('toggle-matching-mode-btn');
 
       if (statusText) {
-        statusText.innerText = isAutoMatchingEnabled
-          ? '🟢 현재 모드: 자동 격리 매칭 모드 (알고리즘 가동 중)'
-          : '⚡ 현재 모드: 100% 관리자 수동 지정 모드 (알고리즘 OFF)';
-        statusText.className = isAutoMatchingEnabled ? 'text-xs text-emerald-300 font-bold' : 'text-xs text-amber-300 font-bold';
+        statusText.innerText = '자동 초안 생성 후 드래그앤드롭으로 검토·수정';
+        statusText.className = 'text-xs text-emerald-300 font-bold';
       }
 
       if (toggleBtn) {
-        toggleBtn.innerHTML = isAutoMatchingEnabled
-          ? `<i class="fa-solid fa-toggle-on text-base text-emerald-300"></i> <span>자동 매칭 삭제 및 100% 수동 모드 전환</span>`
-          : `<i class="fa-solid fa-toggle-off text-base text-amber-300"></i> <span>자동 격리 매칭 모드 복구 (ON)</span>`;
+        toggleBtn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles text-base"></i> <span>정원 기반 자동 초안 생성</span>`;
       }
 
       // Update total matching count indicator
@@ -4166,7 +4152,7 @@
           ? `<strong class="text-amber-700">저장 대기:</strong> 배정 ${addedCount}명 · 해제 ${removedCount}명`
           : '저장할 변경사항이 없습니다.';
       }
-      if (saveBtn) saveBtn.disabled = !dirty || isAutoMatchingEnabled;
+      if (saveBtn) saveBtn.disabled = !dirty;
       if (discardBtn) discardBtn.disabled = !dirty;
       updateMatchingSelectionUi();
     }
@@ -4182,7 +4168,7 @@
           ? 'bg-emerald-50 border-teal-500'
           : 'bg-white border-slate-300 hover:border-blue-500'
       }`;
-      card.draggable = !isAutoMatchingEnabled;
+      card.draggable = true;
       card.setAttribute('aria-label', `${target.name} ${target.role}, ${isAssigned ? '현재 배정됨' : '배정 가능'}`);
       card.title = `${target.company} · ${target.dept} · ${target.workplace || ''}`;
       card.addEventListener('dragstart', event => handleMatchingDragStart(event, target.id));
@@ -4224,7 +4210,7 @@
     }
 
     function handleMatchingMarqueeStart(event) {
-      if (isAutoMatchingEnabled || event.button !== 0 || event.pointerType === 'touch') return;
+      if (event.button !== 0 || event.pointerType === 'touch') return;
       if (event.target.closest('.matching-person-card, button, input, select')) return;
       event.preventDefault();
       if (!event.ctrlKey && !event.metaKey && !event.shiftKey) selectedMatchingTargetIds.clear();
@@ -4295,11 +4281,6 @@
     });
 
     function handleMatchingDragStart(event, targetId) {
-      if (isAutoMatchingEnabled) {
-        event.preventDefault();
-        alert('자동 매칭 모드에서는 수동 배정을 변경할 수 없습니다. 먼저 수동 모드로 전환해 주세요.');
-        return;
-      }
       draggedMatchingTargetId = Number(targetId);
       if (!selectedMatchingTargetIds.has(draggedMatchingTargetId)) {
         selectedMatchingTargetIds = new Set([draggedMatchingTargetId]);
@@ -4312,7 +4293,6 @@
     }
 
     function handleMatchingDragOver(event) {
-      if (isAutoMatchingEnabled) return;
       event.preventDefault();
       event.dataTransfer.dropEffect = 'move';
       event.currentTarget.classList.add('is-drag-over');
@@ -4348,10 +4328,6 @@
     }
 
     function moveMatchingTargets(targetIds, shouldAssign) {
-      if (isAutoMatchingEnabled) {
-        alert('자동 매칭 모드에서는 수동 배정을 변경할 수 없습니다. 먼저 수동 모드로 전환해 주세요.');
-        return;
-      }
       const stagedIds = ensureStagedMatchingState();
       const validIds = [...new Set(targetIds.map(Number))].filter(targetId => {
         if (targetId === Number(selectedEvaluatorForMatching)) return false;
@@ -4372,7 +4348,7 @@
     }
 
     async function saveStagedMatchingChanges() {
-      if (!selectedEvaluatorForMatching || !hasStagedMatchingChanges() || isAutoMatchingEnabled) return;
+      if (!selectedEvaluatorForMatching || !hasStagedMatchingChanges()) return;
       const cycleId = getSelectedMatchingCycleId();
       const evaluatorId = Number(selectedEvaluatorForMatching);
       const targetIds = [...ensureStagedMatchingState()].map(Number).sort((a, b) => a - b);
@@ -4420,7 +4396,6 @@
 
     function selectAllTargetsForSelectedEvaluator() {
       if (!selectedEvaluatorForMatching) return;
-      if (isAutoMatchingEnabled) return alert('먼저 100% 관리자 수동 지정 모드로 전환해 주세요.');
       stagedMatchingTargetIds = new Set(usersDb
         .filter(user => user.id !== selectedEvaluatorForMatching && user.is_evaluatee !== false)
         .map(user => Number(user.id)));
@@ -4431,7 +4406,6 @@
 
     function clearAllTargetsForSelectedEvaluator() {
       if (!selectedEvaluatorForMatching) return;
-      if (isAutoMatchingEnabled) return alert('먼저 100% 관리자 수동 지정 모드로 전환해 주세요.');
       stagedMatchingTargetIds = new Set();
       stagedMatchingEvaluatorId = selectedEvaluatorForMatching;
       stagedMatchingCycleId = getSelectedMatchingCycleId();
@@ -6219,7 +6193,7 @@
             growth: legacyWeights[2], harmony: legacyWeights[3]
           },
           track_category_weights: trackCategoryWeights,
-          auto_matching_enabled: isAutoMatchingEnabled
+          auto_matching_enabled: false
         });
         categoryWeights = {
           perf: legacyWeights[0], collab: legacyWeights[1],

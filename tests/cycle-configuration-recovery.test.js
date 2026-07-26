@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import test from 'node:test';
 
 const adminState = fs.readFileSync(new URL('../api/admin-state.js', import.meta.url), 'utf8');
+const autoMatching = fs.readFileSync(new URL('../api/auto-matching.js', import.meta.url), 'utf8');
 const index = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const migration = fs.readFileSync(
   new URL('../supabase/migrations/202607250004_cycle_hard_delete_trigger_bypass.sql', import.meta.url),
@@ -14,8 +15,9 @@ const matchingMigration = fs.readFileSync(
 );
 
 test('automatic matching uses only explicitly enabled users', () => {
-  assert.match(adminState, /user\.can_evaluate === true/);
-  assert.match(adminState, /user\.is_evaluatee === true/);
+  assert.match(autoMatching, /user\.can_evaluate === true/);
+  assert.match(autoMatching, /user\.is_evaluatee === true/);
+  assert.match(autoMatching, /!isExecutive\(user\)/);
 });
 
 test('matching replacement returns the authoritative saved rows', () => {

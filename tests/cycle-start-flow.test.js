@@ -4,21 +4,22 @@ import test from 'node:test';
 
 const read = path => readFile(new URL(path, import.meta.url), 'utf8');
 
-test('automatic matching is idempotent and matching mode belongs to a cycle', async () => {
-  const [api, ui, migration] = await Promise.all([
+test('automatic matching creates an atomic quota draft that remains manually editable', async () => {
+  const [api, autoMatching, ui, migration] = await Promise.all([
     read('../api/admin-state.js'),
+    read('../api/auto-matching.js'),
     read('../index.html'),
-    read('../supabase/migrations/202607250003_cycle_matching_mode.sql')
+    read('../supabase/migrations/202607260001_quota_auto_matching.sql')
   ]);
 
-  assert.match(api, /upsert\(rows,\s*\{[\s\S]*onConflict:\s*'cycle_id,evaluator_id,target_id'[\s\S]*ignoreDuplicates:\s*true/);
-  assert.match(api, /action === 'matching_mode_update'/);
-  assert.match(ui, /action:\s*'matching_mode_update'/);
-  assert.match(ui, /cycle\?\.auto_matching_enabled !== false/);
-  assert.match(ui, /일시정지 중 매칭 모드 변경 사유를 5자 이상/);
-  assert.match(ui, /matching_mode_update'[\s\S]*reason/);
-  assert.match(ui, /cycle\.auto_matching_enabled = response\.data\?\.auto_matching_enabled !== false/);
-  assert.match(migration, /add column if not exists auto_matching_enabled boolean not null default true/i);
+  assert.match(api, /governance_replace_auto_matchings/);
+  assert.match(autoMatching, /const needed = Math\.max\(0, rule\.quota - already\)/);
+  assert.match(autoMatching, /load\.get\(Number\(a\.id\)\)/);
+  assert.match(ui, /action:\s*'matching_generate'/);
+  assert.match(ui, /정원 기반 자동 초안 생성/);
+  assert.doesNotMatch(ui, /saveBtn\.disabled = !dirty \|\| isAutoMatchingEnabled/);
+  assert.match(migration, /alter column auto_matching_enabled set default false/i);
+  assert.match(migration, /delete from public\.matchings[\s\S]*insert into public\.matchings/i);
 });
 
 test('cycle validation groups repeated question gaps into actionable scopes', async () => {
