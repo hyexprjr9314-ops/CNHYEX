@@ -58,4 +58,9 @@ test('database grading policy accepts EX and preserves minimum cohort edges', ()
 test('completed EX results render an EX badge in the score summary', () => {
   assert.match(index, /if \(g === 'EX'\)/);
   assert.match(index, /EX · ANOTHER LEVEL/);
+  assert.match(index, /@keyframes ex-aura/);
+  assert.match(index, /@keyframes ex-prism/);
+  assert.match(index, /@keyframes ex-shine/);
+  assert.match(index, /@keyframes ex-wing-float/);
+  assert.match(index, /class="ex-wing-motion text-sm"/);
 });

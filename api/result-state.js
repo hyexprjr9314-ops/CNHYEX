@@ -10,6 +10,49 @@ export function isFinalResultAdjusted(result = {}) {
     || Boolean(result.approved_grade && result.approved_grade !== result.relative_grade);
 }
 
+const COHORT_LABELS = Object.freeze({
+  headquarters: '본사',
+  branch: '영업소',
+  mechanic: '정비사'
+});
+
+export function buildGradeBasis(result = {}, cohortResults = []) {
+  const grade = result.approved_grade || result.relative_grade;
+  const cohortKey = String(result.cohort_key || 'headquarters');
+  const cohortLabel = COHORT_LABELS[cohortKey] || '해당 직군';
+  if (!grade) return null;
+  if (result.approved_grade && result.approved_grade !== result.relative_grade) {
+    return {
+      type: 'approved_override', cohort_key: cohortKey, cohort_label: cohortLabel,
+      grade, calculated_grade: result.relative_grade,
+      text: `상대평가 산정등급 ${result.relative_grade}에서 최종 승인 절차를 거쳐 ${grade}등급으로 확정되었습니다.`
+    };
+  }
+  if (grade === 'EX') {
+    return {
+      type: 'exceptional', cohort_key: cohortKey, cohort_label: cohortLabel,
+      grade, top_percent: 0,
+      text: '최종점수 100점을 달성하여 상대평가 비율과 별도로 EX 특별등급이 부여되었습니다.'
+    };
+  }
+  const ranked = (cohortResults || [])
+    .filter(row => String(row.cohort_key) === cohortKey && row.relative_grade !== 'EX')
+    .sort((a, b) => Number(b.effective_score) - Number(a.effective_score)
+      || Number(b.raw_score) - Number(a.raw_score)
+      || Number(a.target_id) - Number(b.target_id));
+  const rankIndex = ranked.findIndex(row => Number(row.target_id) === Number(result.target_id));
+  const topPercent = rankIndex < 0 || ranked.length === 0
+    ? null
+    : Math.max(1, Math.ceil(((rankIndex + 1) / ranked.length) * 100));
+  return {
+    type: 'relative', cohort_key: cohortKey, cohort_label: cohortLabel,
+    grade, top_percent: topPercent,
+    text: topPercent
+      ? `${cohortLabel} 집계구역 상대평가에서 상위 ${topPercent}% 구간에 해당하여 ${grade}등급으로 산정되었습니다.`
+      : `${cohortLabel} 집계구역 상대평가 기준에 따라 ${grade}등급으로 산정되었습니다.`
+  };
+}
+
 function serviceClient() {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -53,13 +96,19 @@ async function aggregateTarget(service, cycleId, targetId) {
   // edits to employees, questions, weights, or evaluations change this view.
   if (Number(cycle.data.result_version || 0) > 0) {
     const finalResult = await service.from('evaluation_final_results')
-      .select('raw_score,effective_score,relative_grade,approved_grade,category_labels,category_scores,result_version')
+      .select('target_id,cohort_key,raw_score,effective_score,relative_grade,approved_grade,category_labels,category_scores,result_version')
       .eq('cycle_id', cycleId)
       .eq('target_id', targetId)
       .eq('result_version', cycle.data.result_version)
       .maybeSingle();
     if (finalResult.error) throw finalResult.error;
     if (finalResult.data) {
+      const cohortResults = await service.from('evaluation_final_results')
+        .select('target_id,cohort_key,raw_score,effective_score,relative_grade,approved_grade')
+        .eq('cycle_id', cycleId)
+        .eq('result_version', cycle.data.result_version)
+        .eq('cohort_key', finalResult.data.cohort_key);
+      if (cohortResults.error) throw cohortResults.error;
       return {
         cycle: cycle.data,
         complete: true,
@@ -69,6 +118,7 @@ async function aggregateTarget(service, cycleId, targetId) {
         adjusted: isFinalResultAdjusted(finalResult.data),
         relative_grade: finalResult.data.approved_grade || finalResult.data.relative_grade,
         calculated_grade: finalResult.data.relative_grade,
+        grade_basis: buildGradeBasis(finalResult.data, cohortResults.data || []),
         scores: {
           ...(finalResult.data.category_scores || {}),
           raw_total: Number(finalResult.data.raw_score),
@@ -215,6 +265,7 @@ export default async function handler(req, res) {
         scores: aggregate.complete && (privileged || released) ? aggregate.scores : null,
         adjusted: aggregate.adjusted,
         relative_grade: privileged || released ? aggregate.relative_grade : null,
+        grade_basis: privileged || released ? aggregate.grade_basis || null : null,
         adjustment: privileged ? aggregate.adjustment : null,
         state: !aggregate.complete ? 'in_progress' : !privileged && !released ? 'not_published' : 'ready'
       });
