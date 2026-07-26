@@ -309,7 +309,8 @@ export function applyRelativeGrades(cycleScores, users, archives) {
         targetId,
         cohortKey: cohortKeyForUser(user),
         rawScore: score.raw,
-        effectiveFinalScore: score.final
+        effectiveFinalScore: score.final,
+        isAdjusted: score.is_adjusted === true
       }));
     const provisionalGrades = buildRelativeGradePlan(candidates).gradesByTargetId;
     const finalGrades = finalGradesByCycle.get(cycleId);
@@ -492,7 +493,7 @@ async function closeCycle(service, rpcService, cycleId, authUser) {
     throw Object.assign(new Error(`미제출 평가 ${missingCount}건이 남아 있어 마감할 수 없습니다.`), { status: 409 });
   }
   if ((adjustments.data || []).some(row => row.status === 'active' && row.workflow_status !== 'second_stage_adjusted')) {
-    throw Object.assign(new Error('2차 조정이 완료되지 않은 활성 조정이 있어 마감할 수 없습니다.'), { status: 409 });
+    throw Object.assign(new Error('최종 조정이 완료되지 않은 활성 조정이 있어 마감할 수 없습니다.'), { status: 409 });
   }
   const scoreMap = buildScores(scores.data || [], adjustments.data || [], settings.data, activeMatchings, users.data || [])[String(cycleId)] || {};
   const finalUsers = (users.data || []).filter(user => user.is_evaluatee !== false && scoreMap[user.id]);
@@ -500,7 +501,8 @@ async function closeCycle(service, rpcService, cycleId, authUser) {
     targetId: user.id,
     cohortKey: cohortKeyForUser(user),
     rawScore: scoreMap[user.id].raw,
-    effectiveFinalScore: scoreMap[user.id].final
+    effectiveFinalScore: scoreMap[user.id].final,
+    isAdjusted: scoreMap[user.id].is_adjusted === true
   })));
   const snapshot = finalUsers.map(user => ({
     id: user.id, name: user.name, company: user.company, dept: user.dept, role: user.role,

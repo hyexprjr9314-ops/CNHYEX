@@ -249,9 +249,11 @@
     #bulk-permission-evaluator-btn,
     #bulk-permission-both-btn,
     #bulk-password-mail-btn,
+    #password-reset-request-button,
     #bulk-permission-evaluator-btn i,
     #bulk-permission-both-btn i,
-    #bulk-password-mail-btn i {
+    #bulk-password-mail-btn i,
+    #password-reset-request-button i {
       color: #FFFFFF !important;
     }
     .approval-toast {
@@ -875,6 +877,22 @@
         font-weight: bold !important;
       }
     }
+    .grade-result-card { min-height: 260px; isolation: isolate; }
+    .grade-result-mark { font-size: clamp(3.75rem, 8vw, 6.5rem); line-height: .9; letter-spacing: -.08em; }
+    .hourglass-turn { animation: hourglass-turn 2.8s ease-in-out infinite; transform-origin: center; }
+    @keyframes hourglass-turn {
+      0%, 42% { transform: rotate(0deg) scale(1); }
+      52% { transform: rotate(180deg) scale(.9); }
+      62%, 100% { transform: rotate(360deg) scale(1); }
+    }
+    .sync-footer-status { color: #64748b; font-size: 11px; }
+    .sync-footer-status::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 999px; background: #14b8a6; }
+    .sync-footer-status[data-state="syncing"]::before { background: #f59e0b; }
+    .sync-footer-status[data-state="error"] { color: #991b1b; }
+    .sync-footer-status[data-state="error"]::before { background: #dc2626; }
+    #question-cycle-select, #perm-cycle-select, #matching-cycle-select, #progress-cycle-select, #summary-cycle-select,
+    label[for="matching-cycle-select"], label[for="summary-cycle-select"] { display: none !important; }
+    @media (prefers-reduced-motion: reduce) { .hourglass-turn { animation: none; } }
   </style>
 </head>
 <body class="min-h-screen flex flex-col antialiased selection:bg-brandTeal selection:text-white custom-scrollbar">
@@ -907,12 +925,6 @@
           <option value="xlarge">매우 크게 130%</option>
         </select>
       </label>
-      <!-- 24H Live Auto Sync Badge -->
-      <div title="24시간 실시간 무자각 자동 클라우드 동기화 활성화됨" class="text-xs bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 shadow-lg shadow-emerald-950/20">
-        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-        <span>🟢 실시간 자동동기화 ON</span>
-      </div>
-
       <button id="notification-center-button" type="button" onclick="openNotificationCenter()" class="relative hidden rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-slate-200 hover:border-brandTeal hover:text-white" aria-label="개인 알림함 열기">
         <i class="fa-solid fa-bell"></i>
         <span id="notification-unread-count" class="absolute -right-2 -top-2 hidden min-w-5 rounded-full bg-rose-600 px-1.5 py-0.5 text-[10px] font-black text-white">0</span>
@@ -945,10 +957,6 @@
       <button onclick="navigateTo('list')" id="nav-tab-list" class="px-4 py-2 rounded-xl transition bg-brandTeal text-white shadow-lg shadow-teal-900/20 flex items-center gap-2">
         <i class="fa-solid fa-list-check"></i>
         <span>평가 대상자 목록</span>
-      </button>
-      <button onclick="navigateTo('guide')" id="nav-tab-guide" class="px-4 py-2 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-2">
-        <i class="fa-solid fa-book-open"></i>
-        <span>평가 가이드</span>
       </button>
       <button onclick="navigateTo('myresults')" id="nav-tab-myresults" class="px-4 py-2 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-2">
         <i class="fa-solid fa-chart-line"></i>
@@ -999,13 +1007,25 @@
           </button>
         </form>
 
-        <div class="p-3.5 bg-slate-900/80 rounded-2xl border border-slate-800 text-left text-[11px] text-slate-400 space-y-1.5 shadow">
-          <p class="font-bold text-brandGold flex items-center gap-1.5">
-            <i class="fa-solid fa-shield-halved text-amber-400"></i>
+        <details class="rounded-2xl border border-slate-300 bg-white text-left shadow-sm">
+          <summary class="cursor-pointer list-none px-4 py-3 text-xs font-black text-teal-700">
+            <i class="fa-solid fa-envelope-circle-check mr-1.5"></i>비밀번호 설정 메일 받기
+          </summary>
+          <form id="password-reset-request-form" onsubmit="requestPasswordSetupEmail(event)" class="space-y-3 border-t border-slate-200 px-4 py-4">
+            <p class="text-[11px] leading-relaxed text-slate-600">관리자에게 등록된 본인 이메일을 입력하세요. 등록된 활성 계정인 경우에만 설정 링크가 발송됩니다.</p>
+            <input id="password-reset-request-email" type="email" autocomplete="email" required placeholder="본인 이메일 주소" class="w-full rounded-xl border border-slate-400 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-brandTeal focus:ring-2 focus:ring-teal-100">
+            <button id="password-reset-request-button" type="submit" class="w-full rounded-xl border border-teal-700 bg-teal-700 px-4 py-2.5 text-xs font-black text-white hover:bg-teal-800">설정 메일 요청</button>
+            <p id="password-reset-request-message" class="hidden text-[11px] font-bold leading-relaxed text-emerald-700" aria-live="polite"></p>
+          </form>
+        </details>
+
+        <div class="p-3.5 bg-amber-50 rounded-2xl border border-amber-300 text-left text-[11px] text-slate-600 space-y-1.5 shadow-sm">
+          <p class="font-bold text-amber-800 flex items-center gap-1.5">
+            <i class="fa-solid fa-shield-halved text-amber-600"></i>
             <span>보안 로그인 안내</span>
           </p>
           <p>Supabase Auth에 등록된 회사 계정으로 로그인해 주세요.</p>
-          <p class="text-[10px] text-slate-400 pt-1 border-t border-slate-800/80">계정 발급 또는 비밀번호 재설정은 인사관리자에게 문의해 주세요.</p>
+          <p class="text-[10px] text-slate-600 pt-1 border-t border-amber-200">계정이 등록되어 있지 않다면 인사관리자에게 문의해 주세요.</p>
         </div>
       </div>
     </section>
@@ -1321,13 +1341,13 @@
           </div>
         </div>
 
-        <div id="my-grade-card" class="glitter-diamond border rounded-2xl p-6 text-center flex flex-col items-center justify-center gap-4 transition-all min-h-[220px]">
-          <span class="block text-[11px] uppercase font-black text-slate-300 tracking-[0.18em]">최종 인사평가 등급</span>
+        <div id="my-grade-card" class="grade-result-card rounded-3xl border border-amber-200 bg-gradient-to-br from-white via-amber-50 to-slate-100 p-7 text-center flex flex-col items-center justify-center gap-5 transition-all shadow-xl">
+          <span class="block text-xs uppercase font-black text-slate-600 tracking-[0.18em]">최종 인사평가 등급</span>
           <div id="my-medal-container">
-            <i class="fa-solid fa-gem text-cyan-300 text-5xl animate-spin3d filter drop-shadow-[0_0_15px_rgba(6,182,212,0.9)]"></i>
+            <i class="fa-solid fa-hourglass-half hourglass-turn text-amber-500 text-6xl"></i>
           </div>
-          <strong id="my-grade-title" class="text-2xl font-black grade-label-s">S Grade (💎 Diamond)</strong>
-          <p class="text-xs text-slate-400">최종 확정·공개된 인사평가 등급입니다.</p>
+          <strong id="my-grade-title" class="text-3xl font-black text-slate-800">평가 진행 중</strong>
+          <p id="my-grade-description" class="max-w-md text-sm leading-relaxed text-slate-500">모든 평가와 결과 공개 절차가 완료되면 최종 등급이 표시됩니다.</p>
         </div>
 
         <!-- Executive Adjusted Notice Card (Displayed ONLY when Executive 2nd Adjustment applied) -->
@@ -1517,12 +1537,6 @@
           <p class="text-xs text-slate-300 mt-1">평가 주기 생성, 질문/가중치 커스텀, 평가 권한 관리, 점수 집계 및 전자승인, 과거 이력 관리</p>
         </div>
 
-        <div class="flex flex-wrap items-center gap-3">
-          <button onclick="openGuideModal(true)" class="bg-gradient-to-r from-amber-500/20 to-purple-600/20 hover:from-amber-500/40 hover:to-purple-600/40 text-amber-300 border border-amber-500/40 font-bold px-4 py-2.5 rounded-xl transition text-xs flex items-center gap-2 shadow-lg shadow-purple-900/20">
-            <i class="fa-solid fa-crown text-amber-400"></i>
-            <span>👑 관리자·임원 전용 가이드라인</span>
-          </button>
-        </div>
       </div>
 
       <!-- EVALUATION MANAGEMENT SUB-TABS NAVIGATION -->
@@ -1549,12 +1563,20 @@
         </button>
         <button onclick="switchAdminTab('summary')" id="admin-tab-summary" class="px-4 py-2 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-2">
           <i class="fa-solid fa-table-list"></i>
-          <span>📋 점수 집계 & 2차 조정</span>
+          <span>📋 점수 집계 & 최종 조정</span>
         </button>
         <button onclick="switchAdminTab('history')" id="admin-tab-history" class="px-4 py-2 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-2">
           <i class="fa-solid fa-lock"></i>
           <span>🔒 과거 평가 이력</span>
         </button>
+      </div>
+
+      <div id="management-cycle-toolbar" class="hidden items-center justify-between gap-3 rounded-2xl border border-slate-300 bg-white p-3 shadow-sm">
+        <div>
+          <p class="text-xs font-black text-slate-900"><i class="fa-solid fa-calendar-check mr-1 text-brandTeal"></i>관리 중인 평가 주기</p>
+          <p id="management-cycle-help" class="mt-0.5 text-[11px] text-slate-500">선택한 주기가 아래 관리 화면에 공통 적용됩니다.</p>
+        </div>
+        <select id="management-cycle-select" onchange="handleManagementCycleChange(this)" class="min-w-[280px] max-w-full rounded-xl border border-slate-400 bg-white px-3 py-2 text-xs font-bold text-slate-900"></select>
       </div>
 
       <!-- ADMIN SUB-TAB 2: EVALUATION CYCLE MANAGEMENT -->
@@ -1637,7 +1659,7 @@
                 <span>📤 CSV 질문 선택 또는 드롭</span>
                 <input type="file" id="csv-question-file-input" accept=".csv" onchange="handleCSVQuestionUpload(event)" class="hidden">
               </label>
-              <div class="flex items-center gap-1 ml-2">
+              <div class="hidden items-center gap-1 ml-2" aria-hidden="true">
                 <span class="text-xs font-bold text-slate-300 whitespace-nowrap"><i class="fa-solid fa-calendar-check text-brandTeal mr-1"></i>주기:</span>
                 <select id="question-cycle-select" onchange="handleCycleSelectChange(this); renderQuestionsList()" class="bg-slate-900 border border-slate-700 text-xs font-bold text-white rounded-xl px-3 py-2">
                   <!-- Dynamically Populated -->
@@ -1846,7 +1868,7 @@
               </div>
               <h3 class="text-xl font-black text-white flex items-center gap-2">
                 <i class="fa-solid fa-wand-magic-sparkles text-purple-400"></i>
-                <span>전사 동료평가 매칭 알고리즘 제어 센터</span>
+                <span>평가 매칭 관리</span>
               </h3>
               <p class="text-xs text-slate-300 mt-1">직군별 정원과 평가자 업무량을 기준으로 초안을 만들고, 관리자가 자유롭게 보완합니다.</p>
             </div>
@@ -1862,7 +1884,7 @@
                 <i class="fa-solid fa-robot"></i> 1) 정원 기반 자동 초안
               </p>
               <p class="text-slate-400 text-[11px] leading-relaxed">
-                영업소 지점 직원은 동일 소속사(한양-한양, 충남-충남)끼리만 자동 배치되며, 본사 스태프는 양사 간 자유 교차 매칭됩니다.
+                피평가자의 사원구분·조직·근무지와 관계별 정원을 기준으로 후보를 선별하고, 평가 업무량이 적은 순서로 부족 인원만 자동 보충합니다.
               </p>
             </div>
             <div class="bg-slate-900/90 p-4 rounded-xl border border-slate-800 space-y-1.5">
@@ -1870,7 +1892,7 @@
                 <i class="fa-solid fa-hand-pointer"></i> 2) 관리자 검토·수정
               </p>
               <p class="text-slate-400 text-[11px] leading-relaxed">
-                자동 규칙이 완전히 비활성화되며, 아래 <strong>드래그앤드롭 매칭 작업대에서 관리자가 저장한 관계</strong>로만 평가가 실시됩니다.
+                자동 초안은 기존 수동 배정을 유지합니다. 아래 작업대에서 관리자가 검토·수정한 뒤 <strong>저장한 최종 배정만 평가에 적용</strong>됩니다.
               </p>
             </div>
           </div>
@@ -1882,7 +1904,7 @@
             <div>
               <h3 class="text-base font-bold text-white flex items-center gap-2">
                 <i class="fa-solid fa-folder-tree text-brandTeal"></i>
-                <span>🎯 드래그앤드롭 수동 평가 매칭 스튜디오</span>
+                <span>🎯 드래그앤드롭 평가 매칭 작업대</span>
               </h3>
               <p class="text-xs text-slate-400 mt-0.5">평가자 폴더를 선택하고 인원 카드를 좌우로 끌어 배정한 뒤, 변경사항을 한 번에 저장합니다.</p>
             </div>
@@ -2015,7 +2037,7 @@
             <div>
               <h3 class="text-base font-bold text-white flex items-center gap-2">
                 <i class="fa-solid fa-table-list text-brandGold"></i>
-                <span>📋 피평가자별 점수 집계 및 2차 조정</span>
+                <span>📋 피평가자별 점수 집계 및 최종 조정</span>
               </h3>
               <p class="text-xs text-slate-400 mt-0.5">오른쪽 점수 입력/조정 버튼을 눌러 완료된 평가만 조정할 수 있습니다.</p>
             </div>
@@ -2049,10 +2071,16 @@
             </div>
           </div>
 
-          <div id="summary-filter-toolbar" class="mb-3 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-2 rounded-xl border border-slate-800 bg-slate-950/50 p-3">
-            <label class="relative xl:col-span-2"><i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i><input id="summary-filter-search" type="search" placeholder="이름·이메일·소속사·부서·직급 검색" class="w-full rounded-lg border border-slate-700 bg-slate-900 py-2 pl-8 pr-3 text-xs text-white outline-none focus:border-brandTeal"></label>
+          <div id="summary-filter-toolbar" class="mb-3 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[minmax(240px,1.5fr)_repeat(4,minmax(140px,1fr))] gap-2 rounded-xl border border-slate-800 bg-slate-950/50 p-3">
+            <label class="relative"><i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i><input id="summary-filter-search" type="search" placeholder="이름·이메일 검색" class="w-full rounded-lg border border-slate-700 bg-slate-900 py-2 pl-8 pr-3 text-xs text-white outline-none focus:border-brandTeal"></label>
             <select id="summary-filter-company" class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-bold text-slate-200"><option value="">전체 소속사</option></select>
             <select id="summary-filter-dept" class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-bold text-slate-200"><option value="">전체 부서</option></select>
+            <select id="summary-filter-workplace" class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-bold text-slate-200"><option value="">전체 근무지</option></select>
+            <select id="summary-filter-role" class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-bold text-slate-200"><option value="">전체 직급</option></select>
+            <select id="summary-filter-type" class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-bold text-slate-200"><option value="">전체 사원구분</option></select>
+            <select id="summary-filter-grade" class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-bold text-slate-200"><option value="">전체 등급</option><option>EX</option><option>S</option><option>A</option><option>B</option><option>C</option><option>D</option><option value="unrated">미평가</option></select>
+            <select id="summary-filter-status" class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-bold text-slate-200"><option value="">전체 진행상태</option><option value="complete">평가 완료</option><option value="pending">평가 진행 중</option></select>
+            <select id="summary-filter-adjusted" class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-bold text-slate-200"><option value="">전체 조정상태</option><option value="adjusted">조정됨</option><option value="not_adjusted">미조정</option></select>
             <button type="button" onclick="resetSummaryFilters()" class="rounded-lg border border-slate-700 px-3 py-2 text-xs font-bold text-slate-300 hover:border-slate-500 hover:text-white"><i class="fa-solid fa-rotate-left mr-1"></i>검색 초기화</button>
             <div class="md:col-span-2 xl:col-span-5 flex items-center justify-between text-[11px] text-slate-400"><span id="summary-filter-result-count">0명 표시</span><span><i class="fa-solid fa-arrow-down-a-z mr-1 text-brandTeal"></i>열 제목을 클릭하면 오름차순·내림차순으로 정렬됩니다.</span></div>
           </div>
@@ -2423,7 +2451,7 @@
           <label class="block text-[11px] font-bold text-slate-400 mb-1">시스템 권한</label>
           <select id="edit-user-sysrole" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-amber-300 font-bold">
             <option value="일반사용자">👤 일반사용자</option>
-            <option value="임원">⚖️ 임원 (전자결재·2차 조정)</option>
+            <option value="임원">⚖️ 임원 (전자결재·최종 조정)</option>
             <option value="관리자">👑 관리자 (Admin 권한)</option>
           </select>
         </div>
@@ -3154,6 +3182,10 @@
     function handleCycleSelectChange(selectEl) {
       const cycleId = setSelectedEvaluationCycleId(selectEl?.value);
       if (!cycleId) return;
+      const managementSelect = document.getElementById('management-cycle-select');
+      if (managementSelect && [...managementSelect.options].some(option => option.value === String(cycleId))) {
+        managementSelect.value = String(cycleId);
+      }
       ['question-cycle-select', 'perm-cycle-select', 'matching-cycle-select', 'progress-cycle-select', 'summary-cycle-select']
         .forEach(id => {
           const select = document.getElementById(id);
@@ -3169,6 +3201,47 @@
 
     function hasClosedArchiveForCycle(cycleId) {
       return evaluationHistoryDb.some(archive => Number(archive.cycleId) === Number(cycleId));
+    }
+
+    function hasCurrentFinalResultForCycle(cycle) {
+      const rows = Object.values(finalResultsByCycle[cycle?.id] || {});
+      return Number(cycle?.result_version || 0) > 0
+        && rows.some(row => Number(row.result_version) === Number(cycle.result_version));
+    }
+
+    function isVisiblePublishedResultCycle(cycle) {
+      return cycle?.status === '마감/보관됨'
+        && !cycle.cancelled_at
+        && !cycle.force_closed_at
+        && cycle.results_published === true
+        && cycle.result_gate_open === true
+        && cycle.internal_approval_status === 'approved'
+        && hasClosedArchiveForCycle(cycle.id)
+        && hasCurrentFinalResultForCycle(cycle);
+    }
+
+    function managementCyclesForSubtab(subtab, sortedCycles) {
+      if (['questions', 'matching'].includes(subtab)) {
+        return sortedCycles.filter(cycle => ['초안', '일시정지'].includes(cycle.status) && !isClosedEvaluationCycle(cycle));
+      }
+      if (subtab === 'progress') return sortedCycles.filter(cycle => cycle.status === '진행중' && !isClosedEvaluationCycle(cycle));
+      if (subtab === 'summary') {
+        return sortedCycles.filter(cycle =>
+          (cycle.status === '진행중' && Object.keys(cycleScoresDb[cycle.id] || {}).length > 0)
+          || (cycle.status === '마감/보관됨' && hasClosedArchiveForCycle(cycle.id) && hasCurrentFinalResultForCycle(cycle))
+        );
+      }
+      return [];
+    }
+
+    function handleManagementCycleChange(selectEl) {
+      const cycleId = setSelectedEvaluationCycleId(selectEl?.value);
+      if (!cycleId) return;
+      handleCycleSelectChange(selectEl);
+      if (currentActiveSubtab === 'questions') renderQuestionsList();
+      if (currentActiveSubtab === 'matching') renderManualMatchingTable();
+      if (currentActiveSubtab === 'progress') renderEvaluationProgress();
+      if (currentActiveSubtab === 'summary') renderAdminSummaryTable();
     }
 
     function setCycleSelectOptions(select, cycles, preferredCycleId = null) {
@@ -3191,8 +3264,17 @@
       const matchingSelect = document.getElementById('matching-cycle-select');
       const progressSelect = document.getElementById('progress-cycle-select');
       const summarySelect = document.getElementById('summary-cycle-select');
+      const managementSelect = document.getElementById('management-cycle-select');
+      const managementToolbar = document.getElementById('management-cycle-toolbar');
 
-      if (!cyclesDb || cyclesDb.length === 0) return;
+      if (!cyclesDb || cyclesDb.length === 0) {
+        [myReportSelect, questionSelect, permSelect, matchingSelect, progressSelect, summarySelect, managementSelect]
+          .filter(Boolean).forEach(select => select.replaceChildren());
+        if (managementToolbar) managementToolbar.classList.add('hidden');
+        selectedEvaluationCycleId = null;
+        currentSelectedSummaryCycleId = null;
+        return;
+      }
 
       // Sort by newest created cycle first (top of dropdown list)
       const sortedCycles = [...cyclesDb].sort((a, b) => b.id - a.id);
@@ -3210,7 +3292,7 @@
         ...progressCycles.filter(cycle => Object.keys(cycleScoresDb[cycle.id] || {}).length > 0),
         ...finalizedApprovalCycles
       ];
-      const publishedCycles = sortedCycles.filter(cycle => cycle.results_published === true);
+      const publishedCycles = sortedCycles.filter(isVisiblePublishedResultCycle);
       const preferredCycleId = selectedEvaluationCycleId || progressCycles[0]?.id || setupCycles[0]?.id;
 
       setCycleSelectOptions(questionSelect, setupCycles, questionSelect?.value || preferredCycleId);
@@ -3219,12 +3301,23 @@
       const progressCycleId = setCycleSelectOptions(progressSelect, progressCycles, progressSelect?.value || preferredCycleId);
       setCycleSelectOptions(summarySelect, summaryCycles, summarySelect?.value || progressCycleId);
       setSelectedEvaluationCycleId(progressCycleId || setupCycles[0]?.id);
+      const managementCycles = managementCyclesForSubtab(currentActiveSubtab, sortedCycles);
+      const managementCycleId = setCycleSelectOptions(managementSelect, managementCycles, selectedEvaluationCycleId);
+      if (managementCycleId) handleCycleSelectChange({ value: String(managementCycleId) });
+      if (managementToolbar) {
+        const visible = ['questions', 'matching', 'progress', 'summary'].includes(currentActiveSubtab);
+        managementToolbar.classList.toggle('hidden', !visible);
+        managementToolbar.classList.toggle('flex', visible);
+      }
 
       let myReportOptionsHtml = publishedCycles
         .map(cycle => `<option value="${cycle.id}">[${cycle.status}] ${cycle.name} (${cycle.start} ~ ${cycle.end})</option>`)
         .join('');
       if (evaluationHistoryDb && evaluationHistoryDb.length > 0) {
-        const historyOptionsHtml = evaluationHistoryDb.map(h => `<option value="history_${h.cycleId}">[🔒 과거 보관이력] ${h.cycleName} (마감: ${h.closedAt})</option>`).join('');
+        const visibleCycleIds = new Set(publishedCycles.map(cycle => Number(cycle.id)));
+        const historyOptionsHtml = evaluationHistoryDb
+          .filter(history => !visibleCycleIds.has(Number(history.cycleId)))
+          .map(h => `<option value="history_${h.cycleId}">[🔒 과거 보관이력] ${h.cycleName} (마감: ${h.closedAt})</option>`).join('');
         myReportOptionsHtml += historyOptionsHtml;
       }
 
@@ -3431,7 +3524,7 @@
         div.className = 'bg-slate-900/90 p-5 rounded-2xl border border-slate-800 shadow-xl';
         div.innerHTML = `
           <div class="flex items-center justify-between gap-2 mb-2">
-            <div class="flex items-center gap-2">
+            <div class="hidden items-center gap-2" aria-hidden="true">
               <span class="bg-slate-200 text-slate-700 border border-slate-400 px-2 py-0.5 rounded text-[10px] font-bold">읽기 전용</span>
               <span class="text-xs text-slate-400 font-bold">${escapeHtml(cycle.status)}</span>
             </div>
@@ -3563,20 +3656,22 @@
 
       if (!isPublished) {
         if (scoreEl) scoreEl.innerText = `-`;
-        if (cardEl) cardEl.className = "bg-slate-900/90 border border-slate-800 px-6 py-3 rounded-2xl text-center flex items-center gap-4 transition-all shadow-xl";
-        if (medalEl) medalEl.innerHTML = `<i class="fa-solid fa-lock text-amber-500 text-3xl animate-pulse"></i>`;
+        if (cardEl) cardEl.className = "grade-result-card rounded-3xl border border-slate-300 bg-gradient-to-br from-white to-slate-100 p-7 text-center flex flex-col items-center justify-center gap-5 transition-all shadow-xl";
+        if (medalEl) medalEl.innerHTML = `<i class="fa-solid fa-lock text-slate-500 text-6xl"></i>`;
         if (titleEl) {
-          titleEl.className = "text-xl font-black text-slate-400";
-          titleEl.innerText = `🔒 평가 결과 비공개 상태`;
+          titleEl.className = "text-3xl font-black text-slate-800";
+          titleEl.innerText = `평가 결과 비공개`;
         }
+        if (descriptionEl) descriptionEl.innerText = '전자승인과 결과 공개 절차가 완료되면 최종 등급이 표시됩니다.';
       } else if (!hasActualEvaluations) {
         if (scoreEl) scoreEl.innerText = `-`;
-        if (cardEl) cardEl.className = "bg-slate-900/90 border border-slate-800 px-6 py-3 rounded-2xl text-center flex items-center gap-4 transition-all shadow-xl";
-        if (medalEl) medalEl.innerHTML = `<i class="fa-solid fa-hourglass-start text-amber-400 text-3xl animate-pulse"></i>`;
+        if (cardEl) cardEl.className = "grade-result-card rounded-3xl border border-amber-200 bg-gradient-to-br from-white via-amber-50 to-slate-100 p-7 text-center flex flex-col items-center justify-center gap-5 transition-all shadow-xl";
+        if (medalEl) medalEl.innerHTML = `<i class="fa-solid fa-hourglass-half hourglass-turn text-amber-500 text-6xl"></i>`;
         if (titleEl) {
-          titleEl.className = "text-xl font-black text-slate-400";
-          titleEl.innerText = `⏳ 미평가 (평가 진행 중)`;
+          titleEl.className = "text-3xl font-black text-slate-800";
+          titleEl.innerText = `평가 진행 중`;
         }
+        if (descriptionEl) descriptionEl.innerText = '모든 평가와 결과 공개 절차가 완료되면 최종 등급이 표시됩니다.';
       } else {
         const grade = empScoreData.grade;
         const totalScore = empScoreData.final.toFixed(1);
@@ -3584,26 +3679,28 @@
         if (adjustedScoreEl) adjustedScoreEl.innerText = `${totalScore}점`;
 
         if (grade === 'EX') {
-          cardEl.className = "glitter-another-level border-2 px-6 py-4 rounded-2xl text-center flex items-center gap-4 transition-all shadow-2xl relative overflow-hidden";
-          medalEl.innerHTML = `<span class="text-4xl animate-bounce">🪽</span>`;
-          titleEl.className = "text-xl font-black grade-label-ex";
-          titleEl.innerText = `EX Grade (ANOTHER LEVEL)`;
+          cardEl.className = "grade-result-card glitter-another-level border-2 p-7 rounded-3xl text-center flex flex-col items-center justify-center gap-5 transition-all shadow-2xl relative overflow-hidden";
+          medalEl.innerHTML = `<span class="text-6xl">🪽</span>`;
+          titleEl.className = "grade-result-mark font-black grade-label-ex";
+          titleEl.innerText = `EX`;
         } else if (grade === 'S') {
-          cardEl.className = "glitter-diamond border px-6 py-3 rounded-2xl text-center flex items-center gap-4 transition-all shadow-2xl";
-          medalEl.innerHTML = `<i class="fa-solid fa-gem text-cyan-300 text-3xl"></i>`;
-          titleEl.className = "text-xl font-black grade-label-s";
-          titleEl.innerText = `S Grade (Diamond)`;
+          cardEl.className = "grade-result-card glitter-diamond border p-7 rounded-3xl text-center flex flex-col items-center justify-center gap-5 transition-all shadow-2xl";
+          medalEl.innerHTML = `<i class="fa-solid fa-gem text-cyan-300 text-6xl"></i>`;
+          titleEl.className = "grade-result-mark font-black grade-label-s";
+          titleEl.innerText = `S`;
         } else if (grade === 'A') {
-          cardEl.className = "glitter-gold border px-6 py-3 rounded-2xl text-center flex items-center gap-4 transition-all shadow-2xl";
-          medalEl.innerHTML = `<i class="fa-solid fa-award text-amber-300 text-3xl"></i>`;
-          titleEl.className = "text-xl font-black grade-label-a";
-          titleEl.innerText = `A Grade (Gold)`;
+          cardEl.className = "grade-result-card glitter-gold border p-7 rounded-3xl text-center flex flex-col items-center justify-center gap-5 transition-all shadow-2xl";
+          medalEl.innerHTML = `<i class="fa-solid fa-award text-amber-300 text-6xl"></i>`;
+          titleEl.className = "grade-result-mark font-black grade-label-a";
+          titleEl.innerText = `A`;
         } else {
-          cardEl.className = "bg-slate-800/90 border border-slate-700 px-6 py-3 rounded-2xl text-center flex items-center gap-4 transition-all shadow-xl";
-          medalEl.innerHTML = `<i class="fa-solid fa-medal text-slate-300 text-3xl"></i>`;
-          titleEl.className = "text-xl font-black text-slate-200";
-          titleEl.innerText = `B Grade (Silver)`;
+          const gradeIcon = grade === 'C' ? 'fa-shield' : grade === 'D' ? 'fa-cube' : 'fa-medal';
+          cardEl.className = "grade-result-card rounded-3xl border border-slate-300 bg-gradient-to-br from-white to-slate-100 p-7 text-center flex flex-col items-center justify-center gap-5 transition-all shadow-xl";
+          medalEl.innerHTML = `<i class="fa-solid ${gradeIcon} text-slate-500 text-6xl"></i>`;
+          titleEl.className = "grade-result-mark font-black text-slate-800";
+          titleEl.innerText = grade || 'B';
         }
+        if (descriptionEl) descriptionEl.innerText = '최종 확정·공개된 인사평가 등급입니다.';
       }
 
       if (adjustedScoreEl && empScoreData) adjustedScoreEl.innerText = `${empScoreData.final.toFixed(1)}점`;
@@ -3780,7 +3877,7 @@
       }
 
       if (isExecOnly && !['summary', 'history', 'progress'].includes(subtab)) {
-        alert('임원 권한 사용자는 [📋 점수 집계 & 2차 조정] 및 [🔒 평가 마감 & 과거 이력] 접근 권한이 부여됩니다.');
+        alert('임원 권한 사용자는 [📋 점수 집계 & 최종 조정], [평가 진행 현황], [🔒 과거 평가 이력]을 이용할 수 있습니다.');
         subtab = 'summary';
       }
 
@@ -4527,6 +4624,31 @@
       finishAuthenticatedLogin();
     }
 
+    async function requestPasswordSetupEmail(event) {
+      event.preventDefault();
+      const email = document.getElementById('password-reset-request-email')?.value.trim();
+      const button = document.getElementById('password-reset-request-button');
+      const message = document.getElementById('password-reset-request-message');
+      if (!email || !button || !message) return;
+      button.disabled = true;
+      button.textContent = '요청 중…';
+      try {
+        const response = await fetch('/api/password-reset-request', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        const payload = await response.json().catch(() => ({}));
+        message.textContent = payload.message || '등록된 활성 계정이면 비밀번호 설정 메일을 발송했습니다.';
+      } catch {
+        message.textContent = '등록된 활성 계정이면 비밀번호 설정 메일을 발송했습니다.';
+      } finally {
+        message.classList.remove('hidden');
+        button.disabled = false;
+        button.textContent = '설정 메일 다시 요청';
+      }
+    }
+
     async function callUsersApi(method, body) {
       if (!supabaseClient) throw new Error('Supabase 연결이 없습니다.');
       const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
@@ -4683,19 +4805,37 @@
 
     function scheduleCentralReload() {
       clearTimeout(centralReloadTimer);
+      setCentralSyncStatus('syncing');
       centralReloadTimer = setTimeout(async () => {
-        if (!currentLoggedInUser) return;
+        if (!currentLoggedInUser) {
+          setCentralSyncStatus('ready');
+          return;
+        }
         try {
           await loadFromServer();
           renderCurrentCentralViews();
+          setCentralSyncStatus('ready');
         } catch (error) {
           console.error('Central state reload failed:', error);
+          setCentralSyncStatus('error');
         }
       }, 250);
     }
 
     function announceCentralChange() {
       if (centralBroadcastChannel) centralBroadcastChannel.postMessage({ type: 'server-state-changed', at: Date.now() });
+    }
+
+    function setCentralSyncStatus(state = 'ready') {
+      const statusEl = document.getElementById('sync-footer-status');
+      if (!statusEl) return;
+      const labels = {
+        ready: '서버 동기화 정상',
+        syncing: '서버 동기화 중',
+        error: '서버 연결 확인 필요'
+      };
+      statusEl.dataset.state = labels[state] ? state : 'ready';
+      statusEl.textContent = labels[state] || labels.ready;
     }
 
     function setupCentralStateSync() {
@@ -4714,7 +4854,11 @@
       ].forEach(table => {
         centralRealtimeChannel.on('postgres_changes', { event: '*', schema: 'public', table }, scheduleCentralReload);
       });
-      centralRealtimeChannel.subscribe();
+      centralRealtimeChannel.subscribe(status => {
+        if (status === 'SUBSCRIBED') setCentralSyncStatus('ready');
+        else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') setCentralSyncStatus('error');
+        else setCentralSyncStatus('syncing');
+      });
       window.addEventListener('focus', () => {
         if (Date.now() - lastCentralLoadAt > 30000) scheduleCentralReload();
       });
@@ -4834,6 +4978,30 @@
       );
     }
 
+    function renderGradeResultCard(grade) {
+      const normalized = String(grade || '').toUpperCase();
+      const card = document.getElementById('my-grade-card');
+      const title = document.getElementById('my-grade-title');
+      const medal = document.getElementById('my-medal-container');
+      const description = document.getElementById('my-grade-description');
+      const ui = {
+        EX: ['glitter-another-level border-2', '🪽', 'grade-label-ex'],
+        S: ['glitter-diamond border', '<i class="fa-solid fa-gem text-cyan-300 text-6xl"></i>', 'grade-label-s'],
+        A: ['glitter-gold border', '<i class="fa-solid fa-award text-amber-300 text-6xl"></i>', 'grade-label-a'],
+        B: ['border border-slate-300 bg-gradient-to-br from-white to-slate-100', '<i class="fa-solid fa-medal text-slate-500 text-6xl"></i>', 'text-slate-800'],
+        C: ['grade-surface-c border', '<i class="fa-solid fa-shield grade-icon-c text-6xl"></i>', 'grade-label-c'],
+        D: ['border border-stone-300 bg-gradient-to-br from-white to-stone-100', '<i class="fa-solid fa-cube text-stone-500 text-6xl"></i>', 'text-stone-800']
+      }[normalized];
+      if (!ui) return;
+      if (card) card.className = `grade-result-card ${ui[0]} p-7 rounded-3xl text-center flex flex-col items-center justify-center gap-5 transition-all shadow-2xl relative overflow-hidden`;
+      if (medal) medal.innerHTML = ui[1];
+      if (title) {
+        title.className = `grade-result-mark font-black ${ui[2]}`;
+        title.textContent = normalized;
+      }
+      if (description) description.textContent = '최종 확정·공개된 인사평가 등급입니다.';
+    }
+
     function applyPublishedScores(scores) {
       const cardEl = document.getElementById('my-grade-card');
       const chartCard = document.getElementById('my-chart-card');
@@ -4847,16 +5015,15 @@
       const total = Number(scores.total);
       const totalEl = document.getElementById('my-total-score');
       const titleEl = document.getElementById('my-grade-title');
+      const descriptionEl = document.getElementById('my-grade-description');
       const medalEl = document.getElementById('my-medal-container');
       if (totalEl) totalEl.textContent = `${total.toFixed(1)}점`;
       const relativeGrade = scores.relative_grade || scores.grade;
-      const grade = ['S', 'A', 'B', 'C', 'D'].includes(String(relativeGrade).toUpperCase())
+      const grade = ['EX', 'S', 'A', 'B', 'C', 'D'].includes(String(relativeGrade).toUpperCase())
         ? String(relativeGrade).toUpperCase()
         : null;
       if (!grade) { applyAdjustedResultMode(null); return; }
-      if (cardEl) cardEl.className = grade === 'S' ? 'glitter-diamond border px-6 py-3 rounded-2xl text-center flex items-center gap-4 transition-all shadow-2xl' : grade === 'A' ? 'glitter-gold border px-6 py-3 rounded-2xl text-center flex items-center gap-4 transition-all shadow-2xl' : grade === 'C' ? 'grade-surface-c border px-6 py-3 rounded-2xl text-center flex items-center gap-4 transition-all shadow-xl' : 'bg-slate-800/90 border border-slate-700 px-6 py-3 rounded-2xl text-center flex items-center gap-4 transition-all shadow-xl';
-      if (titleEl) { titleEl.className = grade === 'S' ? 'text-xl font-black grade-label-s' : grade === 'A' ? 'text-xl font-black grade-label-a' : grade === 'C' ? 'text-xl font-black grade-label-c' : 'text-xl font-black text-slate-200'; titleEl.textContent = `${grade} Grade`; }
-      if (medalEl) medalEl.innerHTML = grade === 'S' ? '<i class="fa-solid fa-gem text-cyan-300 text-3xl animate-spin3d"></i>' : grade === 'A' ? '<i class="fa-solid fa-award text-amber-300 text-3xl animate-spin3d"></i>' : grade === 'B' ? '<i class="fa-solid fa-medal text-slate-300 text-3xl animate-spin3d"></i>' : grade === 'C' ? '<i class="fa-solid fa-shield grade-icon-c text-3xl animate-spin3d"></i>' : '<i class="fa-solid fa-cube text-stone-300 text-3xl animate-spin3d"></i>';
+      renderGradeResultCard(grade);
       mapping.forEach(([prefix, value]) => {
         const valueEl = document.getElementById(`my-${prefix}-val`);
         const barEl = document.getElementById(`my-${prefix}-bar`);
@@ -4879,6 +5046,10 @@
       const grade = ['EX', 'S', 'A', 'B', 'C', 'D'].includes(String(finalGrade || '').toUpperCase())
         ? String(finalGrade).toUpperCase()
         : null;
+      if (grade) {
+        renderGradeResultCard(grade);
+        return;
+      }
       const gradeUi = {
         EX: {
           card: 'glitter-another-level border-2 px-6 py-4 rounded-2xl text-center flex items-center gap-4 transition-all shadow-2xl relative overflow-hidden',
@@ -6641,7 +6812,7 @@
       }
     }
 
-    // ADMIN SUBTAB 5: SUMMARY & 2ND ADJUSTMENT
+    // ADMIN SUBTAB: SUMMARY & FINAL ADJUSTMENT
     let currentSelectedSummaryCycleId = 1;
 
     async function handleLogout() {
@@ -6710,7 +6881,10 @@
       }
     });
 
-    const summaryViewState = { query: '', company: '', dept: '', sortKey: 'workflow', sortDirection: 'asc' };
+    const summaryViewState = {
+      query: '', company: '', dept: '', workplace: '', role: '', type: '',
+      grade: '', status: '', adjusted: '', sortKey: 'workflow', sortDirection: 'asc'
+    };
 
     function populateSummaryFilterSelect(select, label, values, selectedValue) {
       if (!select) return;
@@ -6723,12 +6897,21 @@
       const search = document.getElementById('summary-filter-search');
       const company = document.getElementById('summary-filter-company');
       const dept = document.getElementById('summary-filter-dept');
-      if (!search || !company || !dept) return;
+      const workplace = document.getElementById('summary-filter-workplace');
+      const role = document.getElementById('summary-filter-role');
+      const type = document.getElementById('summary-filter-type');
+      if (!search || !company || !dept || !workplace || !role || !type) return;
       search.value = summaryViewState.query;
       const companies = [...new Set(usersDb.map(user => String(user.company || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ko'));
       populateSummaryFilterSelect(company, '전체 소속사', companies, summaryViewState.company);
       const departments = [...new Set(usersDb.filter(user => !summaryViewState.company || user.company === summaryViewState.company).map(user => String(user.dept || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ko'));
       populateSummaryFilterSelect(dept, '전체 부서', departments, summaryViewState.dept);
+      populateSummaryFilterSelect(workplace, '전체 근무지', [...new Set(usersDb.map(user => String(user.workplace || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ko')), summaryViewState.workplace);
+      populateSummaryFilterSelect(role, '전체 직급', [...new Set(usersDb.map(user => String(user.role || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ko')), summaryViewState.role);
+      populateSummaryFilterSelect(type, '전체 사원구분', [...new Set(usersDb.map(user => String(user.type || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ko')), summaryViewState.type);
+      document.getElementById('summary-filter-grade').value = summaryViewState.grade;
+      document.getElementById('summary-filter-status').value = summaryViewState.status;
+      document.getElementById('summary-filter-adjusted').value = summaryViewState.adjusted;
     }
 
     function initializeSummaryFiltersAndSorting() {
@@ -6749,6 +6932,12 @@
         summaryViewState.dept = event.target.value;
         renderAdminSummaryTable();
       });
+      ['workplace', 'role', 'type', 'grade', 'status', 'adjusted'].forEach(key => {
+        document.getElementById(`summary-filter-${key}`).addEventListener('change', event => {
+          summaryViewState[key] = event.target.value;
+          renderAdminSummaryTable();
+        });
+      });
       const sortKeys = ['name', 'company', 'role', 'raw', 'final', 'adjusted', 'grade'];
       document.getElementById('admin-table-body')?.closest('table')?.querySelectorAll('thead th').forEach((header, index) => {
         const key = sortKeys[index];
@@ -6764,7 +6953,10 @@
     }
 
     function resetSummaryFilters() {
-      Object.assign(summaryViewState, { query: '', company: '', dept: '', sortKey: 'workflow', sortDirection: 'asc' });
+      Object.assign(summaryViewState, {
+        query: '', company: '', dept: '', workplace: '', role: '', type: '',
+        grade: '', status: '', adjusted: '', sortKey: 'workflow', sortDirection: 'asc'
+      });
       renderAdminSummaryTable();
     }
 
@@ -6775,7 +6967,13 @@
         const searchable = [employee.name, employee.email, employee.company, employee.dept, employee.role, employee.workplace].join(' ').toLocaleLowerCase('ko');
         return (!query || searchable.includes(query))
           && (!summaryViewState.company || employee.company === summaryViewState.company)
-          && (!summaryViewState.dept || employee.dept === summaryViewState.dept);
+          && (!summaryViewState.dept || employee.dept === summaryViewState.dept)
+          && (!summaryViewState.workplace || employee.workplace === summaryViewState.workplace)
+          && (!summaryViewState.role || employee.role === summaryViewState.role)
+          && (!summaryViewState.type || employee.type === summaryViewState.type)
+          && (!summaryViewState.grade || (summaryViewState.grade === 'unrated' ? !cycleScores[employee.id]?.grade : cycleScores[employee.id]?.grade === summaryViewState.grade))
+          && (!summaryViewState.status || (summaryViewState.status === 'complete' ? cycleScores[employee.id]?.complete : !cycleScores[employee.id]?.complete))
+          && (!summaryViewState.adjusted || (summaryViewState.adjusted === 'adjusted' ? cycleScores[employee.id]?.is_adjusted : !cycleScores[employee.id]?.is_adjusted));
       });
       const sortValue = employee => {
         const score = cycleScores[employee.id] || {};
@@ -6849,9 +7047,13 @@
       const cycleScores = cycleScoresDb[currentSelectedSummaryCycleId] || {};
       initializeSummaryFiltersAndSorting();
 
-      // 점수 집계·2차 조정은 실제 피평가자만 대상으로 한다.
+      // 점수 집계·최종 조정은 선택 주기의 실제 피평가자만 대상으로 한다.
       // 평가 전담자는 평가 진행·배정 관리에는 남지만 이 결과 목록에서는 제외한다.
-      getVisibleSummaryEmployees(usersDb.filter(emp => emp.is_evaluatee !== false), cycleScores).forEach(emp => {
+      const cycleTargetIds = new Set(Object.keys(cycleScores).map(Number));
+      getVisibleSummaryEmployees(
+        usersDb.filter(emp => emp.active !== false && emp.is_evaluatee === true && cycleTargetIds.has(Number(emp.id))),
+        cycleScores
+      ).forEach(emp => {
         const isEvalOnly = false;
         const empScoreData = cycleScores[emp.id];
         const tr = document.createElement('tr');
@@ -7542,7 +7744,7 @@
 
     function navigateTo(viewId) {
       // Older builds stored the removed personal-goals view in sessionStorage.
-      if (viewId === 'goals') viewId = 'guide';
+      if (viewId === 'goals' || viewId === 'guide') viewId = 'list';
 
       // Dynamic Permission Guard for Admin/Management Pages
       const roleInfo = checkUserRole(currentLoggedInUser);
@@ -7561,7 +7763,7 @@
       sessionStorage.setItem('cnhy_session_view', viewId);
 
       // Hide all main section views
-      const views = ['login', 'list', 'eval', 'guide', 'myresults', 'evalmanage', 'admin'];
+      const views = ['login', 'list', 'eval', 'myresults', 'evalmanage', 'admin'];
       views.forEach(v => {
         const el = document.getElementById(`view-${v}`);
         if (el) el.classList.add('hidden');
@@ -7610,5 +7812,6 @@
       }
     }
   </script>
+  <footer class="px-4 pb-4 pt-2 text-center"><span id="sync-footer-status" class="sync-footer-status" data-state="ready">서버 동기화 정상</span></footer>
 </body>
 </html>
