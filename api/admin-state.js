@@ -12,7 +12,7 @@ const ADMIN_ONLY = new Set([
   'question_delete', 'matching_toggle', 'matching_replace', 'matching_generate', 'matching_mode_update', 'permission_update', 'permission_bulk_update', 'settings_update',
   'goal_status', 'cycle_close', 'cycle_pause', 'cycle_resume', 'cycle_force_close', 'cycle_cancel', 'cycle_hard_delete'
 ]);
-const EXECUTIVE_ALLOWED = new Set();
+const EXECUTIVE_ALLOWED = new Set(['notification_read', 'notification_read_all']);
 const send = (res, status, payload) => res.status(status).json(payload);
 
 export async function fetchAllRows(buildQuery, pageSize = 1000) {
@@ -370,7 +370,7 @@ async function readState(service, profile) {
   if (settingsResult.error) throw settingsResult.error;
   if (goalsResult.error) throw goalsResult.error;
   if (!PRIVILEGED.has(profile.sys_role)) return { settings: settingsResult.data, goals: goalsResult.data || [] };
-  const [matchings, archives, evaluations, adjustments, allGoals, users, cycles, finalResults, approvalRequests, approvalSteps, gradeMailDispatches] = await Promise.all([
+  const [matchings, archives, evaluations, adjustments, allGoals, users, cycles, finalResults, approvalRequests, approvalSteps, gradeMailDispatches, notifications] = await Promise.all([
     fetchAllRows(() => service.from('matchings').select('*').order('id')),
     service.from('evaluation_archives').select('*').order('closed_at', { ascending: false }),
     fetchAllRows(() => service.from('evaluations').select('matching_id,cycle_id,target_id,perf_score,collab_score,growth_score,harmony_score').order('id')),
@@ -386,9 +386,14 @@ async function readState(service, profile) {
           .select('cycle_id,target_id,result_version,dispatched_at')
           .eq('mail_kind', 'grade_notice')
           .eq('dispatch_status', 'sent'))
-      : Promise.resolve({ data: [], error: null })
+      : Promise.resolve({ data: [], error: null }),
+    service.from('evaluation_notifications')
+      .select('id,cycle_id,notification_type,title,message,read_at,created_at')
+      .eq('recipient_user_id', profile.id)
+      .order('created_at', { ascending: false })
+      .limit(100)
   ]);
-  for (const result of [matchings, archives, evaluations, adjustments, allGoals, users, cycles, finalResults, approvalRequests, approvalSteps, gradeMailDispatches]) if (result.error) throw result.error;
+  for (const result of [matchings, archives, evaluations, adjustments, allGoals, users, cycles, finalResults, approvalRequests, approvalSteps, gradeMailDispatches, notifications]) if (result.error) throw result.error;
   const userMap = new Map((users.data || []).map(user => [Number(user.id), user]));
   const eligibleMatchings = (matchings.data || []).filter(row => {
     const evaluator = userMap.get(Number(row.evaluator_id));
@@ -457,7 +462,8 @@ async function readState(service, profile) {
     final_results: currentFinalResults,
     grade_mail_dispatches: gradeMailDispatches.data || [],
     approval_requests: approvalLines,
-    pending_approval_notifications: pendingApprovalNotifications
+    pending_approval_notifications: pendingApprovalNotifications,
+    notifications: notifications.data || []
   };
 }
 
@@ -548,6 +554,16 @@ export default async function handler(req, res) {
       return send(res, 200, { data: goal.data });
     }
     if (!PRIVILEGED.has(profile.sys_role)) return send(res, 403, { error: '관리자 권한이 필요합니다.' });
+    if (action === 'notification_read' || action === 'notification_read_all') {
+      let query = service.from('evaluation_notifications')
+        .update({ read_at: new Date().toISOString() })
+        .eq('recipient_user_id', profile.id)
+        .is('read_at', null);
+      if (action === 'notification_read') query = query.eq('id', Number(req.body?.id));
+      const updated = await query.select('id,read_at');
+      if (updated.error) throw updated.error;
+      return send(res, 200, { data: updated.data || [] });
+    }
     if (action === 'goal_status') {
       if (profile.sys_role !== ROLES.admin) return send(res, 403, { error: 'Administrator role required.' });
       const status = String(req.body?.status || '');

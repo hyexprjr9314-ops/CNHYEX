@@ -174,8 +174,8 @@ const RPC_BY_ACTION = Object.freeze({
 
 async function resolveApproverAuthIds(service, userIds) {
   const ids = [...new Set((userIds || []).map(Number).filter(Number.isInteger))];
-  if (ids.length < 1 || ids.length > 2) {
-    throw Object.assign(new Error('Select one or two unique executive approvers.'), { status: 400 });
+  if (ids.length < 1 || ids.length > 3) {
+    throw Object.assign(new Error('Select one to three unique executive approvers.'), { status: 400 });
   }
   const approvers = await service.from('users')
     .select('id,auth_user_id')
