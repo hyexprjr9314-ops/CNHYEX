@@ -54,3 +54,8 @@ test('database grading policy accepts EX and preserves minimum cohort edges', ()
   assert.match(migration, /member_count>=10 and grade in \('S','D'\)/);
   assert.match(migration, /evaluation_cycle_exceptional_grade_trigger/);
 });
+
+test('completed EX results render an EX badge in the score summary', () => {
+  assert.match(index, /if \(g === 'EX'\)/);
+  assert.match(index, /EX · ANOTHER LEVEL/);
+});
