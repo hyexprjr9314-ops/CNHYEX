@@ -129,10 +129,46 @@
     }
 
     .glitter-another-level {
-      animation: none;
-      background: #FFF7ED;
-      border-color: #D97706 !important;
-      box-shadow: 0 3px 12px rgba(217, 119, 6, 0.2) !important;
+      position: relative;
+      overflow: hidden;
+      animation: ex-aura 2.8s ease-in-out infinite, ex-prism 7s linear infinite;
+      background: linear-gradient(120deg, #FDF4FF, #E0F2FE, #DCFCE7, #FEF9C3, #FFEDD5, #FCE7F3, #FDF4FF);
+      background-size: 300% 300%;
+      border-color: #A855F7 !important;
+      box-shadow: 0 3px 14px rgba(124, 58, 237, 0.22) !important;
+    }
+    .glitter-another-level > * { position: relative; z-index: 1; }
+    .glitter-another-level::after {
+      content: "";
+      position: absolute;
+      inset: -40% auto -40% -35%;
+      width: 22%;
+      pointer-events: none;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.85), transparent);
+      transform: skewX(-18deg);
+      animation: ex-shine 3.4s ease-in-out infinite;
+    }
+    .ex-wing-motion {
+      display: inline-block;
+      animation: ex-wing-float 2.2s ease-in-out infinite;
+      transform-origin: center;
+    }
+    @keyframes ex-aura {
+      0%, 100% { box-shadow: 0 3px 14px rgba(124, 58, 237, .22); }
+      50% { box-shadow: 0 10px 30px rgba(14, 165, 233, .34), 0 0 22px rgba(236, 72, 153, .2); }
+    }
+    @keyframes ex-prism {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 300% 50%; }
+    }
+    @keyframes ex-shine {
+      0%, 28% { left: -35%; opacity: 0; }
+      42% { opacity: 1; }
+      62%, 100% { left: 120%; opacity: 0; }
+    }
+    @keyframes ex-wing-float {
+      0%, 100% { transform: translateY(0) rotate(-3deg) scale(1); }
+      50% { transform: translateY(-6px) rotate(3deg) scale(1.08); }
     }
     .grade-label-ex { color: #78350F !important; }
     .grade-label-s { color: #155E75 !important; }
@@ -487,6 +523,9 @@
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
+      }
+      .glitter-another-level, .glitter-another-level::after, .ex-wing-motion {
+        animation: none !important;
       }
     }
 
@@ -1348,6 +1387,10 @@
           </div>
           <strong id="my-grade-title" class="text-3xl font-black text-slate-800">평가 진행 중</strong>
           <p id="my-grade-description" class="max-w-md text-sm leading-relaxed text-slate-500">모든 평가와 결과 공개 절차가 완료되면 최종 등급이 표시됩니다.</p>
+          <div id="my-grade-reason" class="hidden w-full max-w-md rounded-2xl border border-white/80 bg-white/75 px-4 py-3 text-left shadow-sm backdrop-blur-sm">
+            <span class="block text-[11px] font-black tracking-[0.08em] text-slate-700">평가등급 책정 사유</span>
+            <p id="my-grade-reason-text" class="mt-1 text-sm font-semibold leading-relaxed text-slate-700"></p>
+          </div>
         </div>
 
         <!-- Executive Adjusted Notice Card (Displayed ONLY when Executive 2nd Adjustment applied) -->
@@ -3685,7 +3728,7 @@
 
         if (grade === 'EX') {
           cardEl.className = "grade-result-card glitter-another-level border-2 p-7 rounded-3xl text-center flex flex-col items-center justify-center gap-5 transition-all shadow-2xl relative overflow-hidden";
-          medalEl.innerHTML = `<span class="text-6xl">🪽</span>`;
+          medalEl.innerHTML = `<span class="ex-wing-motion text-6xl">🪽</span>`;
           titleEl.className = "grade-result-mark font-black grade-label-ex";
           titleEl.innerText = `EX`;
         } else if (grade === 'S') {
@@ -4983,14 +5026,23 @@
       );
     }
 
-    function renderGradeResultCard(grade) {
+    function renderGradeBasis(gradeBasis) {
+      const container = document.getElementById('my-grade-reason');
+      const text = document.getElementById('my-grade-reason-text');
+      if (!container || !text) return;
+      const reason = String(gradeBasis?.text || '').trim();
+      container.classList.toggle('hidden', !reason);
+      text.textContent = reason;
+    }
+
+    function renderGradeResultCard(grade, gradeBasis = null) {
       const normalized = String(grade || '').toUpperCase();
       const card = document.getElementById('my-grade-card');
       const title = document.getElementById('my-grade-title');
       const medal = document.getElementById('my-medal-container');
       const description = document.getElementById('my-grade-description');
       const ui = {
-        EX: ['glitter-another-level border-2', '🪽', 'grade-label-ex'],
+        EX: ['glitter-another-level border-2', '<span class="ex-wing-motion">🪽</span>', 'grade-label-ex'],
         S: ['glitter-diamond border', '<i class="fa-solid fa-gem text-cyan-300 text-6xl"></i>', 'grade-label-s'],
         A: ['glitter-gold border', '<i class="fa-solid fa-award text-amber-300 text-6xl"></i>', 'grade-label-a'],
         B: ['border border-slate-300 bg-gradient-to-br from-white to-slate-100', '<i class="fa-solid fa-medal text-slate-500 text-6xl"></i>', 'text-slate-800'],
@@ -5005,9 +5057,10 @@
         title.textContent = normalized;
       }
       if (description) description.textContent = '최종 확정·공개된 인사평가 등급입니다.';
+      renderGradeBasis(gradeBasis);
     }
 
-    function applyPublishedScores(scores) {
+    function applyPublishedScores(scores, gradeBasis = null) {
       const cardEl = document.getElementById('my-grade-card');
       const chartCard = document.getElementById('my-chart-card');
       const adjustedNotice = document.getElementById('my-adjusted-notice');
@@ -5028,7 +5081,7 @@
         ? String(relativeGrade).toUpperCase()
         : null;
       if (!grade) { applyAdjustedResultMode(null); return; }
-      renderGradeResultCard(grade);
+      renderGradeResultCard(grade, gradeBasis);
       mapping.forEach(([prefix, value]) => {
         const valueEl = document.getElementById(`my-${prefix}-val`);
         const barEl = document.getElementById(`my-${prefix}-bar`);
@@ -5037,7 +5090,7 @@
       });
     }
 
-    function applyAdjustedResultMode(finalGrade = null) {
+    function applyAdjustedResultMode(finalGrade = null, gradeBasis = null) {
       const chartCard = document.getElementById('my-chart-card');
       const adjustedNotice = document.getElementById('my-adjusted-notice');
       const cardEl = document.getElementById('my-grade-card');
@@ -5047,19 +5100,20 @@
       if (chartCard) chartCard.classList.add('hidden');
       if (adjustedNotice) adjustedNotice.classList.remove('hidden');
       if (totalEl) totalEl.textContent = '점수 비공개';
+      renderGradeBasis(gradeBasis);
 
       const grade = ['EX', 'S', 'A', 'B', 'C', 'D'].includes(String(finalGrade || '').toUpperCase())
         ? String(finalGrade).toUpperCase()
         : null;
       if (grade) {
-        renderGradeResultCard(grade);
+        renderGradeResultCard(grade, gradeBasis);
         return;
       }
       const gradeUi = {
         EX: {
           card: 'glitter-another-level border-2 px-6 py-4 rounded-2xl text-center flex items-center gap-4 transition-all shadow-2xl relative overflow-hidden',
           title: 'text-xl font-black grade-label-ex',
-          icon: '<span class="text-4xl animate-bounce">🪽</span>'
+          icon: '<span class="ex-wing-motion text-4xl">🪽</span>'
         },
         S: {
           card: 'glitter-diamond border px-6 py-3 rounded-2xl text-center flex items-center gap-4 transition-all shadow-2xl',
@@ -5110,15 +5164,16 @@
 
     async function loadServerResultState(cycleId) {
       const requestId = ++latestResultStateRequest;
+      renderGradeBasis(null);
       try {
         const payload = await callResultStateApi('GET', { cycle_id: cycleId });
         if (requestId !== latestResultStateRequest) return;
         if (payload.adjusted) {
-          applyAdjustedResultMode(payload.relative_grade || payload.adjustment?.grade_override || payload.adjustment?.final_grade || null);
+          applyAdjustedResultMode(payload.relative_grade || payload.adjustment?.grade_override || payload.adjustment?.final_grade || null, payload.grade_basis);
           return;
         }
         if (payload.state === 'ready' && payload.scores) {
-          applyPublishedScores({ ...payload.scores, relative_grade: payload.relative_grade });
+          applyPublishedScores({ ...payload.scores, relative_grade: payload.relative_grade }, payload.grade_basis);
         }
       } catch (error) {
         console.warn('평가 결과를 불러오지 못했습니다:', error);
@@ -7083,7 +7138,7 @@
           if (g === 'EX') {
             gradeBadgeHtml = `
               <div class="inline-flex items-center gap-1.5 glitter-another-level border px-2.5 py-1 rounded-xl shadow-md">
-                <span class="text-sm">🪽</span>
+                <span class="ex-wing-motion text-sm">🪽</span>
                 <span class="font-black text-xs grade-label-ex">EX · ANOTHER LEVEL</span>
               </div>
             `;

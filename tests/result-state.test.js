@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
-import { hasUnresolvedActiveAdjustment, isFinalResultAdjusted, secondStageFinalScore } from '../api/result-state.js';
+import { buildGradeBasis, hasUnresolvedActiveAdjustment, isFinalResultAdjusted, secondStageFinalScore } from '../api/result-state.js';
 
 const resultStateUrl = new URL('../api/result-state.js', import.meta.url);
 
@@ -51,8 +51,29 @@ test('finalized score or approved-grade changes keep personal category graphs pr
   assert.equal(isFinalResultAdjusted({ raw_score: 80, effective_score: 80, relative_grade: 'B', approved_grade: 'A' }), true);
 });
 
+test('grade basis explains relative, EX, and approved override results without exposing exact rank', () => {
+  const rows = [
+    { target_id: 1, cohort_key: 'headquarters', raw_score: 95, effective_score: 95, relative_grade: 'S' },
+    { target_id: 2, cohort_key: 'headquarters', raw_score: 90, effective_score: 90, relative_grade: 'A' },
+    { target_id: 3, cohort_key: 'headquarters', raw_score: 80, effective_score: 80, relative_grade: 'B' },
+    { target_id: 4, cohort_key: 'headquarters', raw_score: 100, effective_score: 100, relative_grade: 'EX' }
+  ];
+  const relative = buildGradeBasis(rows[1], rows);
+  assert.equal(relative.top_percent, 67);
+  assert.match(relative.text, /본사 집계구역 상대평가에서 상위 67% 구간/);
+  assert.doesNotMatch(relative.text, /2위/);
+
+  const exceptional = buildGradeBasis(rows[3], rows);
+  assert.equal(exceptional.type, 'exceptional');
+  assert.match(exceptional.text, /100점/);
+
+  const overridden = buildGradeBasis({ ...rows[2], approved_grade: 'A' }, rows);
+  assert.equal(overridden.type, 'approved_override');
+  assert.match(overridden.text, /산정등급 B에서.*A등급/);
+});
+
 test('personal result UI passes the released grade into the score renderer', async () => {
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
-  assert.match(html, /applyPublishedScores\(\{ \.\.\.payload\.scores, relative_grade: payload\.relative_grade \}\)/);
-  assert.match(html, /applyAdjustedResultMode\(payload\.relative_grade \|\| payload\.adjustment\?\.grade_override/);
+  assert.match(html, /applyPublishedScores\(\{ \.\.\.payload\.scores, relative_grade: payload\.relative_grade \}, payload\.grade_basis\)/);
+  assert.match(html, /applyAdjustedResultMode\(payload\.relative_grade \|\| payload\.adjustment\?\.grade_override[\s\S]+payload\.grade_basis\)/);
 });
