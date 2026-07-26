@@ -551,6 +551,62 @@
       outline-offset: 2px;
     }
 
+    @keyframes mascot-guide-pop {
+      0% { opacity: 0; transform: translateY(28px) scale(0.92); }
+      70% { opacity: 1; transform: translateY(-4px) scale(1.02); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes mascot-guide-talk {
+      0%, 100% { transform: translateY(0) rotate(0); }
+      35% { transform: translateY(-4px) rotate(-1.5deg); }
+      70% { transform: translateY(-2px) rotate(1.5deg); }
+    }
+    @keyframes mascot-guide-celebrate {
+      0%, 100% { transform: translateY(0) rotate(0) scale(1); }
+      35% { transform: translateY(-16px) rotate(-4deg) scale(1.04); }
+      65% { transform: translateY(-10px) rotate(4deg) scale(1.04); }
+    }
+    @keyframes mascot-target-glow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(13, 148, 136, 0); }
+      50% { box-shadow: 0 0 0 5px rgba(13, 148, 136, 0.25); }
+    }
+    #mascot-guide {
+      position: fixed;
+      right: 1rem;
+      bottom: 1rem;
+      z-index: 40;
+      width: min(23rem, calc(100vw - 2rem));
+      pointer-events: none;
+    }
+    #mascot-guide.is-visible .mascot-guide-card {
+      animation: mascot-guide-pop 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    .mascot-guide-card {
+      pointer-events: auto;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 6.5rem;
+      align-items: end;
+      gap: 0.75rem;
+      overflow: hidden;
+      border: 1px solid rgba(13, 148, 136, 0.3);
+      border-radius: 1.25rem;
+      background: rgba(255, 255, 255, 0.97);
+      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.22);
+    }
+    .mascot-guide-image {
+      width: 100%;
+      align-self: end;
+      transform-origin: bottom center;
+      animation: mascot-guide-talk 1.5s ease-in-out 0.55s 2;
+    }
+    #mascot-guide.is-celebrating .mascot-guide-image {
+      animation: mascot-guide-celebrate 1.05s ease-in-out 2;
+    }
+    .mascot-target-highlight {
+      position: relative;
+      animation: mascot-target-glow 1.1s ease-in-out 2;
+    }
+
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
         scroll-behavior: auto !important;
@@ -560,6 +616,12 @@
       }
       .glitter-another-level, .glitter-another-level::after, .ex-wing-motion,
       .grade-result-card.grade-reveal, .grade-result-icon {
+        animation: none !important;
+      }
+      #mascot-guide.is-visible .mascot-guide-card,
+      .mascot-guide-image,
+      #mascot-guide.is-celebrating .mascot-guide-image,
+      .mascot-target-highlight {
         animation: none !important;
       }
     }
@@ -2608,6 +2670,19 @@
       </form>
     </div>
   </div>
+
+  <aside id="mascot-guide" class="hidden" role="status" aria-live="polite" aria-atomic="true">
+    <div class="mascot-guide-card">
+      <div class="relative p-4 pr-0 self-stretch flex flex-col justify-center">
+        <button type="button" onclick="hideMascotGuide()" aria-label="안내 닫기" class="absolute top-2 right-0 w-8 h-8 rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+        <strong id="mascot-guide-title" class="text-sm font-black text-slate-900">평가 도우미</strong>
+        <p id="mascot-guide-message" class="mt-1 pr-5 text-xs leading-relaxed text-slate-600"></p>
+      </div>
+      <img id="mascot-guide-image" class="mascot-guide-image" src="" alt="">
+    </div>
+  </aside>
 
   <!-- MODAL: INTERACTIVE CAROUSEL GUIDEBOOK -->
   <div id="guide-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
@@ -5284,6 +5359,70 @@
 
     // Employee Track Filter State for Admin/Executive
     let currentSelectedEmpTrackFilter = '전체';
+    let mascotGuideTimer = null;
+
+    function mascotForCurrentUser() {
+      const isHanyang = String(currentLoggedInUser?.company || '').includes('한양');
+      return {
+        src: isHanyang ? 'assets/mascot-hanyang.jpg' : 'assets/mascot-chungnam.jpg',
+        name: isHanyang ? '하냥이' : '충남이'
+      };
+    }
+
+    function hideMascotGuide() {
+      clearTimeout(mascotGuideTimer);
+      const guide = document.getElementById('mascot-guide');
+      if (guide) {
+        guide.classList.add('hidden');
+        guide.classList.remove('is-visible', 'is-celebrating');
+      }
+      document.querySelectorAll('.mascot-target-highlight').forEach(element => element.classList.remove('mascot-target-highlight'));
+    }
+
+    function showMascotGuide(message, { celebrate = false, duration = 6500 } = {}) {
+      try {
+        if (!currentLoggedInUser) return;
+        const guide = document.getElementById('mascot-guide');
+        const image = document.getElementById('mascot-guide-image');
+        const title = document.getElementById('mascot-guide-title');
+        const messageElement = document.getElementById('mascot-guide-message');
+        if (!guide || !image || !title || !messageElement) return;
+        clearTimeout(mascotGuideTimer);
+        const mascot = mascotForCurrentUser();
+        image.src = mascot.src;
+        image.alt = `${mascot.name} 평가 도우미`;
+        title.textContent = `${mascot.name}의 한마디`;
+        messageElement.textContent = message;
+        guide.classList.remove('hidden', 'is-visible', 'is-celebrating');
+        void guide.offsetWidth;
+        guide.classList.add('is-visible');
+        guide.classList.toggle('is-celebrating', celebrate);
+        mascotGuideTimer = setTimeout(hideMascotGuide, duration);
+      } catch (error) {
+        console.warn('Optional mascot guide skipped:', error);
+      }
+    }
+
+    function showPendingEvaluationGuide(assignments) {
+      try {
+        if (currentActiveView !== 'list' || !currentLoggedInUser || !Array.isArray(assignments)) return;
+        const pending = assignments.filter(item => Number(item.completed || 0) === 0);
+        if (!pending.length) return;
+        const cycleId = pending[0]?.cycleId || 'current';
+        const sessionKey = `cnhy_mascot_pending_${currentLoggedInUser.id}_${cycleId}`;
+        if (sessionStorage.getItem(sessionKey)) return;
+        sessionStorage.setItem(sessionKey, '1');
+        showMascotGuide(`${currentLoggedInUser.name}님, 아직 완료하지 않은 평가가 ${pending.length}건 있습니다. 대상자 카드를 선택해 시작해 주세요.`);
+        const firstPendingCard = document.querySelector('[data-mascot-pending="true"]');
+        if (firstPendingCard) {
+          firstPendingCard.classList.add('mascot-target-highlight');
+          firstPendingCard.addEventListener('click', hideMascotGuide, { once: true });
+          setTimeout(() => firstPendingCard.classList.remove('mascot-target-highlight'), 4500);
+        }
+      } catch (error) {
+        console.warn('Optional mascot pending guide skipped:', error);
+      }
+    }
 
     function filterEmployeeListTrack(trackName) {
       currentSelectedEmpTrackFilter = trackName;
@@ -5540,6 +5679,7 @@
         } else {
           card.className = `glass-card rounded-2xl p-5 border border-slate-800 hover:border-brandTeal/50 transition cursor-pointer flex flex-col justify-between space-y-4 ${!emp.active ? 'opacity-50 pointer-events-none' : ''}`;
           card.onclick = () => openEvaluationForm(emp, false);
+          card.dataset.mascotPending = 'true';
         }
 
         card.innerHTML = `
@@ -5588,6 +5728,7 @@
         container.appendChild(section);
       });
 
+      showPendingEvaluationGuide(allTargetEmployees);
     }
 
     let isCurrentFormEditMode = false;
@@ -5848,6 +5989,9 @@
 
       alert(`[${currentTargetEmp ? currentTargetEmp.name : ''}] 님에 대한 360° 동료평가 제출 내용이 성공적으로 ${isCurrentFormEditMode ? '수정/재제출' : '제출'}되었습니다!`);
       navigateTo('list');
+      showMascotGuide(isCurrentFormEditMode
+        ? '수정한 평가 내용이 안전하게 다시 저장되었습니다.'
+        : '수고하셨어요! 평가가 정상적으로 제출되었습니다.', { celebrate: true, duration: 5000 });
     }
 
     let currentEditingUserId = null;
@@ -6918,6 +7062,7 @@
     let currentSelectedSummaryCycleId = 1;
 
     async function handleLogout() {
+      hideMascotGuide();
       if (supabaseClient) await supabaseClient.auth.signOut();
       sessionStorage.removeItem('cnhy_session_user');
       sessionStorage.removeItem('cnhy_session_view');
@@ -7880,6 +8025,7 @@
 
       currentActiveView = viewId;
       sessionStorage.setItem('cnhy_session_view', viewId);
+      if (viewId !== 'list') hideMascotGuide();
 
       // Hide all main section views
       const views = ['login', 'list', 'eval', 'myresults', 'evalmanage', 'admin'];
