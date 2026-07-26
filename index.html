@@ -5544,9 +5544,9 @@
 
         card.innerHTML = `
           <div>
-            <div class="flex justify-between items-center mb-2">
-              <span role="img" aria-label="${companyLogoLabel}" class="block h-10 w-20 flex-shrink-0 rounded-lg border border-slate-700/70 bg-white bg-center bg-no-repeat shadow-sm" style="background-image:url('${companyLogoUrl}');background-size:430% auto">
-                <span class="sr-only">${emp.company}</span>
+            <div class="flex justify-between items-start gap-3 mb-3">
+              <span class="flex h-14 w-28 max-w-[40%] flex-shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-700/70 bg-white p-1.5 shadow-sm">
+                <img src="${companyLogoUrl}" alt="${companyLogoLabel}" class="h-full w-full object-contain">
               </span>
               <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${isDone ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : (isStageUnlocked ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-slate-800 text-slate-400')}">
                 ${isDone ? '✅ 평가 완료' : (isStageUnlocked ? '🟢 평가 진행 가능' : '🔒 전단계 대기 중')}

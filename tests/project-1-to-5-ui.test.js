@@ -44,7 +44,8 @@ test('evaluatee cards show the logo that matches each employee company', async (
   assert.match(index, /assets\/hanyang-logo\.png/);
   assert.match(index, /assets\/chungnam-logo\.png/);
   assert.match(index, /const isHanyangCompany = String\(emp\.company \|\| ''\)\.includes\('한양'\)/);
-  assert.match(index, /role="img" aria-label="\$\{companyLogoLabel\}"/);
+  assert.match(index, /<img src="\$\{companyLogoUrl\}" alt="\$\{companyLogoLabel\}" class="h-full w-full object-contain">/);
+  assert.doesNotMatch(index, /background-size:430%/);
 });
 
 test('relationship alignment migration preserves leader precedence and cross-organization exchange', async () => {
