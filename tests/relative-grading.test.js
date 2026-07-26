@@ -8,6 +8,25 @@ test('largest remainder exactly allocates every cohort member', () => {
   assert.equal(allocation.reduce((sum, row) => sum + row.allocation_count, 0), 17);
 });
 
+test('cohorts of ten or more always allocate at least one S and one D', () => {
+  const allocation = largestRemainderAllocation(10);
+  const counts = Object.fromEntries(allocation.map(row => [row.grade, row.allocation_count]));
+  assert.equal(counts.S, 1);
+  assert.equal(counts.D, 1);
+  assert.equal(Object.values(counts).reduce((sum, count) => sum + count, 0), 10);
+});
+
+test('an unadjusted perfect score receives EX outside the relative quota', () => {
+  const plan = buildRelativeGradePlan([
+    { targetId: 1, cohortKey: 'headquarters', rawScore: 100, effectiveFinalScore: 100, isAdjusted: false },
+    { targetId: 2, cohortKey: 'headquarters', rawScore: 100, effectiveFinalScore: 100, isAdjusted: true },
+    { targetId: 3, cohortKey: 'headquarters', rawScore: 90, effectiveFinalScore: 90, isAdjusted: false }
+  ]);
+  assert.equal(plan.gradesByTargetId.get(1), 'EX');
+  assert.notEqual(plan.gradesByTargetId.get(2), 'EX');
+  assert.equal(plan.allocations.reduce((sum, row) => sum + row.allocation_count, 0), 2);
+});
+
 test('relative grades use effective score, raw score, then target id', () => {
   const entries = Array.from({ length: 20 }, (_, index) => ({ targetId: index + 1, rawScore: 70, effectiveFinalScore: 70, cohortKey: 'headquarters' }));
   entries[1].rawScore = 80;
