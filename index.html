@@ -5510,6 +5510,9 @@
 
         groupEmployees.forEach(emp => {
         const isDone = Number(emp.completed || 0) > 0;
+        const isHanyangCompany = String(emp.company || '').includes('한양');
+        const companyLogoUrl = isHanyangCompany ? 'assets/hanyang-logo.png' : 'assets/chungnam-logo.png';
+        const companyLogoLabel = isHanyangCompany ? '한양고속 로고' : '충남고속 로고';
 
         const activeCycle = cyclesDb.find(c => String(c.id) === String(emp.cycleId));
         const isCycleClosed = activeCycle && activeCycle.status === '마감/보관됨';
@@ -5542,7 +5545,9 @@
         card.innerHTML = `
           <div>
             <div class="flex justify-between items-center mb-2">
-              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${emp.company.includes('한양') ? 'bg-blue-500/20 text-blue-300' : 'bg-orange-500/20 text-orange-300'}">${emp.company}</span>
+              <span role="img" aria-label="${companyLogoLabel}" class="block h-10 w-20 flex-shrink-0 rounded-lg border border-slate-700/70 bg-white bg-center bg-no-repeat shadow-sm" style="background-image:url('${companyLogoUrl}');background-size:430% auto">
+                <span class="sr-only">${emp.company}</span>
+              </span>
               <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${isDone ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : (isStageUnlocked ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-slate-800 text-slate-400')}">
                 ${isDone ? '✅ 평가 완료' : (isStageUnlocked ? '🟢 평가 진행 가능' : '🔒 전단계 대기 중')}
               </span>

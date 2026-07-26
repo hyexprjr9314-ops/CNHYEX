@@ -39,6 +39,14 @@ test('inline application scripts remain syntactically valid', async () => {
   });
 });
 
+test('evaluatee cards show the logo that matches each employee company', async () => {
+  const index = await readFile(indexUrl, 'utf8');
+  assert.match(index, /assets\/hanyang-logo\.png/);
+  assert.match(index, /assets\/chungnam-logo\.png/);
+  assert.match(index, /const isHanyangCompany = String\(emp\.company \|\| ''\)\.includes\('한양'\)/);
+  assert.match(index, /role="img" aria-label="\$\{companyLogoLabel\}"/);
+});
+
 test('relationship alignment migration preserves leader precedence and cross-organization exchange', async () => {
   const source = await readFile(migrationUrl, 'utf8');
   assert.match(source, /disable trigger matchings_prevent_non_draft_mutation/);
