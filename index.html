@@ -4076,6 +4076,7 @@
       if (subtab === 'summary') renderAdminSummaryTable();
       if (subtab === 'history') renderHistoryTable();
       requestAnimationFrame(applyMobileAdminTableLayout);
+      requestAnimationFrame(() => showAdminMascotGuide(subtab));
     }
 
     function renderEvaluationProgress() {
@@ -5421,6 +5422,56 @@
         }
       } catch (error) {
         console.warn('Optional mascot pending guide skipped:', error);
+      }
+    }
+
+    function showAdminMascotGuide(subtab) {
+      try {
+        const roleInfo = checkUserRole(currentLoggedInUser);
+        if (!['evalmanage', 'admin'].includes(currentActiveView) || !roleInfo.isAdmin) return;
+
+        const preferredCycleId = subtab === 'summary'
+          ? currentSelectedSummaryCycleId
+          : selectedEvaluationCycleId || currentSelectedSummaryCycleId;
+        const selectedCycle = cyclesDb.find(cycle => Number(cycle.id) === Number(preferredCycleId))
+          || [...cyclesDb].sort((a, b) => Number(b.id) - Number(a.id))[0];
+        const approval = selectedCycle?.internal_approval_status || 'not_requested';
+        const published = selectedCycle?.results_published === true;
+        const stateKey = [subtab, selectedCycle?.id || 'none', selectedCycle?.status || 'none', approval, published].join('_');
+        const sessionKey = `cnhy_mascot_admin_${currentLoggedInUser.id}_${stateKey}`;
+        if (sessionStorage.getItem(sessionKey)) return;
+
+        const messages = {
+          users: '직원 계정과 소속 정보를 관리하는 화면입니다. 평가주기를 시작하기 전에 재직·평가 권한 정보를 확인해 주세요.',
+          cycles: selectedCycle
+            ? selectedCycle.status === '진행중'
+              ? '평가가 진행 중입니다. 제출 상황은 ‘평가 진행 현황’에서 확인해 주세요.'
+              : selectedCycle.status === '마감/보관됨'
+                ? '마감된 결과는 ‘점수 집계 & 최종 조정’에서 검토할 수 있습니다.'
+                : '질문과 평가자 배정을 확인한 뒤 ‘사전점검’을 실행해 주세요.'
+            : '먼저 평가주기를 만들어 주세요. 저장 후 질문과 평가자 배정을 차례로 확인하면 됩니다.',
+          questions: '평가 직군별 질문을 확인해 주세요. 질문 구성이 끝나면 ‘평가 권한 관리’로 이동하면 됩니다.',
+          permissions: '평가자와 피평가 대상 포함 여부를 확인해 주세요. 다음 단계는 ‘평가자 자동·수동 배정’입니다.',
+          matching: '자동 배정 결과를 확인하고, 부족한 관계는 현재 인원 안에서 수동으로 조정해 주세요.',
+          progress: '제출률과 미완료 인원을 확인하는 화면입니다. 결과 내용은 평가 마감 전까지 집계되지 않습니다.',
+          summary: !selectedCycle
+            ? '평가가 마감되면 이곳에서 점수 검토, 전자결재, 결과 공개를 순서대로 진행합니다.'
+            : published
+              ? '결과 공개가 완료되었습니다. 이제 평가등급 메일을 일괄 또는 개인별로 발송할 수 있습니다.'
+              : approval === 'approved'
+                ? '전자결재가 승인되었습니다. 최종 확인 후 ‘결과 공개’ 버튼을 눌러 주세요.'
+                : ['requested', 'pending'].includes(approval)
+                  ? '전자결재가 진행 중입니다. 승인 완료 후 결과 공개 버튼이 활성화됩니다.'
+                  : '최종 점수 검토와 조정을 마친 뒤 전자결재를 요청해 주세요.',
+          history: '승인과 공개가 끝난 평가 결과를 읽기 전용으로 확인하는 화면입니다.'
+        };
+        const message = messages[subtab];
+        if (!message) return;
+
+        sessionStorage.setItem(sessionKey, '1');
+        showMascotGuide(message, { duration: 7500 });
+      } catch (error) {
+        console.warn('Optional mascot admin guide skipped:', error);
       }
     }
 
