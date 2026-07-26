@@ -18,7 +18,7 @@ export function normalizeQuestionRows(rawQuestions) {
     cycle_id: Number(raw.cycle_id), category: String(raw.category || '').trim(),
     target_track: normalizeTrack(raw.target_track),
     target_dept: '\uC804\uCCB4', type: String(raw.type || '5\uC9C0\uC120\uB2E4\uD615').trim(),
-    audience: 'all', weight: Number(raw.weight), text: String(raw.text || '').trim(),
+    audience: 'all', weight: 1, text: String(raw.text || '').trim(),
     required: raw.required !== false, is_default: raw.is_default !== false, max_score: 5
   }));
 }
@@ -76,8 +76,8 @@ export default async function handler(req, res) {
     await assertQuestionCyclesMutable(service, rows.map(row => row.cycle_id));
     const results = [];
     for (const row of rows) {
-      if (!row.cycle_id || !row.category || !row.text || !Number.isFinite(row.weight) || row.weight < 0 || row.weight > 100) {
-        results.push({ text: row.text, status: 'failed', message: '필수값 또는 가중치 오류' }); continue;
+      if (!row.cycle_id || !row.category || !row.text) {
+        results.push({ text: row.text, status: 'failed', message: '필수값 오류' }); continue;
       }
       const { data: existing, error: findError } = await service.from('evaluation_questions').select('id')
         .eq('cycle_id', row.cycle_id).eq('category', row.category).eq('text', row.text)

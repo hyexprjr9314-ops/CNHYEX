@@ -1688,7 +1688,7 @@
           </h3>
 
           <form onsubmit="handleAddQuestionSubmit(event)" class="space-y-4">
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               <div>
                 <label class="block text-xs font-bold text-slate-300 mb-1">평가 영역 (카테고리)</label>
                 <select id="q-category-in" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-white font-bold">
@@ -1717,10 +1717,6 @@
                 </select>
               </div>
 
-              <div>
-                <label class="block text-xs font-bold text-slate-300 mb-1">가중치 (%)</label>
-                <input type="number" id="q-weight-in" value="10.0" step="0.1" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-white">
-              </div>
             </div>
 
             <div>
@@ -2689,11 +2685,7 @@
           <textarea id="edit-q-text" rows="3" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white leading-relaxed"></textarea>
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-bold text-slate-300 mb-1">가중치 (%)</label>
-            <input type="number" id="edit-q-weight" step="0.1" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white">
-          </div>
+        <div>
           <div>
             <label class="block text-xs font-bold text-slate-300 mb-1">최대 점수</label>
             <input type="number" id="edit-q-maxscore" value="5" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white">
@@ -5443,7 +5435,7 @@
                 <span class="text-[10px] font-bold px-2 py-0.5 rounded ${categoryBadge}">${q.category}</span>
                 <span class="text-[10px] bg-teal-500/20 text-brandTeal font-bold px-2 py-0.5 rounded border border-brandTeal/30">5지선다형</span>
               </div>
-              <span class="text-[10px] text-slate-400">가중치 ${q.weight}%</span>
+              <span class="text-[10px] text-slate-400">동일 비중</span>
             </div>
             <p class="text-xs font-bold text-white pt-0.5">Q${idx + 1}. ${escapeHtml(q.text)}</p>
             <div class="evaluation-score-options flex items-center gap-3 pt-1">
@@ -6256,8 +6248,8 @@
         statusLabel: '전체 카테고리', statusValue: question => question.category,
         statusOptions: directoryUniqueValues(filteredQuestions, question => question.category).map(value => ({ value, label: value })),
         searchValues: question => [question.text, question.category, question.targetTrack, question.targetDept, question.type],
-        sortOptions: [{ key: 'order', label: '등록 순서' }, { key: 'text', label: '질문 가나다순' }, { key: 'category', label: '카테고리' }, { key: 'weight', label: '가중치' }],
-        sortValues: { order: question => Number(question.id || 0), name: question => question.text, text: question => question.text, category: question => question.category, weight: question => Number(question.weight || 0) }
+        sortOptions: [{ key: 'order', label: '등록 순서' }, { key: 'text', label: '질문 가나다순' }, { key: 'category', label: '카테고리' }],
+        sortValues: { order: question => Number(question.id || 0), name: question => question.text, text: question => question.text, category: question => question.category }
       });
       filteredQuestions = filterDirectoryItems('questions', filteredQuestions);
       if (filteredQuestions.length === 0) {
@@ -6290,7 +6282,7 @@
               ${q.is_default ? '<span class="bg-amber-500/20 text-amber-300 text-[10px] font-bold px-1.5 py-0.5 rounded">기본질문</span>' : ''}
             </div>
             <h4 class="text-xs font-bold text-white pt-0.5">Q${idx + 1}. ${escapeHtml(q.text)}</h4>
-            <p class="text-[10px] text-slate-400">가중치 반영: <strong class="text-brandGold">${q.weight}%</strong> | 척도: <strong class="text-slate-200">${q.max_score || 5}점 만점</strong></p>
+            <p class="text-[10px] text-slate-400">동일 비중 반영 | 척도: <strong class="text-slate-200">${q.max_score || 5}점 만점</strong></p>
           </div>
 
           <!-- Edit & Delete Action Buttons -->
@@ -6318,7 +6310,6 @@
       const category = document.getElementById('q-category-in').value;
       const targetTrack = normalizeQuestionTrack(document.getElementById('q-track-in').value);
       const type = document.getElementById('q-type-in').value;
-      const weight = parseFloat(document.getElementById('q-weight-in').value) || 0;
       const text = document.getElementById('q-text-in').value.trim();
       const required = document.getElementById('q-required-check').checked;
       const is_default = document.getElementById('q-default-check').checked;
@@ -6326,7 +6317,7 @@
       try {
         await callAdminStateApi({
           action: 'question_create', cycle_id: cycleId, category, target_track: targetTrack,
-          target_dept: '전체', audience: 'all', type, weight, max_score: 5, text, required, is_default
+          target_dept: '전체', audience: 'all', type, max_score: 5, text, required, is_default
         });
         announceCentralChange();
         await loadFromServer();
@@ -6351,7 +6342,6 @@
       document.getElementById('edit-q-track').value = q.targetTrack || '기본 필수질문';
       document.getElementById('edit-q-type').value = q.type || '5지선다형';
       document.getElementById('edit-q-text').value = q.text || '';
-      document.getElementById('edit-q-weight').value = q.weight !== undefined ? q.weight : 10.0;
       document.getElementById('edit-q-maxscore').value = q.max_score || 5;
 
       const modal = document.getElementById('modal-edit-question');
@@ -6381,7 +6371,6 @@
         target_dept: '전체', audience: 'all',
         type: document.getElementById('edit-q-type').value,
         text: document.getElementById('edit-q-text').value.trim(),
-        weight: parseFloat(document.getElementById('edit-q-weight').value) || 0,
         max_score: parseInt(document.getElementById('edit-q-maxscore').value) || 5,
         required: q.required, is_default: q.is_default
       };
@@ -6417,20 +6406,24 @@
 
     // CSV Template Download & Upload Handler for Questions
     function downloadCSVQuestionTemplate() {
-      const csvHeader = "\uFEFF카테고리,사원구분,질문유형,가중치(%),질문내용,필수여부,기본질문여부\n";
+      const csvHeader = "\uFEFF카테고리,사원구분,질문유형,질문내용,필수여부,기본질문여부\n";
       const sampleRows = [
-        "성과,팀원급,5지선다형,25,담당 업무 목표를 책임감 있게 달성하나요?,Y,Y\n",
-        "협업,팀원급,5지선다형,25,동료 및 유관부서와 원활하게 협업하나요?,Y,Y\n",
-        "성장,팀원급,5지선다형,25,업무 역량 향상을 위해 지속적으로 노력하나요?,Y,Y\n",
-        "조화,팀원급,5지선다형,25,조직의 규칙을 지키며 긍정적인 관계를 형성하나요?,Y,Y\n",
-        "리더십,팀장/부서장급,5지선다형,25,명확한 방향을 제시하고 책임 있게 의사결정하나요?,Y,Y\n",
-        "팀원 육성,팀장/부서장급,5지선다형,25,구성원의 성장을 지원하고 적절한 피드백을 제공하나요?,Y,Y\n",
-        "소통,팀장/부서장급,5지선다형,25,구성원 및 유관부서와 투명하게 소통하나요?,Y,Y\n",
-        "전략적 사고,팀장/부서장급,5지선다형,25,조직 목표를 고려하여 우선순위와 실행 방향을 정하나요?,Y,Y\n",
-        "역량 개발,정비사,5지선다형,25,정비 기술과 관련 지식을 지속적으로 향상하나요?,Y,Y\n",
-        "정비 능력,정비사,5지선다형,25,점검과 정비를 정확하고 신속하게 수행하나요?,Y,Y\n",
-        "책임/주인의식,정비사,5지선다형,25,차량 상태와 정비 결과에 책임감을 보이나요?,Y,Y\n",
-        "안전의식,정비사,5지선다형,25,작업 절차와 안전수칙을 철저히 준수하나요?,Y,Y\n"
+        "성과,팀원급,5지선다형,담당 업무 목표를 책임감 있게 달성하나요?,Y,Y\n",
+        "협업,팀원급,5지선다형,동료 및 유관부서와 원활하게 협업하나요?,Y,Y\n",
+        "성장,팀원급,5지선다형,업무 역량 향상을 위해 지속적으로 노력하나요?,Y,Y\n",
+        "조화,팀원급,5지선다형,조직의 규칙을 지키며 긍정적인 관계를 형성하나요?,Y,Y\n",
+        "리더십,팀장/부서장급,5지선다형,명확한 방향을 제시하고 책임 있게 의사결정하나요?,Y,Y\n",
+        "팀원 육성,팀장/부서장급,5지선다형,구성원의 성장을 지원하고 적절한 피드백을 제공하나요?,Y,Y\n",
+        "소통,팀장/부서장급,5지선다형,구성원 및 유관부서와 투명하게 소통하나요?,Y,Y\n",
+        "전략적 사고,팀장/부서장급,5지선다형,조직 목표를 고려하여 우선순위와 실행 방향을 정하나요?,Y,Y\n",
+        "비상대응,영업소 직원,5지선다형,돌발 상황에 신속하고 적절하게 대응하나요?,Y,Y\n",
+        "소통 협력,영업소 직원,5지선다형,동료 및 유관부서와 원활하게 소통하고 협력하나요?,Y,Y\n",
+        "솔선 수범,영업소 직원,5지선다형,현장 업무에서 솔선수범하는 태도를 보이나요?,Y,Y\n",
+        "갈등 해소,영업소 직원,5지선다형,현장의 갈등을 원만하고 건설적으로 해결하나요?,Y,Y\n",
+        "역량 개발,정비사,5지선다형,정비 기술과 관련 지식을 지속적으로 향상하나요?,Y,Y\n",
+        "정비 능력,정비사,5지선다형,점검과 정비를 정확하고 신속하게 수행하나요?,Y,Y\n",
+        "책임/주인의식,정비사,5지선다형,차량 상태와 정비 결과에 책임감을 보이나요?,Y,Y\n",
+        "안전의식,정비사,5지선다형,작업 절차와 안전수칙을 철저히 준수하나요?,Y,Y\n"
       ].join("");
 
       const blob = new Blob([csvHeader + sampleRows], { type: 'text/csv;charset=utf-8;' });
@@ -6457,9 +6450,9 @@
             cycle_id: cycleId,
             category: cols[0] || '성과', target_track: cols[1] || '팀원급',
             target_dept: '전체', audience: 'all', type: cols[2] || '5지선다형',
-            weight: Number(cols[3]), text: cols[4],
-            required: (cols[5] || 'Y').toUpperCase() === 'Y',
-            is_default: (cols[6] || 'Y').toUpperCase() === 'Y'
+            text: cols[3],
+            required: (cols[4] || 'Y').toUpperCase() === 'Y',
+            is_default: (cols[5] || 'Y').toUpperCase() === 'Y'
           }));
           const { data: sessionData } = await supabaseClient.auth.getSession();
           if (!sessionData.session) throw new Error('로그인이 필요합니다.');

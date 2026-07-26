@@ -39,7 +39,7 @@ test('CSV question rows normalize the same defaults as the question editor', () 
   const [row] = normalizeQuestionRows([{ cycle_id: '7', category: '성과', weight: '25', text: '질문' }]);
   assert.deepEqual(row, {
     cycle_id: 7, category: '성과', target_track: 'all', target_dept: '전체',
-    type: '5지선다형', audience: 'all', weight: 25, text: '질문', required: true, is_default: true, max_score: 5
+    type: '5지선다형', audience: 'all', weight: 1, text: '질문', required: true, is_default: true, max_score: 5
   });
 });
 

@@ -92,14 +92,14 @@ function cyclePayload(body) {
 function questionPayload(body) {
   const row = {
     cycle_id: Number(body.cycle_id || body.cycleId), category: String(body.category || '').trim(),
-    text: String(body.text || '').trim(), weight: Number(body.weight),
+    text: String(body.text || '').trim(), weight: 1,
     type: String(body.type || '5지선다형').trim(), target_track: normalizeTrack(body.target_track || body.targetTrack),
     target_dept: '전체',
     audience: 'all', required: body.required !== false,
     is_default: body.is_default !== false, max_score: Number(body.max_score || 5), updated_at: new Date().toISOString()
   };
-  if (!row.cycle_id || !row.category || !row.text || !Number.isFinite(row.weight) || row.weight < 0 || row.weight > 100) {
-    throw Object.assign(new Error('질문의 평가 주기, 카테고리, 내용 및 0~100 가중치가 필요합니다.'), { status: 400 });
+  if (!row.cycle_id || !row.category || !row.text) {
+    throw Object.assign(new Error('질문의 평가 주기, 카테고리 및 내용이 필요합니다.'), { status: 400 });
   }
   return row;
 }
