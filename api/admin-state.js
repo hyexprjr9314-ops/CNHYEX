@@ -241,10 +241,44 @@ async function generateAutoMatchings(service, rpcClient, cycleId, actorId) {
     p_matchings: plan.generated,
     p_actor_id: actorId
   });
-  if (saved.error) return saved;
+  if (saved.error && /governance_replace_auto_matchings|schema cache|could not find/i.test(saved.error.message || '')) {
+    const submittedIds = new Set((submitted.data || []).map(row => Number(row.matching_id)));
+    const desiredByEvaluator = new Map();
+    for (const row of existing.data || []) {
+      if (row.type === '알고리즘 자동 지정' && !submittedIds.has(Number(row.id))) continue;
+      const evaluatorId = Number(row.evaluator_id);
+      if (!desiredByEvaluator.has(evaluatorId)) desiredByEvaluator.set(evaluatorId, []);
+      desiredByEvaluator.get(evaluatorId).push({
+        target_id: Number(row.target_id),
+        relationship_type: row.relationship_type || 'internal'
+      });
+    }
+    for (const row of plan.generated) {
+      if (!desiredByEvaluator.has(row.evaluator_id)) desiredByEvaluator.set(row.evaluator_id, []);
+      desiredByEvaluator.get(row.evaluator_id).push({
+        target_id: row.target_id,
+        relationship_type: row.relationship_type
+      });
+    }
+    const evaluatorIds = new Set([
+      ...(existing.data || []).map(row => Number(row.evaluator_id)),
+      ...plan.generated.map(row => Number(row.evaluator_id))
+    ]);
+    for (const evaluatorId of evaluatorIds) {
+      const fallback = await rpcClient.rpc('governance_replace_draft_matchings', {
+        p_cycle_id: cycleId,
+        p_evaluator_id: evaluatorId,
+        p_targets: desiredByEvaluator.get(evaluatorId) || [],
+        p_actor_id: actorId
+      });
+      if (fallback.error) return fallback;
+    }
+  } else if (saved.error) {
+    return saved;
+  }
   return {
     data: {
-      ...saved.data,
+      ...(saved.data || {}),
       generated: plan.generated.length,
       shortages: plan.shortages
     },

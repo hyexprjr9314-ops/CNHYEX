@@ -13,6 +13,8 @@ test('automatic matching creates an atomic quota draft that remains manually edi
   ]);
 
   assert.match(api, /governance_replace_auto_matchings/);
+  assert.match(api, /governance_replace_draft_matchings/);
+  assert.match(api, /schema cache\|could not find/);
   assert.match(autoMatching, /const needed = Math\.max\(0, rule\.quota - already\)/);
   assert.match(autoMatching, /load\.get\(Number\(a\.id\)\)/);
   assert.match(ui, /action:\s*'matching_generate'/);
