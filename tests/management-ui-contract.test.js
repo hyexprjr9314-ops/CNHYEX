@@ -74,6 +74,16 @@ test('evaluation form selects questions only from the evaluatee employee type', 
   assert.doesNotMatch(renderer, /targetDept|target_dept|workplace|relationshipType|audience/);
 });
 
+test('evaluation form clears the previous target comment before loading another target', async () => {
+  const index = await readFile(indexUrl, 'utf8');
+  const opener = index.match(/async function openEvaluationForm\(emp, isEdit = false\) \{[\s\S]*?\n    \}/)?.[0] ?? '';
+
+  assert.match(opener, /document\.getElementById\('eval-comment-input'\)\.value = ''/);
+  assert.match(opener, /updateCommentCounter\(\)/);
+  assert.ok(opener.indexOf("document.getElementById('eval-comment-input').value = ''") < opener.indexOf('if (isEdit)'));
+  assert.ok(opener.indexOf("document.getElementById('eval-comment-input').value = ''") < opener.indexOf('prevData.comment'));
+});
+
 test('target list renders all five display-only relationship groups', async () => {
   const index = await readFile(indexUrl, 'utf8');
   const renderer = index.match(/function renderEmployeeGrid\(\) \{[\s\S]*?\n    \}/)?.[0] ?? '';

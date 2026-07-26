@@ -5806,6 +5806,8 @@
     let isCurrentFormEditMode = false;
 
     async function openEvaluationForm(emp, isEdit = false) {
+      document.getElementById('eval-comment-input').value = '';
+      updateCommentCounter();
       currentTargetEmp = emp;
       isCurrentFormEditMode = isEdit;
 
