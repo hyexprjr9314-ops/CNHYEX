@@ -35,10 +35,25 @@ test('administrator mascot guide is read-only, state-aware, and isolated from ma
     html.indexOf('function filterEmployeeListTrack')
   );
   assert.match(html, /function showAdminMascotGuide\(subtab\)[\s\S]*\['evalmanage', 'admin'\]\.includes\(currentActiveView\)[\s\S]*!roleInfo\.isAdmin/);
-  assert.match(html, /internal_approval_status[\s\S]*results_published[\s\S]*cnhy_mascot_admin_v2_/);
+  assert.match(html, /internal_approval_status[\s\S]*results_published[\s\S]*cnhy_mascot_admin_v3_/);
   assert.match(html, /requestAnimationFrame\(\(\) => \{[\s\S]*showAdminMascotGuide\(subtab\)[\s\S]*showExecutiveMascotGuide\(subtab\)/);
-  ['1단계 · 질문 구성', '2단계 · 권한 확인', '3단계 · 평가자 배정', '4단계 · 사전점검']
+  [
+    '평가주기 등록 위치 보기',
+    '평가 권한 설정하기',
+    '가중치 설정 위치 보기',
+    '질문 등록 위치 보기',
+    '평가 매칭관리로 이동',
+    '사전점검 버튼 보기',
+    '검증 후 시작 버튼 보기',
+    '평가 진행 현황 보기',
+    '점수 집계·최종 조정 보기',
+    '과거 평가 이력 조회'
+  ]
     .forEach(label => assert.match(adminGuide, new RegExp(label)));
+  assert.match(html, /function adminMascotFlowKey\(cycleId\)[\s\S]*function setAdminMascotFlowStep\(cycleId, step\)/);
+  assert.match(html, /id="cycle-validate-\$\{c\.id\}"[\s\S]*id="cycle-activate-\$\{c\.id\}"/);
+  assert.match(html, /saveCategoryWeights\(\)[\s\S]*setAdminMascotFlowStep\(cycleId, 4\)[\s\S]*showAdminMascotGuide\('questions'\)/);
+  assert.match(html, /validateEvaluationCycle\(cycleId, activate = false\)[\s\S]*setAdminMascotFlowStep\(cycleId, 7\)[\s\S]*showAdminMascotGuide\('cycles'\)/);
   assert.match(html, /Optional mascot admin guide skipped/);
   assert.doesNotMatch(adminGuide, /callAdminStateApi/);
 });
@@ -59,8 +74,8 @@ test('executive and inactive-cycle mascot guides remain role-scoped and read-onl
 test('privileged users are guided from the first list view into evaluation management', async () => {
   const html = await readFile(indexUrl, 'utf8');
   assert.match(html, /function showPrivilegedHomeGuide\(\)[\s\S]*currentActiveView !== 'list'[\s\S]*roleInfo\.isPrivileged/);
-  assert.match(html, /관리자님, 평가 업무는 평가관리에서 시작합니다/);
-  assert.match(html, /평가관리 시작하기[\s\S]*view: 'evalmanage'[\s\S]*target: '#nav-tab-evalmanage'/);
+  assert.match(html, /관리자님, 평가주기 등록부터 권한·가중치·질문·매칭·사전점검·결과 공개까지/);
+  assert.match(html, /평가관리 시작하기[\s\S]*view: 'evalmanage'[\s\S]*subtab: roleInfo\.isAdmin \? 'cycles' : 'summary'[\s\S]*target: '#nav-tab-evalmanage'/);
   assert.match(html, /renderLoggedInWelcome\(totalAssignmentCount\);[\s\S]*showNoActiveEvaluationGuide\(\);[\s\S]*showPrivilegedHomeGuide\(\);/);
   assert.match(html, /function showPendingEvaluationGuide\(assignments\)[\s\S]*checkUserRole\(currentLoggedInUser\)\.isPrivileged/);
 });
