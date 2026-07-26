@@ -913,6 +913,11 @@
         <span>🟢 실시간 자동동기화 ON</span>
       </div>
 
+      <button id="notification-center-button" type="button" onclick="openNotificationCenter()" class="relative hidden rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-slate-200 hover:border-brandTeal hover:text-white" aria-label="개인 알림함 열기">
+        <i class="fa-solid fa-bell"></i>
+        <span id="notification-unread-count" class="absolute -right-2 -top-2 hidden min-w-5 rounded-full bg-rose-600 px-1.5 py-0.5 text-[10px] font-black text-white">0</span>
+      </button>
+
       <!-- Clickable User Profile Badge to Change Password -->
       <button onclick="openChangePasswordModal()" title="클릭하여 비밀번호 변경" class="hidden md:flex items-center gap-2 bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 hover:border-brandTeal/60 px-3 py-1.5 rounded-xl text-xs transition shadow cursor-pointer group">
         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -1526,13 +1531,13 @@
           <i class="fa-solid fa-calendar-days"></i>
           <span>📅 평가 주기 관리</span>
         </button>
-        <button onclick="switchAdminTab('questions')" id="admin-tab-questions" class="px-4 py-2 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-2">
-          <i class="fa-solid fa-sliders"></i>
-          <span>📝 평가 질문 & 가중치 커스텀</span>
-        </button>
         <button onclick="switchAdminTab('permissions')" id="admin-tab-permissions" class="px-4 py-2 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-2">
           <i class="fa-solid fa-toggle-on"></i>
           <span>🔑 평가 권한 관리</span>
+        </button>
+        <button onclick="switchAdminTab('questions')" id="admin-tab-questions" class="px-4 py-2 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-2">
+          <i class="fa-solid fa-sliders"></i>
+          <span>📝 평가 질문 & 가중치 커스텀</span>
         </button>
         <button onclick="switchAdminTab('matching')" id="admin-tab-matching" class="px-4 py-2 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-2 border border-purple-500/30 text-purple-300 bg-purple-500/10">
           <i class="fa-solid fa-shuffle"></i>
@@ -1626,9 +1631,10 @@
                 <i class="fa-solid fa-file-csv text-emerald-400"></i>
                 <span>📥 CSV 템플릿 양식 다운로드</span>
               </button>
-              <label class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold px-3.5 py-2 rounded-xl text-xs transition cursor-pointer flex items-center gap-1.5 shadow-lg shadow-teal-900/30">
+              <label id="csv-question-dropzone" class="csv-dropzone bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold px-3.5 py-2 rounded-xl text-xs transition cursor-pointer flex items-center gap-1.5 shadow-lg shadow-teal-900/30 border-2 border-dashed border-emerald-300/60"
+                ondragover="handleCSVDragOver(event)" ondragleave="handleCSVDragLeave(event)" ondrop="handleCSVQuestionDrop(event)">
                 <i class="fa-solid fa-file-import"></i>
-                <span>📤 CSV 질문 일괄 업로드</span>
+                <span>📤 CSV 질문 선택 또는 드롭</span>
                 <input type="file" id="csv-question-file-input" accept=".csv" onchange="handleCSVQuestionUpload(event)" class="hidden">
               </label>
               <div class="flex items-center gap-1 ml-2">
@@ -1762,6 +1768,9 @@
               </button>
               <button onclick="filterQuestionTrack('팀장/부서장급')" id="q-track-tab-팀장/부서장급" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white transition">
                 👔 팀장/부서장급
+              </button>
+              <button onclick="filterQuestionTrack('영업소 직원')" id="q-track-tab-영업소 직원" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white transition">
+                🚌 영업소 직원
               </button>
               <button onclick="filterQuestionTrack('정비사')" id="q-track-tab-정비사" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white transition">
                 🔧 정비사
@@ -2242,10 +2251,30 @@
       <label class="block text-xs font-bold text-slate-700">2차 결재자 (선택)
         <select id="approval-step-two" class="mt-1 w-full rounded-lg border border-slate-400 bg-white px-3 py-2 text-sm text-slate-900"></select>
       </label>
+      <label class="block text-xs font-bold text-slate-700">3차 결재자 (선택)
+        <select id="approval-step-three" class="mt-1 w-full rounded-lg border border-slate-400 bg-white px-3 py-2 text-sm text-slate-900"></select>
+      </label>
       <div class="flex justify-end gap-2 pt-2">
         <button type="button" onclick="closeApprovalLineModal()" class="rounded-lg border border-slate-400 bg-white px-4 py-2 text-sm font-bold text-slate-700">취소</button>
         <button type="button" onclick="submitInternalApprovalRequest()" class="rounded-lg bg-amber-600 px-4 py-2 text-sm font-black text-white hover:bg-amber-700">결재 요청</button>
       </div>
+    </div>
+  </div>
+
+  <!-- MODAL: PERSONAL NOTIFICATION CENTER -->
+  <div id="modal-notification-center" class="fixed inset-0 z-[80] hidden items-center justify-center bg-black/70 p-4">
+    <div class="glass-card w-full max-w-lg space-y-4 rounded-2xl border border-slate-400 p-5 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-300 pb-3">
+        <div>
+          <h3 class="font-black text-slate-900"><i class="fa-solid fa-bell mr-1 text-teal-700"></i>개인 알림함</h3>
+          <p class="mt-1 text-xs text-slate-600">전자결재 요청·승인·반려 알림을 확인합니다.</p>
+        </div>
+        <button type="button" onclick="closeNotificationCenter()" class="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100" aria-label="알림함 닫기"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="flex justify-end">
+        <button type="button" onclick="markAllNotificationsRead()" class="rounded-lg border border-teal-700 bg-white px-3 py-2 text-xs font-bold text-teal-800 hover:bg-teal-50">모두 읽음</button>
+      </div>
+      <div id="notification-center-list" class="max-h-[55vh] space-y-2 overflow-y-auto"></div>
     </div>
   </div>
 
@@ -2847,6 +2876,7 @@
     let selectedAdjustId = null;
     let approvalRequestsDb = [];
     let pendingApprovalNotifications = [];
+    let notificationsDb = [];
     let sentGradeMailKeys = new Set();
     let expandedHistoryCycleId = null;
 
@@ -4602,6 +4632,8 @@
       ));
       approvalRequestsDb = Array.isArray(payload.approval_requests) ? payload.approval_requests : [];
       pendingApprovalNotifications = Array.isArray(payload.pending_approval_notifications) ? payload.pending_approval_notifications : [];
+      notificationsDb = Array.isArray(payload.notifications) ? payload.notifications : [];
+      updateNotificationCenterBadge();
       showPendingApprovalToasts();
     }
 
@@ -6211,7 +6243,7 @@
     function filterQuestionTrack(trackName) {
       currentSelectedQuestionTrack = trackName;
 
-      ['전체', '본사 팀원급', '팀장/부서장급', '정비사'].forEach(t => {
+      ['전체', '본사 팀원급', '팀장/부서장급', '영업소 직원', '정비사'].forEach(t => {
         const btn = document.getElementById(`q-track-tab-${t}`);
         if (btn) {
           if (t === trackName) {
@@ -6238,7 +6270,9 @@
         : customQuestionsDb;
 
       if (currentSelectedQuestionTrack !== '전체') {
-        filteredQuestions = filteredQuestions.filter(q => (q.targetTrack || '기본 필수질문') === currentSelectedQuestionTrack);
+        filteredQuestions = filteredQuestions.filter(q =>
+          normalizeQuestionTrack(q.targetTrack) === normalizeQuestionTrack(currentSelectedQuestionTrack)
+        );
       }
 
       ensureDirectoryToolbar('questions', container, filteredQuestions, {
@@ -6436,9 +6470,10 @@
       document.body.removeChild(link);
     }
 
-    function handleCSVQuestionUpload(event) {
-      const file = event.target.files[0];
+    function processCSVQuestionFile(file) {
       if (!file) return;
+      if (!/\.csv$/i.test(file.name)) return alert('CSV 질문 파일만 업로드할 수 있습니다.');
+      if (file.size > 5 * 1024 * 1024) return alert('CSV 질문 파일은 5MB 이하만 업로드할 수 있습니다.');
 
       const reader = new FileReader();
       reader.onload = async function(e) {
@@ -6477,7 +6512,20 @@
         }
       };
       reader.readAsText(file, 'UTF-8');
+    }
+
+    function handleCSVQuestionUpload(event) {
+      const file = event.target.files?.[0];
+      processCSVQuestionFile(file);
       event.target.value = '';
+    }
+
+    function handleCSVQuestionDrop(event) {
+      event.preventDefault();
+      event.currentTarget.classList.remove('is-drag-over');
+      const files = [...(event.dataTransfer.files || [])];
+      if (files.length !== 1) return alert('CSV 질문 파일 한 개만 드롭해 주세요.');
+      processCSVQuestionFile(files[0]);
     }
 
     // ADMIN SUBTAB 4: PERMISSIONS (Evaluator & Evaluatee Dual Controls)
@@ -7068,7 +7116,9 @@
     }
 
     async function toggleResultPublishing() {
-      const nextPublished = !isResultPublished;
+      const selectedCycle = cyclesDb.find(row => Number(row.id) === Number(currentSelectedSummaryCycleId));
+      if (!selectedCycle) return alert('선택한 평가 주기를 찾지 못했습니다.');
+      const nextPublished = selectedCycle.results_published !== true;
       try {
         await callResultStateApi('POST', {
           action: 'publish',
@@ -7082,16 +7132,10 @@
       }
       announceCentralChange();
       await loadFromServer();
-      const btnText = document.getElementById('admin-publish-status-text');
-      const btn = document.getElementById('admin-publish-toggle-btn');
-
-      if (isResultPublished) {
-        btnText.innerText = '🌐 결과 공개 중 (클릭 시 비공개)';
-        btn.className = 'bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2.5 rounded-xl transition text-xs flex items-center gap-2 shadow-lg shadow-emerald-900/30';
+      renderAdminSummaryTable();
+      if (nextPublished) {
         alert('평가 결과가 피평가자들에게 공개되었습니다.');
       } else {
-        btnText.innerText = '🔒 결과 비공개 (클릭 시 공개)';
-        btn.className = 'bg-rose-600 hover:bg-rose-500 text-white font-bold px-4 py-2.5 rounded-xl transition text-xs flex items-center gap-2 shadow-lg shadow-rose-900/30';
         alert('평가 결과가 다시 비공개로 변경되었습니다.');
       }
     }
@@ -7105,15 +7149,25 @@
       button.classList.toggle('hidden', !canManagePublication);
       if (!canManagePublication) return;
       const cycle = selectedCycle || cyclesDb.find(row => Number(row.id) === Number(currentSelectedSummaryCycleId));
-      const canPublish = isResultPublished || (
+      const published = cycle?.results_published === true;
+      isResultPublished = published;
+      const canPublish = published || (
         cycle?.status === '마감/보관됨'
         && cycle?.internal_approval_status === 'approved'
         && cycle?.result_gate_open === true
       );
+      label.innerText = published
+        ? '🌐 결과 공개 중 (클릭 시 비공개)'
+        : canPublish
+          ? '🔒 결과 비공개 (클릭 시 공개)'
+          : '🔒 전자결재 승인·결과 게이트 대기';
+      button.className = `${published
+        ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-900/30'
+        : 'bg-rose-600 hover:bg-rose-500 shadow-rose-900/30'
+      } text-white font-bold px-4 py-2.5 rounded-xl transition text-xs flex items-center gap-2 shadow-lg`;
       button.disabled = !canPublish;
       button.classList.toggle('cursor-not-allowed', !canPublish);
       button.classList.toggle('opacity-50', !canPublish);
-      if (!canPublish) label.innerText = '🔒 전자결재 승인·결과 게이트 대기';
     }
 
     async function refreshApprovalWorkflowState() {
@@ -7128,11 +7182,10 @@
     }
 
     function showPendingApprovalToasts() {
-      if (currentLoggedInUser?.sys_role !== '임원') return;
-      pendingApprovalNotifications.forEach(notification => {
-        const requestId = notification.approval_request_id || notification.request_id || notification.id;
-        const step = notification.current_step || notification.step_order || 1;
-        const key = `cnhy_approval_toast_${currentLoggedInUser.id}_${requestId}_${step}`;
+      if (!['관리자', '임원'].includes(currentLoggedInUser?.sys_role)) return;
+      notificationsDb.filter(notification => !notification.read_at).forEach(notification => {
+        const requestId = notification.approval_request_id || notification.id;
+        const key = `cnhy_approval_toast_${currentLoggedInUser.id}_${requestId}`;
         try {
           if (sessionStorage.getItem(key)) return;
           sessionStorage.setItem(key, '1');
@@ -7149,20 +7202,90 @@
       const toast = document.createElement('div');
       toast.className = 'approval-toast rounded-xl p-4 text-sm';
       toast.innerHTML = `
-        <p class="font-black"><i class="fa-solid fa-file-signature mr-1 text-teal-700"></i>전자결재 요청이 도착했습니다</p>
-        <p class="mt-1 text-xs text-slate-600">${escapeHtml(cycle?.name || notification.cycle_name || '평가주기')} · ${Number(notification.current_step || notification.step_order || 1)}차 결재</p>
+        <p class="font-black"><i class="fa-solid fa-file-signature mr-1 text-teal-700"></i>${escapeHtml(notification.title || '전자결재 알림')}</p>
+        <p class="mt-1 text-xs text-slate-600">${escapeHtml(cycle?.name || notification.cycle_name || '평가주기')} · ${escapeHtml(notification.message || '')}</p>
         <div class="mt-3 flex justify-end gap-2">
           <button type="button" class="rounded-lg px-3 py-2 text-xs font-bold text-slate-600" aria-label="알림 닫기">닫기</button>
           <button type="button" class="rounded-lg bg-teal-700 px-3 py-2 text-xs font-black text-white">결재 화면으로 이동</button>
         </div>`;
       const [closeButton, moveButton] = toast.querySelectorAll('button');
       closeButton.addEventListener('click', () => toast.remove());
-      moveButton.addEventListener('click', () => {
+      moveButton.addEventListener('click', async () => {
         toast.remove();
+        if (notification.id) await markNotificationRead(notification.id, false);
         navigateToApprovalSummary(cycleId);
       });
       container.appendChild(toast);
       setTimeout(() => toast.remove(), 12000);
+    }
+
+    function updateNotificationCenterBadge() {
+      const button = document.getElementById('notification-center-button');
+      const badge = document.getElementById('notification-unread-count');
+      if (!button || !badge) return;
+      const visible = ['관리자', '임원'].includes(currentLoggedInUser?.sys_role);
+      button.classList.toggle('hidden', !visible);
+      const unread = notificationsDb.filter(notification => !notification.read_at).length;
+      badge.textContent = String(unread);
+      badge.classList.toggle('hidden', unread === 0);
+    }
+
+    function renderNotificationCenter() {
+      const list = document.getElementById('notification-center-list');
+      if (!list) return;
+      if (!notificationsDb.length) {
+        list.innerHTML = '<p class="rounded-xl border border-slate-300 bg-white p-6 text-center text-sm text-slate-500">도착한 알림이 없습니다.</p>';
+        return;
+      }
+      list.innerHTML = notificationsDb.map(notification => {
+        const cycle = cyclesDb.find(row => Number(row.id) === Number(notification.cycle_id));
+        const unread = !notification.read_at;
+        return `<button type="button" onclick="openNotificationItem(${Number(notification.id)}, ${Number(notification.cycle_id)})" class="w-full rounded-xl border p-3 text-left transition ${
+          unread ? 'border-teal-500 bg-teal-50' : 'border-slate-300 bg-white'
+        }">
+          <span class="flex items-center justify-between gap-2">
+            <strong class="text-sm text-slate-900">${escapeHtml(notification.title)}</strong>
+            ${unread ? '<span class="rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-black text-white">새 알림</span>' : ''}
+          </span>
+          <span class="mt-1 block text-xs text-slate-600">${escapeHtml(cycle?.name || '평가주기')} · ${escapeHtml(notification.message)}</span>
+          <span class="mt-2 block text-[10px] text-slate-500">${escapeHtml(new Date(notification.created_at).toLocaleString('ko-KR'))}</span>
+        </button>`;
+      }).join('');
+    }
+
+    function openNotificationCenter() {
+      renderNotificationCenter();
+      const modal = document.getElementById('modal-notification-center');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeNotificationCenter() {
+      const modal = document.getElementById('modal-notification-center');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    async function markNotificationRead(id, refresh = true) {
+      await callAdminStateApi({ action: 'notification_read', id: Number(id) });
+      const row = notificationsDb.find(notification => Number(notification.id) === Number(id));
+      if (row) row.read_at = new Date().toISOString();
+      updateNotificationCenterBadge();
+      if (refresh) renderNotificationCenter();
+    }
+
+    async function markAllNotificationsRead() {
+      await callAdminStateApi({ action: 'notification_read_all' });
+      const now = new Date().toISOString();
+      notificationsDb.forEach(notification => { if (!notification.read_at) notification.read_at = now; });
+      updateNotificationCenterBadge();
+      renderNotificationCenter();
+    }
+
+    async function openNotificationItem(id, cycleId) {
+      await markNotificationRead(id, false);
+      closeNotificationCenter();
+      navigateToApprovalSummary(cycleId);
     }
 
     function navigateToApprovalSummary(cycleId) {
@@ -7193,11 +7316,15 @@
         || approvalRequestsDb.find(row => Number(row.cycle_id) === Number(cycle.id));
       const steps = Array.isArray(request?.steps) ? [...request.steps].sort((a, b) => Number(a.step_order) - Number(b.step_order)) : [];
       const line = steps.length
-        ? `<span class="w-full text-[11px] text-slate-600">${steps.map(step => {
+        ? `<details class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-[11px] text-slate-700">
+            <summary class="cursor-pointer font-black">결재 진행 기록 보기</summary>
+            <div class="mt-2 space-y-1">${steps.map(step => {
             const approver = usersDb.find(user => Number(user.id) === Number(step.approver_user_id));
             const state = { pending: '대기', approved: '승인', rejected: '반려' }[step.status] || step.status || '대기';
-            return `${Number(step.step_order)}차 ${escapeHtml(approver?.name || '지정 임원')} · ${escapeHtml(state)}`;
-          }).join(' → ')}</span>`
+            const decidedAt = step.decided_at ? new Date(step.decided_at).toLocaleString('ko-KR') : '처리 대기';
+            const note = step.decision_note ? ` · 의견: ${escapeHtml(step.decision_note)}` : '';
+            return `<p><strong>${Number(step.step_order)}차 ${escapeHtml(approver?.name || '지정 임원')}</strong> · ${escapeHtml(state)} · ${escapeHtml(decidedAt)}${note}</p>`;
+          }).join('')}</div></details>`
         : '';
       let actions = '';
       if (role === '관리자' && ['not_requested', 'rejected'].includes(status)) actions = '<button onclick="openApprovalLineModal()" class="px-3 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-black" title="최종 결과 확정과 전자결재 요청을 함께 처리합니다.">전자결재 요청</button>';
@@ -7215,8 +7342,10 @@
       const optionHtml = executives.map(user => `<option value="${Number(user.id)}">${escapeHtml(user.name)} · ${escapeHtml(user.email || user.role || '')}</option>`).join('');
       const first = document.getElementById('approval-step-one');
       const second = document.getElementById('approval-step-two');
+      const third = document.getElementById('approval-step-three');
       first.innerHTML = optionHtml;
       second.innerHTML = `<option value="">선택 안 함</option>${optionHtml}`;
+      third.innerHTML = `<option value="">선택 안 함</option>${optionHtml}`;
       if (executives.length > 1) second.value = String(executives[1].id);
       const modal = document.getElementById('modal-approval-line');
       modal.classList.remove('hidden');
@@ -7233,7 +7362,8 @@
       const cycle = cyclesDb.find(row => Number(row.id) === Number(currentSelectedSummaryCycleId));
       const firstId = Number(document.getElementById('approval-step-one')?.value);
       const secondValue = document.getElementById('approval-step-two')?.value;
-      const approverIds = [firstId, secondValue ? Number(secondValue) : null].filter(Boolean);
+      const thirdValue = document.getElementById('approval-step-three')?.value;
+      const approverIds = [firstId, secondValue ? Number(secondValue) : null, thirdValue ? Number(thirdValue) : null].filter(Boolean);
       if (!cycle || !firstId) return alert('1차 결재자를 선택해 주세요.');
       if (new Set(approverIds).size !== approverIds.length) return alert('같은 임원을 중복 지정할 수 없습니다.');
       if (!confirm(`[${cycle.name}] 지정한 ${approverIds.length}명의 결재선으로 요청하시겠습니까?`)) return;
