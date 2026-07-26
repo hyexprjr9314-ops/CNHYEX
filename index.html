@@ -1648,15 +1648,20 @@
             </div>
 
             <!-- CSV Import & Download Action Buttons -->
-            <div class="flex flex-wrap items-center gap-2">
-              <button onclick="downloadCSVQuestionTemplate()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-3.5 py-2 rounded-xl text-xs transition border border-slate-700 flex items-center gap-1.5 shadow">
+            <div class="w-full md:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <button onclick="downloadCSVQuestionTemplate()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-4 py-3 rounded-xl text-xs transition border border-slate-700 flex items-center justify-center gap-1.5 shadow whitespace-nowrap">
                 <i class="fa-solid fa-file-csv text-emerald-400"></i>
                 <span>📥 CSV 템플릿 양식 다운로드</span>
               </button>
-              <label id="csv-question-dropzone" class="csv-dropzone bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold px-3.5 py-2 rounded-xl text-xs transition cursor-pointer flex items-center gap-1.5 shadow-lg shadow-teal-900/30 border-2 border-dashed border-emerald-300/60"
+              <label id="csv-question-dropzone" class="csv-dropzone group min-h-20 sm:min-w-[340px] bg-emerald-50 hover:bg-emerald-100 text-emerald-900 font-bold px-5 py-4 rounded-2xl transition cursor-pointer flex items-center justify-center gap-4 shadow-sm border-2 border-dashed border-emerald-500"
                 ondragover="handleCSVDragOver(event)" ondragleave="handleCSVDragLeave(event)" ondrop="handleCSVQuestionDrop(event)">
-                <i class="fa-solid fa-file-import"></i>
-                <span>📤 CSV 질문 선택 또는 드롭</span>
+                <span class="w-11 h-11 shrink-0 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+                  <i class="fa-solid fa-file-arrow-up text-lg"></i>
+                </span>
+                <span class="min-w-0">
+                  <strong class="block text-sm font-black">CSV 질문 파일 업로드</strong>
+                  <small class="block mt-1 text-[11px] font-bold text-emerald-700">여기를 클릭하거나 파일을 끌어다 놓으세요</small>
+                </span>
                 <input type="file" id="csv-question-file-input" accept=".csv" onchange="handleCSVQuestionUpload(event)" class="hidden">
               </label>
               <div class="hidden items-center gap-1 ml-2" aria-hidden="true">
