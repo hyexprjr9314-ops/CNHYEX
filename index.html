@@ -572,10 +572,10 @@
     }
     #mascot-guide {
       position: fixed;
-      right: 1rem;
-      bottom: 1rem;
+      right: 1.25rem;
+      bottom: 0.75rem;
       z-index: 40;
-      width: min(23rem, calc(100vw - 2rem));
+      width: min(26rem, calc(100vw - 1.5rem));
       pointer-events: none;
     }
     #mascot-guide.is-visible .mascot-guide-card {
@@ -584,19 +584,38 @@
     .mascot-guide-card {
       pointer-events: auto;
       display: grid;
-      grid-template-columns: minmax(0, 1fr) 6.5rem;
+      grid-template-columns: minmax(0, 1fr) 7.5rem;
       align-items: end;
-      gap: 0.75rem;
-      overflow: hidden;
-      border: 1px solid rgba(13, 148, 136, 0.3);
-      border-radius: 1.25rem;
-      background: rgba(255, 255, 255, 0.97);
-      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.22);
+      gap: 0.25rem;
+    }
+    .mascot-guide-bubble {
+      position: relative;
+      align-self: start;
+      margin-top: 0.5rem;
+      margin-bottom: 4.5rem;
+      border: 1px solid rgba(13, 148, 136, 0.35);
+      border-radius: 1.25rem 1.25rem 0.35rem 1.25rem;
+      background: rgba(255, 255, 255, 0.98);
+      box-shadow: 0 14px 35px rgba(15, 23, 42, 0.2);
+    }
+    .mascot-guide-bubble::after {
+      content: '';
+      position: absolute;
+      right: -0.7rem;
+      bottom: -1px;
+      width: 1.15rem;
+      height: 1.15rem;
+      background: rgba(255, 255, 255, 0.98);
+      border-right: 1px solid rgba(13, 148, 136, 0.35);
+      border-bottom: 1px solid rgba(13, 148, 136, 0.35);
+      clip-path: polygon(0 0, 100% 100%, 0 100%);
     }
     .mascot-guide-image {
       width: 100%;
       align-self: end;
       transform-origin: bottom center;
+      mix-blend-mode: multiply;
+      filter: drop-shadow(0 12px 12px rgba(15, 23, 42, 0.2));
       animation: mascot-guide-talk 1.5s ease-in-out 0.55s 2;
     }
     #mascot-guide.is-celebrating .mascot-guide-image {
@@ -632,6 +651,17 @@
     }
 
     @media (max-width: 640px) {
+      #mascot-guide {
+        right: 0.5rem;
+        bottom: 0.5rem;
+        width: calc(100vw - 1rem);
+      }
+      .mascot-guide-card {
+        grid-template-columns: minmax(0, 1fr) 5.75rem;
+      }
+      .mascot-guide-bubble {
+        margin-bottom: 3.25rem;
+      }
       body {
         padding-bottom: 5.5rem;
       }
@@ -2673,12 +2703,15 @@
 
   <aside id="mascot-guide" class="hidden" role="status" aria-live="polite" aria-atomic="true">
     <div class="mascot-guide-card">
-      <div class="relative p-4 pr-0 self-stretch flex flex-col justify-center">
-        <button type="button" onclick="hideMascotGuide()" aria-label="안내 닫기" class="absolute top-2 right-0 w-8 h-8 rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition">
+      <div class="mascot-guide-bubble p-4 flex flex-col justify-center">
+        <button type="button" onclick="hideMascotGuide()" aria-label="안내 닫기" class="absolute top-2 right-2 w-8 h-8 rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition">
           <i class="fa-solid fa-xmark"></i>
         </button>
         <strong id="mascot-guide-title" class="text-sm font-black text-slate-900">평가 도우미</strong>
         <p id="mascot-guide-message" class="mt-1 pr-5 text-xs leading-relaxed text-slate-600"></p>
+        <button id="mascot-guide-action" type="button" onclick="runMascotGuideAction()" class="hidden mt-3 w-fit rounded-lg bg-brandTeal px-3 py-2 text-xs font-black text-white shadow-sm transition hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-brandTeal focus:ring-offset-2">
+          다음 단계로 이동
+        </button>
       </div>
       <img id="mascot-guide-image" class="mascot-guide-image" src="" alt="">
     </div>
@@ -4076,7 +4109,10 @@
       if (subtab === 'summary') renderAdminSummaryTable();
       if (subtab === 'history') renderHistoryTable();
       requestAnimationFrame(applyMobileAdminTableLayout);
-      requestAnimationFrame(() => showAdminMascotGuide(subtab));
+      requestAnimationFrame(() => {
+        showAdminMascotGuide(subtab);
+        showExecutiveMascotGuide(subtab);
+      });
     }
 
     function renderEvaluationProgress() {
@@ -5361,6 +5397,7 @@
     // Employee Track Filter State for Admin/Executive
     let currentSelectedEmpTrackFilter = '전체';
     let mascotGuideTimer = null;
+    let mascotGuideAction = null;
 
     function mascotForCurrentUser() {
       const isHanyang = String(currentLoggedInUser?.company || '').includes('한양');
@@ -5372,6 +5409,7 @@
 
     function hideMascotGuide() {
       clearTimeout(mascotGuideTimer);
+      mascotGuideAction = null;
       const guide = document.getElementById('mascot-guide');
       if (guide) {
         guide.classList.add('hidden');
@@ -5380,20 +5418,35 @@
       document.querySelectorAll('.mascot-target-highlight').forEach(element => element.classList.remove('mascot-target-highlight'));
     }
 
-    function showMascotGuide(message, { celebrate = false, duration = 6500 } = {}) {
+    function runMascotGuideAction() {
+      const action = mascotGuideAction;
+      hideMascotGuide();
+      try {
+        if (typeof action === 'function') action();
+      } catch (error) {
+        console.warn('Optional mascot guide action skipped:', error);
+      }
+    }
+
+    function showMascotGuide(message, { celebrate = false, duration = 6500, actionLabel = '', action = null } = {}) {
       try {
         if (!currentLoggedInUser) return;
         const guide = document.getElementById('mascot-guide');
         const image = document.getElementById('mascot-guide-image');
         const title = document.getElementById('mascot-guide-title');
         const messageElement = document.getElementById('mascot-guide-message');
-        if (!guide || !image || !title || !messageElement) return;
+        const actionButton = document.getElementById('mascot-guide-action');
+        if (!guide || !image || !title || !messageElement || !actionButton) return;
         clearTimeout(mascotGuideTimer);
+        document.querySelectorAll('.mascot-target-highlight').forEach(element => element.classList.remove('mascot-target-highlight'));
         const mascot = mascotForCurrentUser();
         image.src = mascot.src;
         image.alt = `${mascot.name} 평가 도우미`;
         title.textContent = `${mascot.name}의 한마디`;
         messageElement.textContent = message;
+        mascotGuideAction = typeof action === 'function' ? action : null;
+        actionButton.textContent = actionLabel || '다음 단계로 이동';
+        actionButton.classList.toggle('hidden', !mascotGuideAction);
         guide.classList.remove('hidden', 'is-visible', 'is-celebrating');
         void guide.offsetWidth;
         guide.classList.add('is-visible');
@@ -5407,6 +5460,7 @@
     function showPendingEvaluationGuide(assignments) {
       try {
         if (currentActiveView !== 'list' || !currentLoggedInUser || !Array.isArray(assignments)) return;
+        if (!cyclesDb.some(cycle => cycle.status === '진행중' && !isClosedEvaluationCycle(cycle))) return;
         const pending = assignments.filter(item => Number(item.completed || 0) === 0);
         if (!pending.length) return;
         const cycleId = pending[0]?.cycleId || 'current';
@@ -5425,6 +5479,47 @@
       }
     }
 
+    function showNoActiveEvaluationGuide() {
+      try {
+        const roleInfo = checkUserRole(currentLoggedInUser);
+        if (currentActiveView !== 'list' || !currentLoggedInUser || roleInfo.isPrivileged) return;
+        if (cyclesDb.some(cycle => cycle.status === '진행중' && !isClosedEvaluationCycle(cycle))) return;
+        const sessionKey = `cnhy_mascot_no_active_${currentLoggedInUser.id}`;
+        if (sessionStorage.getItem(sessionKey)) return;
+        sessionStorage.setItem(sessionKey, '1');
+        showMascotGuide('현재 시작된 평가가 없습니다. 새로운 평가가 시작되면 이 화면에서 평가 대상자를 확인할 수 있습니다.', { duration: 7500 });
+      } catch (error) {
+        console.warn('Optional mascot inactive-cycle guide skipped:', error);
+      }
+    }
+
+    function showMascotGuideStep(message, step = null) {
+      const action = step
+        ? () => {
+            if (step.view) {
+              navigateTo(step.view);
+              return;
+            }
+            if (step.subtab) {
+              switchAdminTab(step.subtab);
+              return;
+            }
+            const target = step.selector ? document.querySelector(step.selector) : null;
+            if (target) {
+              target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              if (typeof target.focus === 'function') target.focus({ preventScroll: true });
+            }
+          }
+        : null;
+      showMascotGuide(message, {
+        duration: 10000,
+        actionLabel: step?.label || '',
+        action
+      });
+      const target = step?.target ? document.querySelector(step.target) : null;
+      if (target) target.classList.add('mascot-target-highlight');
+    }
+
     function showAdminMascotGuide(subtab) {
       try {
         const roleInfo = checkUserRole(currentLoggedInUser);
@@ -5438,7 +5533,7 @@
         const approval = selectedCycle?.internal_approval_status || 'not_requested';
         const published = selectedCycle?.results_published === true;
         const stateKey = [subtab, selectedCycle?.id || 'none', selectedCycle?.status || 'none', approval, published].join('_');
-        const sessionKey = `cnhy_mascot_admin_${currentLoggedInUser.id}_${stateKey}`;
+        const sessionKey = `cnhy_mascot_admin_v2_${currentLoggedInUser.id}_${stateKey}`;
         if (sessionStorage.getItem(sessionKey)) return;
 
         const messages = {
@@ -5468,10 +5563,85 @@
         const message = messages[subtab];
         if (!message) return;
 
+        let step = {
+          users: { label: '평가관리 시작', view: 'evalmanage', target: '#nav-tab-evalmanage' },
+          questions: { label: '2단계 · 권한 확인', subtab: 'permissions', target: '#admin-tab-permissions' },
+          permissions: { label: '3단계 · 평가자 배정', subtab: 'matching', target: '#admin-tab-matching' },
+          matching: { label: '4단계 · 사전점검', subtab: 'cycles', target: '#admin-tab-cycles' },
+          progress: { label: '평가주기 관리', subtab: 'cycles', target: '#admin-tab-cycles' },
+          history: null
+        }[subtab];
+        if (subtab === 'cycles') {
+          step = !selectedCycle
+            ? { label: '평가주기 만들기', selector: '#cycle-name-in', target: '#cycle-name-in' }
+            : selectedCycle.status === '진행중'
+              ? { label: '진행 현황 확인', subtab: 'progress', target: '#admin-tab-progress' }
+              : selectedCycle.status === '마감/보관됨'
+                ? { label: '최종 결과 검토', subtab: 'summary', target: '#admin-tab-summary' }
+                : { label: '1단계 · 질문 구성', subtab: 'questions', target: '#admin-tab-questions' };
+        }
+        if (subtab === 'summary') {
+          step = published
+            ? { label: '메일 발송 위치 보기', selector: '#bulk-grade-mail-btn', target: '#bulk-grade-mail-btn' }
+            : approval === 'approved'
+              ? { label: '결과 공개 위치 보기', selector: '#admin-publish-toggle-btn', target: '#admin-publish-toggle-btn' }
+              : ['requested', 'pending'].includes(approval)
+                ? null
+                : { label: '전자결재 위치 보기', selector: '#internal-approval-controls', target: '#internal-approval-controls' };
+        }
         sessionStorage.setItem(sessionKey, '1');
-        showMascotGuide(message, { duration: 7500 });
+        showMascotGuideStep(message, step);
       } catch (error) {
         console.warn('Optional mascot admin guide skipped:', error);
+      }
+    }
+
+    function showExecutiveMascotGuide(subtab) {
+      try {
+        const roleInfo = checkUserRole(currentLoggedInUser);
+        if (currentActiveView !== 'evalmanage' || !roleInfo.isExecutive || roleInfo.isAdmin) return;
+
+        const selectedCycle = cyclesDb.find(cycle => Number(cycle.id) === Number(currentSelectedSummaryCycleId || selectedEvaluationCycleId))
+          || [...cyclesDb].sort((a, b) => Number(b.id) - Number(a.id))[0];
+        const approval = selectedCycle?.internal_approval_status || 'not_requested';
+        const published = selectedCycle?.results_published === true;
+        const request = approvalRequestsDb.find(row =>
+          Number(row.cycle_id) === Number(selectedCycle?.id)
+          && ['requested', 'pending'].includes(row.request_status)
+        );
+        const isMyTurn = ['requested', 'pending'].includes(approval)
+          && Number(request?.current_approver_user_id) === Number(currentLoggedInUser.id);
+        const stateKey = [subtab, selectedCycle?.id || 'none', selectedCycle?.status || 'none', approval, published, isMyTurn].join('_');
+        const sessionKey = `cnhy_mascot_executive_${currentLoggedInUser.id}_${stateKey}`;
+        if (sessionStorage.getItem(sessionKey)) return;
+
+        let message = '';
+        let step = null;
+        if (subtab === 'progress') {
+          message = '평가 제출률과 미완료 현황을 확인해 주세요. 점수가 집계되면 ‘점수 집계 & 최종 조정’에서 결과를 검토할 수 있습니다.';
+          step = { label: '결과 검토로 이동', subtab: 'summary', target: '#admin-tab-summary' };
+        } else if (subtab === 'summary') {
+          if (published) {
+            message = '승인된 최종 결과가 직원에게 공개되었습니다. 공개된 결과와 등급을 최종 확인해 주세요.';
+          } else if (isMyTurn) {
+            message = '전자결재 차례가 도착했습니다. 최종 점수와 조정 내용을 확인한 뒤 승인 또는 반려해 주세요.';
+            step = { label: '승인·반려 위치 보기', selector: '#internal-approval-controls', target: '#internal-approval-controls' };
+          } else if (['requested', 'pending'].includes(approval)) {
+            message = '전자결재가 진행 중입니다. 현재 결재자의 처리가 끝나면 다음 결재자에게 순서대로 전달됩니다.';
+          } else if (approval === 'approved') {
+            message = '전자결재가 완료되었습니다. 결과 공개는 관리자 화면에서 진행됩니다.';
+          } else {
+            message = '최종 점수와 조정 결과를 검토해 주세요. 관리자가 전자결재를 요청하면 이 화면에서 승인 또는 반려할 수 있습니다.';
+          }
+        } else if (subtab === 'history') {
+          message = '승인과 결과 공개가 완료된 과거 평가를 읽기 전용으로 확인하는 화면입니다.';
+        }
+        if (!message) return;
+
+        sessionStorage.setItem(sessionKey, '1');
+        showMascotGuideStep(message, step);
+      } catch (error) {
+        console.warn('Optional mascot executive guide skipped:', error);
       }
     }
 
@@ -5605,6 +5775,7 @@
       if (totEl) totEl.innerText = `${totalAssignmentCount} 건`;
       if (compEl) compEl.innerText = `${completedAssignmentCount} 건`;
       renderLoggedInWelcome(totalAssignmentCount);
+      showNoActiveEvaluationGuide();
 
       let targetEmployees = [...allTargetEmployees];
 
