@@ -3263,9 +3263,7 @@
         && !cycle.force_closed_at
         && cycle.results_published === true
         && cycle.result_gate_open === true
-        && cycle.internal_approval_status === 'approved'
-        && hasClosedArchiveForCycle(cycle.id)
-        && hasCurrentFinalResultForCycle(cycle);
+        && cycle.internal_approval_status === 'approved';
     }
 
     function managementCyclesForSubtab(subtab, sortedCycles) {

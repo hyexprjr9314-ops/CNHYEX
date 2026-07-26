@@ -21,3 +21,15 @@ test('publication remains scoped to the selected evaluation cycle', () => {
   assert.match(index, /cycle_id: Number\(currentSelectedSummaryCycleId\)/);
   assert.match(index, /const nextPublished = selectedCycle\.results_published !== true/);
 });
+
+test('published personal-result cycles do not depend on privileged admin caches', () => {
+  const visibilityCheck = index.match(
+    /function isVisiblePublishedResultCycle\(cycle\) \{[\s\S]*?\n    \}/
+  )?.[0] || '';
+
+  assert.match(visibilityCheck, /cycle\.results_published === true/);
+  assert.match(visibilityCheck, /cycle\.result_gate_open === true/);
+  assert.match(visibilityCheck, /cycle\.internal_approval_status === 'approved'/);
+  assert.doesNotMatch(visibilityCheck, /hasClosedArchiveForCycle|hasCurrentFinalResultForCycle/);
+  assert.match(index, /loadServerResultState\(parseInt\(selectedVal\)\)/);
+});
