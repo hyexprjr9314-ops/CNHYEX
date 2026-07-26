@@ -19,6 +19,7 @@ test('automatic matching creates an atomic quota draft that remains manually edi
   assert.match(autoMatching, /load\.get\(Number\(a\.id\)\)/);
   assert.match(ui, /action:\s*'matching_generate'/);
   assert.match(ui, /정원 기반 자동 초안 생성/);
+  assert.match(ui, /if \(activate\)[\s\S]*action:\s*'matching_generate'[\s\S]*shortages\.length[\s\S]*시작을 중단했습니다/);
   assert.doesNotMatch(ui, /saveBtn\.disabled = !dirty \|\| isAutoMatchingEnabled/);
   assert.match(migration, /alter column auto_matching_enabled set default false/i);
   assert.match(migration, /delete from public\.matchings[\s\S]*insert into public\.matchings/i);

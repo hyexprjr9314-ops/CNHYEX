@@ -6308,6 +6308,23 @@
       const cycle = cyclesDb.find(item => Number(item.id) === Number(cycleId));
       if (activate && !confirm('평가 주기 [' + (cycle?.name || cycleId) + ']를 통합 점검 후 시작하시겠습니까?')) return;
       try {
+        if (activate) {
+          const matchingResponse = await callAdminStateApi({
+            action: 'matching_generate',
+            cycle_id: Number(cycleId)
+          });
+          const shortages = Array.isArray(matchingResponse.data?.shortages) ? matchingResponse.data.shortages : [];
+          if (shortages.length) {
+            const preview = shortages.slice(0, 10)
+              .map(item => `${item.target_name}: ${item.bucket} ${item.shortage}명 부족`)
+              .join('\n');
+            const remainder = shortages.length > 10 ? `\n외 ${shortages.length - 10}건` : '';
+            alert(`평가 배정 후보가 부족하여 시작을 중단했습니다.\n\n${preview}${remainder}\n\n평가 매칭 관리에서 수동으로 보완해 주세요.`);
+            await loadCentralState();
+            renderManualMatchingTable();
+            return;
+          }
+        }
         const response = await callAdminStateApi({
           action: activate ? 'cycle_activate' : 'cycle_validate',
           cycle_id: Number(cycleId)
