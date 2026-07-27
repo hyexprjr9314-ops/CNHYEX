@@ -1065,8 +1065,8 @@
     .sync-footer-status[data-state="syncing"]::before { background: #f59e0b; }
     .sync-footer-status[data-state="error"] { color: #991b1b; }
     .sync-footer-status[data-state="error"]::before { background: #dc2626; }
-    #question-cycle-select, #perm-cycle-select, #matching-cycle-select, #progress-cycle-select, #summary-cycle-select,
-    label[for="matching-cycle-select"], label[for="summary-cycle-select"] { display: none !important; }
+    #question-cycle-select, #perm-cycle-select, #matching-cycle-select,
+    label[for="matching-cycle-select"] { display: none !important; }
     @media (prefers-reduced-motion: reduce) { .hourglass-turn { animation: none; } }
   </style>
 </head>
@@ -1140,6 +1140,10 @@
       <button onclick="navigateTo('evalmanage')" id="nav-tab-evalmanage" class="px-4 py-2 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-2 border border-brandTeal/30 text-teal-300 bg-teal-500/10">
         <i class="fa-solid fa-gears"></i>
         <span>평가 관리</span>
+      </button>
+      <button onclick="navigateTo('closingmanage')" id="nav-tab-closingmanage" class="px-4 py-2 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-2 border border-amber-500/30 text-amber-700 bg-amber-500/10">
+        <i class="fa-solid fa-file-signature"></i>
+        <span>집계·마감 관리</span>
       </button>
       <button onclick="navigateTo('admin')" id="nav-tab-admin" class="px-4 py-2 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-2 border border-brandGold/30 text-brandGold bg-brandGold/10">
         <i class="fa-solid fa-user-shield"></i>
@@ -1709,7 +1713,7 @@
             <i class="fa-solid fa-gears text-brandTeal"></i>
             <span>전사 인사평가 관리 카테고리</span>
           </h2>
-          <p class="text-xs text-slate-300 mt-1">평가 주기 생성, 질문/가중치 커스텀, 평가 권한 관리, 점수 집계 및 전자승인, 과거 이력 관리</p>
+          <p class="text-xs text-slate-300 mt-1">평가 주기 생성, 평가 권한 설정, 질문·가중치 구성, 평가 매칭 및 진행 상태 관리</p>
         </div>
 
       </div>
@@ -1735,18 +1739,6 @@
         <button onclick="switchAdminTab('lifecycle')" id="admin-tab-lifecycle" class="px-4 py-2 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-2">
           <i class="fa-solid fa-play-circle"></i>
           <span>평가 진행 관리</span>
-        </button>
-        <button onclick="switchAdminTab('progress')" id="admin-tab-progress" class="px-4 py-2 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-2">
-          <i class="fa-solid fa-chart-line"></i>
-          <span>평가 진행 현황</span>
-        </button>
-        <button onclick="switchAdminTab('summary')" id="admin-tab-summary" class="px-4 py-2 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-2">
-          <i class="fa-solid fa-table-list"></i>
-          <span>📋 점수 집계 & 최종 조정</span>
-        </button>
-        <button onclick="switchAdminTab('history')" id="admin-tab-history" class="px-4 py-2 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-2">
-          <i class="fa-solid fa-lock"></i>
-          <span>🔒 과거 평가 이력</span>
         </button>
       </div>
 
@@ -2186,6 +2178,39 @@
         </div>
       </div>
 
+    </section>
+
+    <!-- VIEW 8: CLOSING MANAGEMENT (진행 현황 · 집계/조정 · 과거 이력) -->
+    <section id="view-closingmanage" class="hidden space-y-6">
+      <div class="app-section-hero app-section-hero--amber glass-card rounded-2xl p-6 border flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <div class="flex items-center gap-2 mb-1">
+            <span class="bg-amber-500/20 text-amber-800 border border-amber-500/40 text-[11px] font-bold px-2.5 py-0.5 rounded-full">CLOSING MANAGEMENT</span>
+            <span class="text-xs text-slate-500">관리자·임원 공용</span>
+          </div>
+          <h2 class="text-2xl font-black text-slate-950 flex items-center gap-2">
+            <i class="fa-solid fa-file-signature text-amber-700"></i>
+            <span>집계·마감 관리</span>
+          </h2>
+          <p class="text-xs text-slate-600 mt-1">평가 진행 확인부터 점수 검토·전자결재·결과 공개·과거 이력 조회까지 처리합니다.</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 border-b border-slate-300 pb-3 overflow-x-auto text-xs font-bold">
+        <button onclick="switchAdminTab('progress')" id="admin-tab-progress" class="px-4 py-2 rounded-xl transition bg-brandTeal text-white shadow-lg flex items-center gap-2">
+          <i class="fa-solid fa-chart-line"></i>
+          <span>평가 진행 현황</span>
+        </button>
+        <button onclick="switchAdminTab('summary')" id="admin-tab-summary" class="px-4 py-2 rounded-xl transition text-slate-500 hover:bg-slate-200 hover:text-slate-950 flex items-center gap-2">
+          <i class="fa-solid fa-table-list"></i>
+          <span>점수 집계 & 최종 조정</span>
+        </button>
+        <button onclick="switchAdminTab('history')" id="admin-tab-history" class="px-4 py-2 rounded-xl transition text-slate-500 hover:bg-slate-200 hover:text-slate-950 flex items-center gap-2">
+          <i class="fa-solid fa-box-archive"></i>
+          <span>과거 평가 이력</span>
+        </button>
+      </div>
+
       <!-- ADMIN SUB-TAB: EVALUATION PROGRESS -->
       <div id="admin-subtab-progress" class="hidden space-y-6">
         <div class="glass-card rounded-2xl p-6 border border-slate-800 space-y-4">
@@ -2248,7 +2273,7 @@
                 <i class="fa-solid fa-file-csv"></i>
                 <span>선택 주기 전체 리포트 CSV</span>
               </button>
-              <button id="bulk-grade-mail-btn" type="button" onclick="sendBulkGradeNoticeEmails()" class="summary-action-white bg-violet-600 hover:bg-violet-500 text-white font-bold px-3.5 py-2 rounded-xl transition text-xs flex items-center gap-2 shadow-lg shadow-violet-900/30">
+              <button id="bulk-grade-mail-btn" type="button" onclick="sendBulkGradeNoticeEmails()" class="hidden summary-action-white bg-violet-600 hover:bg-violet-500 text-white font-bold px-3.5 py-2 rounded-xl transition text-xs flex items-center gap-2 shadow-lg shadow-violet-900/30">
                 <i class="fa-solid fa-envelopes-bulk"></i>
                 <span>평가 결과 메일 일괄 발송</span>
               </button>
@@ -3168,6 +3193,8 @@
     let currentActiveView = 'list';
     let currentActiveSubtab = 'users';
     let selectedEvaluationCycleId = null;
+    const evaluationSetupSubtabs = ['cycles', 'permissions', 'questions', 'matching', 'lifecycle'];
+    const closingManagementSubtabs = ['progress', 'summary', 'history'];
 
     function saveUiPreferences() {
       try {
@@ -3518,7 +3545,7 @@
       const managementCycleId = setCycleSelectOptions(managementSelect, managementCycles, selectedEvaluationCycleId);
       if (managementCycleId) handleCycleSelectChange({ value: String(managementCycleId) });
       if (managementToolbar) {
-        const visible = ['questions', 'matching', 'progress', 'summary'].includes(currentActiveSubtab);
+        const visible = ['questions', 'matching'].includes(currentActiveSubtab);
         managementToolbar.classList.toggle('hidden', !visible);
         managementToolbar.classList.toggle('flex', visible);
       }
@@ -4780,7 +4807,8 @@
       const roleInfo = checkUserRole(currentLoggedInUser);
       const visibility = {
         myresults: canCurrentUserViewResults(),
-        evalmanage: roleInfo.isPrivileged,
+        evalmanage: roleInfo.isAdmin,
+        closingmanage: roleInfo.isPrivileged,
         admin: roleInfo.isAdmin
       };
 
@@ -4985,7 +5013,7 @@
       populateCycleSelects();
       if (currentActiveView === 'list') renderEmployeeGrid();
       if (currentActiveView === 'myresults') renderMyResults();
-      if (currentActiveView === 'admin' || currentActiveView === 'evalmanage') {
+      if (currentActiveView === 'admin' || currentActiveView === 'evalmanage' || currentActiveView === 'closingmanage') {
         if (currentActiveSubtab === 'users') renderUsersTable();
         if (currentActiveSubtab === 'cycles') renderCyclesList();
         if (currentActiveSubtab === 'questions') renderQuestionsList();
@@ -5083,7 +5111,10 @@
     async function callResultStateApi(method, params = {}) {
       if (!supabaseClient) throw new Error('Supabase 연결이 없습니다.');
       const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
-      if (sessionError || !sessionData.session) throw new Error('로그인이 필요합니다.');
+      if (sessionError || !sessionData.session) {
+        await handleLogout();
+        throw new Error('로그인이 필요합니다.');
+      }
       const query = method === 'GET'
         ? `?${new URLSearchParams(params).toString()}`
         : '';
@@ -5096,6 +5127,10 @@
         body: method === 'GET' ? undefined : JSON.stringify(params)
       });
       const payload = await response.json().catch(() => ({}));
+      if (response.status === 401) {
+        await handleLogout();
+        throw new Error('로그인이 만료되었습니다. 다시 로그인해 주세요.');
+      }
       if (!response.ok) throw new Error(payload.error || '평가 결과 요청에 실패했습니다.');
       return payload;
     }
@@ -5103,12 +5138,19 @@
     async function callEvaluationDetailApi(cycleId, targetId) {
       if (!supabaseClient) throw new Error('Supabase 연결이 없습니다.');
       const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
-      if (sessionError || !sessionData.session) throw new Error('로그인이 필요합니다.');
+      if (sessionError || !sessionData.session) {
+        await handleLogout();
+        throw new Error('로그인이 필요합니다.');
+      }
       const query = new URLSearchParams({ cycle_id: cycleId, target_id: targetId });
       const response = await fetch(`/api/evaluation-detail?${query}`, {
         headers: { 'Authorization': `Bearer ${sessionData.session.access_token}` }
       });
       const payload = await response.json().catch(() => ({}));
+      if (response.status === 401) {
+        await handleLogout();
+        throw new Error('로그인이 만료되었습니다. 다시 로그인해 주세요.');
+      }
       if (!response.ok) throw new Error(payload.error || '평가 상세 조회에 실패했습니다.');
       return payload;
     }
@@ -5116,7 +5158,10 @@
     async function callMailApi(params = {}) {
       if (!supabaseClient) throw new Error('Supabase 연결이 없습니다.');
       const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
-      if (sessionError || !sessionData.session) throw new Error('로그인이 필요합니다.');
+      if (sessionError || !sessionData.session) {
+        await handleLogout();
+        throw new Error('로그인이 필요합니다.');
+      }
       const response = await fetch('/api/mail', {
         method: 'POST',
         headers: {
@@ -5126,6 +5171,10 @@
         body: JSON.stringify(params)
       });
       const payload = await response.json().catch(() => ({}));
+      if (response.status === 401) {
+        await handleLogout();
+        throw new Error('로그인이 만료되었습니다. 다시 로그인해 주세요.');
+      }
       if (!response.ok) throw new Error(payload.error || '메일 발송 요청에 실패했습니다.');
       return payload;
     }
@@ -5169,6 +5218,10 @@
     }
 
     async function sendBulkGradeNoticeEmails() {
+      if (!checkUserRole(currentLoggedInUser).isAdmin) {
+        alert('관리자만 평가 결과 메일을 일괄 발송할 수 있습니다.');
+        return;
+      }
       const cycle = cyclesDb.find(row => Number(row.id) === Number(currentSelectedSummaryCycleId));
       if (!cycle) return alert('평가 주기를 선택해 주세요.');
       const button = document.getElementById('bulk-grade-mail-btn');
@@ -7182,6 +7235,7 @@
       if (supabaseClient) await supabaseClient.auth.signOut();
       sessionStorage.removeItem('cnhy_session_user');
       sessionStorage.removeItem('cnhy_session_view');
+      sessionStorage.removeItem('cnhy_last_subtab');
       localStorage.removeItem('cnhy_current_user');
       localStorage.removeItem('cnhy_last_view');
       currentLoggedInUser = null;
@@ -7232,14 +7286,20 @@
         renderEmployeeGrid();
 
         let targetView = (storedView && storedView !== 'login') ? storedView : 'list';
-        if ((targetView === 'evalmanage' || targetView === 'admin') && !roleInfo.isPrivileged) {
-          targetView = 'list';
+        if (targetView === 'evalmanage' && !roleInfo.isAdmin) {
+          targetView = roleInfo.isExecutive ? 'closingmanage' : 'list';
         }
+        if (targetView === 'closingmanage' && !roleInfo.isPrivileged) targetView = 'list';
+        if (targetView === 'admin' && !roleInfo.isAdmin) targetView = 'list';
 
         navigateTo(targetView);
 
-        if (targetView === 'evalmanage' || targetView === 'admin') {
-          switchAdminTab(lastSubtab);
+        if (targetView === 'evalmanage') {
+          switchAdminTab(evaluationSetupSubtabs.includes(lastSubtab) ? lastSubtab : 'cycles');
+        } else if (targetView === 'closingmanage') {
+          switchAdminTab(closingManagementSubtabs.includes(lastSubtab) ? lastSubtab : 'progress');
+        } else if (targetView === 'admin') {
+          switchAdminTab('users');
         }
       }
     });
@@ -7872,7 +7932,7 @@
 
     function navigateToApprovalSummary(cycleId) {
       setSelectedEvaluationCycleId(cycleId);
-      navigateTo('evalmanage');
+      navigateTo('closingmanage');
       switchAdminTab('summary');
       const select = document.getElementById('summary-cycle-select');
       if (select) {
@@ -8128,11 +8188,17 @@
 
       // Dynamic Permission Guard for Admin/Management Pages
       const roleInfo = checkUserRole(currentLoggedInUser);
-      if (viewId === 'evalmanage' || viewId === 'admin') {
-        const allowed = viewId === 'admin' ? roleInfo.isAdmin : roleInfo.isPrivileged;
+      if (viewId === 'evalmanage' || viewId === 'closingmanage' || viewId === 'admin') {
+        const allowed = viewId === 'closingmanage'
+          ? roleInfo.isPrivileged
+          : roleInfo.isAdmin;
         if (!allowed) {
-          alert('접근 권한이 없습니다. 관리자 및 임원 전용 메뉴입니다.');
-          viewId = 'list';
+          if (viewId === 'evalmanage' && roleInfo.isExecutive) {
+            viewId = 'closingmanage';
+          } else {
+            alert('접근 권한이 없습니다.');
+            viewId = 'list';
+          }
         }
       }
       if (viewId === 'myresults' && !canCurrentUserViewResults()) {
@@ -8144,7 +8210,7 @@
       if (viewId !== 'list') hideMascotGuide();
 
       // Hide all main section views
-      const views = ['login', 'list', 'eval', 'myresults', 'evalmanage', 'admin'];
+      const views = ['login', 'list', 'eval', 'myresults', 'evalmanage', 'closingmanage', 'admin'];
       views.forEach(v => {
         const el = document.getElementById(`view-${v}`);
         if (el) el.classList.add('hidden');
@@ -8170,6 +8236,8 @@
       if (activeTab) {
         if (viewId === 'evalmanage') {
           replaceNavTabClasses(activeTab, "px-4 py-2 rounded-xl transition bg-brandTeal text-white shadow-lg flex items-center gap-2 border border-brandTeal/30");
+        } else if (viewId === 'closingmanage') {
+          replaceNavTabClasses(activeTab, "px-4 py-2 rounded-xl transition bg-amber-600 text-white shadow-lg flex items-center gap-2 border border-amber-700");
         } else if (viewId === 'admin') {
           replaceNavTabClasses(activeTab, "px-4 py-2 rounded-xl transition bg-brandGold text-white shadow-lg flex items-center gap-2 border border-brandGold/30");
         } else {
@@ -8185,11 +8253,9 @@
       } else if (viewId === 'admin') {
         switchAdminTab('users');
       } else if (viewId === 'evalmanage') {
-        if (currentActiveSubtab === 'users') {
-          switchAdminTab('cycles');
-        } else {
-          switchAdminTab(currentActiveSubtab);
-        }
+        switchAdminTab(evaluationSetupSubtabs.includes(currentActiveSubtab) ? currentActiveSubtab : 'cycles');
+      } else if (viewId === 'closingmanage') {
+        switchAdminTab(closingManagementSubtabs.includes(currentActiveSubtab) ? currentActiveSubtab : 'progress');
       }
     }
   </script>

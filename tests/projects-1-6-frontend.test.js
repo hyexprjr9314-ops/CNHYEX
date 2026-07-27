@@ -8,6 +8,8 @@ test('executives can open the read-only progress dashboard', async () => {
   const index = await readIndex();
   assert.match(index, /\['summary', 'history', 'progress'\]\.includes\(subtab\)/);
   assert.match(index, /isExecOnly && st !== 'progress'/);
+  assert.match(index, /closingmanage: roleInfo\.isPrivileged/);
+  assert.match(index, /evalmanage: roleInfo\.isAdmin/);
   assert.match(index, /if \(!roleInfo\.isAdmin && !roleInfo\.isExecutive\) return/);
 });
 

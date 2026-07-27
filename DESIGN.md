@@ -24,7 +24,9 @@
 ## Information architecture
 - Evaluation management follows one left-to-right administrator workflow: cycle setup → permissions → questions/weights → matching → lifecycle controls → progress monitoring → final adjustment → history.
 - Cycle setup owns creation and metadata editing. Lifecycle management owns preflight, activation, pause, resume, cancellation, emergency force-close, and deletion without changing the existing server governance rules.
-- Primary navigation: 평가 대상자 목록, 평가 가이드, 내 평가 결과, 평가 관리, 관리자 대시보드
+- Top-level management is split by responsibility: administrators configure and operate evaluations in `평가 관리`; administrators and executives review progress, adjust/finalize results, approve, publish, and inspect history in `집계·마감 관리`.
+- Executives never enter evaluation configuration. Their privileged entry point is `집계·마감 관리`, containing progress, summary/final adjustment, and history as its only subtabs.
+- Primary navigation: 평가 대상자 목록, 내 평가 결과, 평가 관리, 집계·마감 관리, 관리자 대시보드
 - Core routes/screens: 단일 페이지 내 역할별 탭
 - Content hierarchy: 현재 상태와 핵심 행동을 장식보다 우선
 
