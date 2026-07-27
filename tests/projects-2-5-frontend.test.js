@@ -45,6 +45,9 @@ test('pending executive approvals use deduplicated in-app toasts without browser
   assert.match(index, /notification\.approval_request_id/);
   assert.match(index, /approvalRequestsDb = Array\.isArray\(payload\.approval_requests\)/);
   assert.match(index, /결재 화면으로 이동/);
+  assert.match(index, /approval-action-white[^"]*bg-teal-700[^"]*text-white/);
+  assert.match(index, /approval-action-white[^"]*bg-rose-700[^"]*text-white/);
+  assert.match(index, /\.approval-action-white,\s*\.approval-action-white \*\s*\{\s*color: #FFFFFF !important;/);
   assert.doesNotMatch(index, /Notification\.requestPermission|new Notification\(/);
 });
 
