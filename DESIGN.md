@@ -2,7 +2,7 @@
 
 ## Source of truth
 - Status: Active
-- Last refreshed: 2026-07-24
+- Last refreshed: 2026-07-27
 - Primary product surfaces: 평가 대상자, 평가 가이드, 내 평가 결과, 평가 관리, 관리자 대시보드
 - Evidence reviewed: `index.html`, 운영 화면 캡처, 화이트 테마 토큰과 등급 배지 렌더링
 
@@ -22,6 +22,8 @@
 - Key contexts of use: 사무용 데스크톱 브라우저와 모바일 브라우저
 
 ## Information architecture
+- Evaluation management follows one left-to-right administrator workflow: cycle setup → permissions → questions/weights → matching → lifecycle controls → progress monitoring → final adjustment → history.
+- Cycle setup owns creation and metadata editing. Lifecycle management owns preflight, activation, pause, resume, cancellation, emergency force-close, and deletion without changing the existing server governance rules.
 - Primary navigation: 평가 대상자 목록, 평가 가이드, 내 평가 결과, 평가 관리, 관리자 대시보드
 - Core routes/screens: 단일 페이지 내 역할별 탭
 - Content hierarchy: 현재 상태와 핵심 행동을 장식보다 우선

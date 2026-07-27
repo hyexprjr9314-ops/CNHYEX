@@ -126,9 +126,28 @@ test('matching studio exposes and synchronizes its own cycle selector', async ()
   assert.match(index, /const progressCycles = sortedCycles\.filter/);
   assert.match(index, /const finalizedApprovalCycles = sortedCycles\.filter/);
   assert.match(index, /const summaryCycles = \[/);
-  assert.match(index, /cyclesDb\.filter\(cycle => !isClosedEvaluationCycle\(cycle\)\)\.forEach/);
+  assert.match(index, /cycles: cyclesDb\.filter\(cycle => !isClosedEvaluationCycle\(cycle\)\)/);
   assert.match(index, /\[\.\.\.select\.options\]\.some\(option => option\.value === String\(cycleId\)\)/);
   assert.match(index, /const closedWithoutArchive = cyclesDb\.filter/);
   assert.match(index, /확정 결과 없이 종료된 평가주기입니다/);
   assert.doesNotMatch(index, /onclick="deleteArchivedHistory\(\$\{archive\.cycleId\}\)"/);
+});
+
+test('cycle lifecycle actions live in a dedicated tab between matching and progress', async () => {
+  const index = await readFile(indexUrl, 'utf8');
+  const nav = index.slice(
+    index.indexOf('EVALUATION MANAGEMENT SUB-TABS NAVIGATION'),
+    index.indexOf('id="management-cycle-toolbar"')
+  );
+  const cycleRenderer = index.match(/function renderCyclesList\(\) \{[\s\S]*?\n    \}/)?.[0] ?? '';
+
+  assert.ok(nav.indexOf("switchAdminTab('matching')") < nav.indexOf("switchAdminTab('lifecycle')"));
+  assert.ok(nav.indexOf("switchAdminTab('lifecycle')") < nav.indexOf("switchAdminTab('progress')"));
+  assert.match(index, /id="admin-subtab-lifecycle"/);
+  assert.match(index, /id="cycle-lifecycle-list-container"/);
+  assert.match(cycleRenderer, /mode === 'setup'/);
+  assert.match(cycleRenderer, /mode === 'lifecycle'/);
+  assert.match(cycleRenderer, /deleteEvaluationCycle\(\$\{c\.id\}\)/);
+  assert.match(cycleRenderer, /cycle_force_close/);
+  assert.doesNotMatch(cycleRenderer, /cycle_close/);
 });
