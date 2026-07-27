@@ -19,11 +19,47 @@ test('management UI gives administrators and executives one final-adjustment con
   assert.match(index, /const isExecutive = systemRole === '임원'/);
   assert.match(index, /myresults: canCurrentUserViewResults\(\)/);
   assert.match(index, /return cyclesDb\.some\(cycle => cycle\.results_published === true\)/);
+  assert.match(index, /evalmanage: roleInfo\.isAdmin/);
+  assert.match(index, /closingmanage: roleInfo\.isPrivileged/);
   assert.match(index, /admin: roleInfo\.isAdmin/);
   assert.match(index, /function replaceNavTabClasses\(tab, classes\)/);
   assert.match(index, /replaceNavTabClasses\(btn, "px-4 py-2 rounded-xl transition text-slate-400/);
   assert.match(index, /if \(viewId === 'myresults' && !canCurrentUserViewResults\(\)\)/);
   assert.doesNotMatch(index, /tab\.className = "px-4 py-2 rounded-xl transition text-slate-400/);
+});
+
+test('closing management owns progress, summary, and history without duplicating their DOM ids', async () => {
+  const index = await readFile(indexUrl, 'utf8');
+  const evaluationView = index.slice(index.indexOf('id="view-evalmanage"'), index.indexOf('id="view-closingmanage"'));
+  const closingView = index.slice(index.indexOf('id="view-closingmanage"'), index.indexOf('<!-- MODALS -->'));
+
+  assert.match(index, /id="nav-tab-closingmanage"/);
+  assert.doesNotMatch(evaluationView, /admin-tab-progress|admin-tab-summary|admin-tab-history/);
+  for (const subtab of ['progress', 'summary', 'history']) {
+    assert.match(closingView, new RegExp(`id="admin-tab-${subtab}"`));
+    assert.match(closingView, new RegExp(`id="admin-subtab-${subtab}"`));
+    assert.equal((index.match(new RegExp(`id="admin-subtab-${subtab}"`, 'g')) || []).length, 1);
+  }
+  assert.match(index, /currentActiveView === 'closingmanage'/);
+  assert.match(index, /navigateTo\('closingmanage'\);\s*switchAdminTab\('summary'\)/);
+  assert.match(index, /if \(targetView === 'evalmanage' && !roleInfo\.isAdmin\)/);
+  assert.match(index, /targetView = roleInfo\.isExecutive \? 'closingmanage' : 'list';/);
+  assert.match(index, /viewId === 'evalmanage' && roleInfo\.isExecutive/);
+  assert.doesNotMatch(index, /#progress-cycle-select,\s*#summary-cycle-select/);
+  assert.match(index, /async function sendBulkGradeNoticeEmails\(\) \{\s*if \(!checkUserRole\(currentLoggedInUser\)\.isAdmin\)/);
+  assert.match(index, /id="bulk-grade-mail-btn"[^>]+class="hidden /);
+});
+
+test('expired sessions are handled consistently by closing-management API wrappers', async () => {
+  const index = await readFile(indexUrl, 'utf8');
+  for (const name of ['callResultStateApi', 'callEvaluationDetailApi', 'callMailApi']) {
+    const start = index.indexOf(`async function ${name}`);
+    const next = index.indexOf('\n    async function ', start + 1);
+    const source = index.slice(start, next > start ? next : start + 3000);
+    assert.match(source, /sessionError \|\| !sessionData\.session\) \{\s*await handleLogout\(\)/);
+    assert.match(source, /response\.status === 401/);
+    assert.match(source, /await handleLogout\(\)/);
+  }
 });
 
 test('question editor exposes all four employee tracks and removes relationship targeting', async () => {
@@ -133,7 +169,7 @@ test('matching studio exposes and synchronizes its own cycle selector', async ()
   assert.doesNotMatch(index, /onclick="deleteArchivedHistory\(\$\{archive\.cycleId\}\)"/);
 });
 
-test('cycle lifecycle actions live in a dedicated tab between matching and progress', async () => {
+test('cycle lifecycle actions finish evaluation setup before closing management begins', async () => {
   const index = await readFile(indexUrl, 'utf8');
   const nav = index.slice(
     index.indexOf('EVALUATION MANAGEMENT SUB-TABS NAVIGATION'),
@@ -142,7 +178,7 @@ test('cycle lifecycle actions live in a dedicated tab between matching and progr
   const cycleRenderer = index.match(/function renderCyclesList\(\) \{[\s\S]*?\n    \}/)?.[0] ?? '';
 
   assert.ok(nav.indexOf("switchAdminTab('matching')") < nav.indexOf("switchAdminTab('lifecycle')"));
-  assert.ok(nav.indexOf("switchAdminTab('lifecycle')") < nav.indexOf("switchAdminTab('progress')"));
+  assert.doesNotMatch(nav, /switchAdminTab\('progress'\)/);
   assert.match(index, /id="admin-subtab-lifecycle"/);
   assert.match(index, /id="cycle-lifecycle-list-container"/);
   assert.match(cycleRenderer, /mode === 'setup'/);
