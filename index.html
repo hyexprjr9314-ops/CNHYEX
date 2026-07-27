@@ -1732,6 +1732,10 @@
           <i class="fa-solid fa-shuffle"></i>
           <span>🔀 평가 매칭 관리</span>
         </button>
+        <button onclick="switchAdminTab('lifecycle')" id="admin-tab-lifecycle" class="px-4 py-2 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-2">
+          <i class="fa-solid fa-play-circle"></i>
+          <span>평가 진행 관리</span>
+        </button>
         <button onclick="switchAdminTab('progress')" id="admin-tab-progress" class="px-4 py-2 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-2">
           <i class="fa-solid fa-chart-line"></i>
           <span>평가 진행 현황</span>
@@ -2165,6 +2169,20 @@
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- ADMIN SUB-TAB: EVALUATION LIFECYCLE MANAGEMENT -->
+      <div id="admin-subtab-lifecycle" class="hidden space-y-6">
+        <div class="glass-card rounded-2xl p-6 border border-slate-800 space-y-4">
+          <div class="border-b border-slate-800 pb-4">
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-play-circle text-brandTeal"></i>
+              <span>평가 진행 관리</span>
+            </h3>
+            <p class="text-xs text-slate-400 mt-1">사전점검부터 평가 시작·일시정지·재개까지 평가주기의 실행 상태를 관리합니다. 정상 마감은 전자결재 승인 시 자동 처리됩니다.</p>
+          </div>
+          <div class="space-y-3" id="cycle-lifecycle-list-container"></div>
         </div>
       </div>
 
@@ -4078,7 +4096,7 @@
       }
 
       // Hide/Show subtab navigation buttons for Executives
-      ['users', 'cycles', 'questions', 'permissions', 'matching', 'progress'].forEach(st => {
+      ['users', 'cycles', 'questions', 'permissions', 'matching', 'lifecycle', 'progress'].forEach(st => {
         const btn = document.getElementById(`admin-tab-${st}`);
         if (btn) {
           if (isExecOnly && st !== 'progress') btn.classList.add('hidden');
@@ -4086,7 +4104,7 @@
         }
       });
 
-      const subtabs = ['users', 'cycles', 'questions', 'permissions', 'matching', 'progress', 'summary', 'history'];
+      const subtabs = ['users', 'cycles', 'questions', 'permissions', 'matching', 'lifecycle', 'progress', 'summary', 'history'];
       subtabs.forEach(st => {
         const el = document.getElementById(`admin-subtab-${st}`);
         const btn = document.getElementById(`admin-tab-${st}`);
@@ -4109,6 +4127,7 @@
       if (subtab === 'questions') renderQuestionsList();
       if (subtab === 'permissions') renderPermissionsTable();
       if (subtab === 'matching') renderManualMatchingTable();
+      if (subtab === 'lifecycle') renderCyclesList();
       if (subtab === 'progress') renderEvaluationProgress();
       if (subtab === 'summary') renderAdminSummaryTable();
       if (subtab === 'history') renderHistoryTable();
@@ -4972,6 +4991,7 @@
         if (currentActiveSubtab === 'questions') renderQuestionsList();
         if (currentActiveSubtab === 'permissions') renderPermissionsTable();
         if (currentActiveSubtab === 'matching') renderManualMatchingTable();
+        if (currentActiveSubtab === 'lifecycle') renderCyclesList();
         if (currentActiveSubtab === 'progress') renderEvaluationProgress();
         if (currentActiveSubtab === 'summary') renderAdminSummaryTable();
         if (currentActiveSubtab === 'history') renderHistoryTable();
@@ -6398,39 +6418,44 @@
 
     // ADMIN SUBTAB 2: CYCLES
     function renderCyclesList() {
-      const container = document.getElementById('cycle-list-container');
-      container.innerHTML = '';
+      const targets = [
+        {
+          container: document.getElementById('cycle-list-container'),
+          mode: 'setup',
+          cycles: cyclesDb.filter(cycle => !isClosedEvaluationCycle(cycle))
+        },
+        {
+          container: document.getElementById('cycle-lifecycle-list-container'),
+          mode: 'lifecycle',
+          cycles: cyclesDb.filter(cycle =>
+            !isClosedEvaluationCycle(cycle) || cycle.force_closed_at || cycle.cancelled_at
+          )
+        }
+      ];
 
-      cyclesDb.filter(cycle => !isClosedEvaluationCycle(cycle)).forEach(c => {
-        const roleInfo = checkUserRole(currentLoggedInUser);
-        const displayStatus = c.cancelled_at ? '취소/보관됨'
-          : c.force_closed_at ? '강제 종료/보관됨' : c.status;
-        const isPaused = String(c.status).includes('일시정지');
-        const isActive = String(c.status).includes('진행');
-        const isClosed = String(c.status).includes('마감') || String(c.status).includes('보관') || String(c.status).includes('취소');
-        const div = document.createElement('div');
-        div.className = 'bg-slate-900/80 p-4 rounded-xl border border-slate-800 flex flex-col md:flex-row md:justify-between md:items-center gap-3';
-        div.innerHTML = `
-          <div>
-            <div class="flex items-center gap-2 mb-1">
-              <span class="bg-emerald-500/20 text-emerald-300 font-bold px-2 py-0.5 rounded text-[10px]">${escapeHtml(displayStatus)}</span>
-              <span class="text-xs text-slate-400">업무기간: ${c.start} ~ ${c.end}</span>
-            </div>
-            <h4 class="text-sm font-bold text-white">${c.name}</h4>
-            <p class="text-xs text-slate-400 mt-1">${c.desc}</p>
-            <p class="text-[10px] text-amber-400 mt-1"><i class="fa-solid fa-clock mr-1"></i>평가 마감일: ${c.deadline}</p>
-          </div>
-          <div class="flex items-center gap-2 flex-wrap justify-end">
+      targets.forEach(({ container, mode, cycles }) => {
+        if (!container) return;
+        container.innerHTML = '';
+        cycles.forEach(c => {
+          const roleInfo = checkUserRole(currentLoggedInUser);
+          const displayStatus = c.cancelled_at ? '취소/보관됨'
+            : c.force_closed_at ? '강제 종료/보관됨' : c.status;
+          const isPaused = String(c.status).includes('일시정지');
+          const isActive = String(c.status).includes('진행');
+          const isClosed = String(c.status).includes('마감') || String(c.status).includes('보관') || String(c.status).includes('취소');
+          const setupActions = mode === 'setup' ? `
+            <button onclick="openEditCycleModal(${c.id})" class="bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 border border-blue-500/30">
+              <i class="fa-solid fa-pen-to-square"></i> 수정
+            </button>` : '';
+          const lifecycleActions = mode === 'lifecycle' ? `
+            ${!isClosed ? `
             <button onclick="validateEvaluationCycle(${c.id}, false)" class="bg-cyan-600/20 hover:bg-cyan-600 text-cyan-300 hover:text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 border border-cyan-500/30">
               <i class="fa-solid fa-list-check"></i> 사전점검
-            </button>
-            ${c.status !== '진행중' && c.status !== '마감/보관됨' ? `
+            </button>` : ''}
+            ${!isClosed && c.status !== '진행중' ? `
             <button onclick="validateEvaluationCycle(${c.id}, true)" class="bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 border border-emerald-500/30">
               <i class="fa-solid fa-play"></i> 검증 후 시작
             </button>` : ''}
-            <button onclick="openEditCycleModal(${c.id})" class="bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 border border-blue-500/30">
-              <i class="fa-solid fa-pen-to-square"></i> 수정
-            </button>
             ${roleInfo.isAdmin && isActive && !isPaused && !isClosed ? `
             <button onclick="changeCycleState(${c.id}, 'cycle_pause')" class="bg-amber-600/20 hover:bg-amber-600 text-amber-700 hover:text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 border border-amber-500/40">
               <i class="fa-solid fa-pause"></i> 일시정지
@@ -6446,13 +6471,30 @@
             <button onclick="runEmergencyCycleAction(${c.id}, 'cycle_cancel')" class="bg-rose-600/20 hover:bg-rose-600 text-rose-800 hover:text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 border border-rose-500/40">
               <i class="fa-solid fa-ban"></i> 평가주기 취소
             </button>` : ''}
+            ${roleInfo.isAdmin && !isActive && !isPaused && !isClosed ? `
+            <button onclick="deleteEvaluationCycle(${c.id})" class="bg-rose-600/20 hover:bg-rose-600 text-rose-800 hover:text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 border border-rose-500/40">
+              <i class="fa-solid fa-trash-can"></i> 삭제
+            </button>` : ''}
             ${roleInfo.isSuperAdmin && isClosed ? `
             <button onclick="runEmergencyCycleAction(${c.id}, 'cycle_hard_delete')" class="bg-rose-700 hover:bg-rose-800 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 border border-rose-800">
               <i class="fa-solid fa-trash-can"></i> 완전 삭제
-            </button>` : ''}
-          </div>
-        `;
-        container.appendChild(div);
+            </button>` : ''}` : '';
+          const div = document.createElement('div');
+          div.className = 'bg-slate-900/80 p-4 rounded-xl border border-slate-800 flex flex-col md:flex-row md:justify-between md:items-center gap-3';
+          div.innerHTML = `
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="bg-emerald-500/20 text-emerald-300 font-bold px-2 py-0.5 rounded text-[10px]">${escapeHtml(displayStatus)}</span>
+                <span class="text-xs text-slate-400">업무기간: ${c.start} ~ ${c.end}</span>
+              </div>
+              <h4 class="text-sm font-bold text-white">${escapeHtml(c.name)}</h4>
+              <p class="text-xs text-slate-400 mt-1">${escapeHtml(c.desc)}</p>
+              <p class="text-[10px] text-amber-400 mt-1"><i class="fa-solid fa-clock mr-1"></i>평가 마감일: ${c.deadline}</p>
+            </div>
+            <div class="flex items-center gap-2 flex-wrap justify-end">${setupActions}${lifecycleActions}</div>
+          `;
+          container.appendChild(div);
+        });
       });
     }
 
