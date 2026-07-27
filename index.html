@@ -991,6 +991,10 @@
     .summary-action-white * {
       color: #FFFFFF !important;
     }
+    .approval-action-white,
+    .approval-action-white * {
+      color: #FFFFFF !important;
+    }
     #employee-card-grid .glass-card:hover {
       border-color: var(--brand) !important;
     }
@@ -7848,7 +7852,7 @@
         <p class="mt-1 text-xs text-slate-600">${escapeHtml(cycle?.name || notification.cycle_name || '평가주기')} · ${escapeHtml(notification.message || '')}</p>
         <div class="mt-3 flex justify-end gap-2">
           <button type="button" class="rounded-lg px-3 py-2 text-xs font-bold text-slate-600" aria-label="알림 닫기">닫기</button>
-          <button type="button" class="rounded-lg bg-teal-700 px-3 py-2 text-xs font-black text-white">결재 화면으로 이동</button>
+          <button type="button" class="approval-action-white rounded-lg bg-teal-700 px-3 py-2 text-xs font-black text-white">결재 화면으로 이동</button>
         </div>`;
       const [closeButton, moveButton] = toast.querySelectorAll('button');
       closeButton.addEventListener('click', () => toast.remove());
@@ -7974,7 +7978,7 @@
       const isMyTurn = role === '임원'
         && status === 'requested'
         && Number(request?.current_approver_user_id) === Number(currentLoggedInUser?.id);
-      if (isMyTurn) actions = '<button onclick="decideInternalApproval(true)" class="px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-black">승인</button><button onclick="decideInternalApproval(false)" class="px-3 py-2 rounded-lg bg-rose-700 hover:bg-rose-600 text-white font-black">반려</button>';
+      if (isMyTurn) actions = '<button onclick="decideInternalApproval(true)" class="px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-black">승인</button><button onclick="decideInternalApproval(false)" class="approval-action-white px-3 py-2 rounded-lg bg-rose-700 hover:bg-rose-600 text-white font-black">반려</button>';
       el.innerHTML = `<span class="rounded-lg border border-slate-400 bg-white px-3 py-2 font-bold text-slate-800">${label}${cycle.result_gate_open ? ' · 결과 게이트 열림' : ''}</span>${actions}${line}`;
     }
 
