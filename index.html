@@ -4132,6 +4132,29 @@
       return response.json().catch(() => ({}));
     }
 
+    async function syncPersistedPushTokens() {
+      if (!currentLoggedInUser) return;
+      const registrations = [];
+      if (nativePushToken) {
+        registrations.push(callPushApi({
+          action: 'push_register',
+          token: nativePushToken,
+          platform: 'android',
+          app_version: '1.2'
+        }));
+      }
+      if (webPushToken) {
+        registrations.push(callPushApi({
+          action: 'push_register',
+          token: webPushToken,
+          platform: 'web',
+          device_id: navigator.userAgent,
+          app_version: 'web-1.0'
+        }));
+      }
+      await Promise.allSettled(registrations);
+    }
+
     function removeNativePushPermissionNotice() {
       document.getElementById('native-push-permission-notice')?.remove();
     }
@@ -7004,6 +7027,7 @@
       setupCentralStateSync();
       navigateTo('list');
       renderEmployeeGrid();
+      syncPersistedPushTokens();
       initializeNativePushNotifications();
       initializeWebPushNotifications();
       navigateFromWebPushLaunch();
@@ -9062,12 +9086,6 @@
 
     async function handleLogout() {
       hideMascotGuide();
-      if (nativePushToken) {
-        await callPushApi({ action: 'push_unregister', token: nativePushToken }).catch(() => {});
-      }
-      if (webPushToken) {
-        await callPushApi({ action: 'push_unregister', token: webPushToken }).catch(() => {});
-      }
       if (supabaseClient) await supabaseClient.auth.signOut();
       sessionStorage.removeItem('cnhy_session_user');
       sessionStorage.removeItem('cnhy_session_view');
@@ -9075,8 +9093,6 @@
       localStorage.removeItem('cnhy_current_user');
       localStorage.removeItem('cnhy_last_view');
       currentLoggedInUser = null;
-      nativePushInitialized = false;
-      webPushInitialized = false;
       removeNativePushPermissionNotice();
       removeWebPushPermissionNotice();
       evaluationHistoryDb = [];
@@ -9135,6 +9151,7 @@
         if (targetView === 'admin' && !roleInfo.isAdmin) targetView = 'list';
 
         navigateTo(targetView);
+        syncPersistedPushTokens();
         initializeNativePushNotifications();
         initializeWebPushNotifications();
         navigateFromWebPushLaunch();

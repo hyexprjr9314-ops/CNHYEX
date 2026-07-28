@@ -31,8 +31,12 @@ test('assignment, completion and result notification contracts are present', () 
   assert.match(html, /push_evaluation_submitted/);
 });
 
-test('native token is registered after login and disabled on logout', () => {
+test('push tokens survive logout and are rebound to the next authenticated account', () => {
   assert.match(html, /action: 'push_register'/);
-  assert.match(html, /action: 'push_unregister'/);
+  assert.match(html, /async function syncPersistedPushTokens\(\)/);
+  assert.match(html, /await Promise\.allSettled\(registrations\)/);
+  const logout = html.match(/async function handleLogout\(\) \{([\s\S]*?)\n    \}/)?.[1] || '';
+  assert.doesNotMatch(logout, /push_unregister/);
+  assert.doesNotMatch(logout, /removeItem\('cnhy_(?:native|web)_push_token'\)/);
   assert.match(html, /initializeNativePushNotifications\(\)/);
 });
