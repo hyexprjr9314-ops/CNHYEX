@@ -4,11 +4,14 @@
   "type": "module",
   "scripts": {
     "android:sync": "cap sync android",
-    "android:open": "cap open android"
+    "android:open": "cap open android",
+    "ios:sync": "cap sync ios",
+    "ios:open": "cap open ios"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.2",
     "@capacitor/core": "^8.4.2",
+    "@capacitor/ios": "8.4.2",
     "@capacitor/push-notifications": "8.0.0",
     "@supabase/supabase-js": "^2.57.4",
     "nodemailer": "^6.9.16"

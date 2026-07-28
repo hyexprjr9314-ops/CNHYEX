@@ -1,0 +1,70 @@
+name: Build iOS IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ios/**
+      - mobile-shell/**
+      - capacitor.config.json
+      - package.json
+      - pnpm-lock.yaml
+      - .github/workflows/build-ios-ipa.yml
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm ios:sync
+      - name: Build iPhone release app
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$RUNNER_TEMP/CNHYEXDerivedData" \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+      - name: Package unsigned IPA
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP_PATH="$RUNNER_TEMP/CNHYEXDerivedData/Build/Products/Release-iphoneos/App.app"
+          test -d "$APP_PATH"
+          mkdir -p "$RUNNER_TEMP/CNHYEXPayload/Payload"
+          cp -R "$APP_PATH" "$RUNNER_TEMP/CNHYEXPayload/Payload/CNHYEX.app"
+          (
+            cd "$RUNNER_TEMP/CNHYEXPayload"
+            /usr/bin/zip -qry "$GITHUB_WORKSPACE/CNHYEX-iOS-unsigned.ipa" Payload
+          )
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP_PATH/Info.plist" | tee CNHYEX-iOS-bundle-id.txt
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleDisplayName' "$APP_PATH/Info.plist" | tee CNHYEX-iOS-display-name.txt
+          shasum -a 256 CNHYEX-iOS-unsigned.ipa | tee CNHYEX-iOS-sha256.txt
+          printf '%s\n' \
+            'This IPA is an unsigned build artifact.' \
+            'Apple distribution certificate and provisioning profile are required before installation on an iPhone.' \
+            > CNHYEX-iOS-signing-status.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CNHYEX-iOS-unsigned
+          path: |
+            CNHYEX-iOS-unsigned.ipa
+            CNHYEX-iOS-bundle-id.txt
+            CNHYEX-iOS-display-name.txt
+            CNHYEX-iOS-sha256.txt
+            CNHYEX-iOS-signing-status.txt
+          if-no-files-found: error
