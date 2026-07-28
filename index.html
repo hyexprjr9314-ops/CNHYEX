@@ -9,6 +9,12 @@
   <meta property="og:title" content="충남한양 인사평가 시스템">
   <meta property="og:description" content="안전한 평가 배정, 제출, 집계 및 결과 공개를 지원하는 사내 인사평가 시스템">
   <meta property="og:url" content="https://cnhyex.vercel.app/">
+  <meta name="theme-color" content="#0D9488">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="충남한양 평가">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/assets/pwa-icon-192.png">
   <!-- HTTP Strict Cache-Control: Force Browser Zero-Cache -->
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
@@ -4077,9 +4083,30 @@
     let expandedHistoryCycleId = null;
     let nativePushInitialized = false;
     let nativePushToken = localStorage.getItem('cnhy_native_push_token') || '';
+    let webPushInitialized = false;
+    let webPushToken = localStorage.getItem('cnhy_web_push_token') || '';
 
     function isNativeAndroidApp() {
       return window.Capacitor?.getPlatform?.() === 'android';
+    }
+
+    function isIosBrowser() {
+      return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    }
+
+    function isStandaloneWebApp() {
+      return window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+    }
+
+    function supportsWebPush() {
+      return !isNativeAndroidApp() && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+    }
+
+    function webPushApplicationKey(value) {
+      const padding = '='.repeat((4 - value.length % 4) % 4);
+      const bytes = atob((value + padding).replace(/-/g, '+').replace(/_/g, '/'));
+      return Uint8Array.from(bytes, character => character.charCodeAt(0));
     }
 
     async function callPushApi(body) {
@@ -4103,6 +4130,89 @@
 
     function removeNativePushPermissionNotice() {
       document.getElementById('native-push-permission-notice')?.remove();
+    }
+
+    function removeWebPushPermissionNotice() {
+      document.getElementById('web-push-permission-notice')?.remove();
+    }
+
+    function showWebPushPermissionNotice() {
+      if ((!supportsWebPush() && !isIosBrowser()) || document.getElementById('web-push-permission-notice')) return;
+      const iosNeedsInstall = isIosBrowser() && !isStandaloneWebApp();
+      const notice = document.createElement('div');
+      notice.id = 'web-push-permission-notice';
+      notice.className = 'fixed inset-x-3 bottom-20 z-[120] mx-auto max-w-md rounded-2xl border border-teal-300 bg-white p-4 shadow-2xl';
+      notice.innerHTML = iosNeedsInstall ? `
+        <div class="flex items-start gap-3">
+          <i class="fa-brands fa-apple mt-1 text-xl text-slate-800"></i>
+          <div class="min-w-0 flex-1">
+            <p class="font-black text-slate-900">아이폰 앱 알림을 사용해 보세요</p>
+            <p class="mt-1 text-xs leading-5 text-slate-600">Safari 공유 → 홈 화면에 추가 후, 생성된 앱에서 알림을 켤 수 있습니다.</p>
+            <div class="mt-3 flex justify-end">
+              <button type="button" class="rounded-lg bg-teal-700 px-3 py-2 text-xs font-black text-white" onclick="removeWebPushPermissionNotice()">확인</button>
+            </div>
+          </div>
+        </div>` : `
+        <div class="flex items-start gap-3">
+          <i class="fa-solid fa-bell mt-1 text-xl text-teal-700"></i>
+          <div class="min-w-0 flex-1">
+            <p class="font-black text-slate-900">인사평가 알림을 받아보세요</p>
+            <p class="mt-1 text-xs leading-5 text-slate-600">평가 배정·전자결재·결과 공개 소식을 바로 알려드립니다.</p>
+            <div class="mt-3 flex justify-end gap-2">
+              <button type="button" class="rounded-lg px-3 py-2 text-xs font-bold text-slate-500" onclick="removeWebPushPermissionNotice()">나중에</button>
+              <button type="button" class="rounded-lg bg-teal-700 px-3 py-2 text-xs font-black text-white" onclick="enableWebPushNotifications()">알림 켜기</button>
+            </div>
+          </div>
+        </div>`;
+      document.body.appendChild(notice);
+    }
+
+    async function registerWebPushSubscription() {
+      if (!supportsWebPush() || !currentLoggedInUser || Notification.permission !== 'granted') return;
+      const config = await callPushApi({ action: 'push_web_config' });
+      if (!config?.configured || !config.publicKey) return;
+      const registration = await navigator.serviceWorker.register('/service-worker.js');
+      let subscription = await registration.pushManager.getSubscription();
+      if (!subscription) {
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: webPushApplicationKey(config.publicKey)
+        });
+      }
+      webPushToken = JSON.stringify(subscription.toJSON());
+      localStorage.setItem('cnhy_web_push_token', webPushToken);
+      await callPushApi({
+        action: 'push_register',
+        token: webPushToken,
+        platform: 'web',
+        device_id: navigator.userAgent,
+        app_version: 'web-1.0'
+      });
+      webPushInitialized = true;
+      removeWebPushPermissionNotice();
+    }
+
+    async function enableWebPushNotifications() {
+      try {
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') return showWebPushPermissionNotice();
+        await registerWebPushSubscription();
+      } catch (error) {
+        console.warn('웹 푸시 알림을 활성화하지 못했습니다.', error);
+        showWebPushPermissionNotice();
+      }
+    }
+
+    async function initializeWebPushNotifications() {
+      if (webPushInitialized || !currentLoggedInUser) return;
+      if (isIosBrowser() && !isStandaloneWebApp()) return showWebPushPermissionNotice();
+      if (!supportsWebPush()) return;
+      if (Notification.permission !== 'granted') return showWebPushPermissionNotice();
+      try {
+        await registerWebPushSubscription();
+      } catch (error) {
+        console.warn('웹 푸시 구독을 갱신하지 못했습니다.', error);
+      }
     }
 
     function showNativePushPermissionNotice() {
@@ -6891,6 +7001,19 @@
       navigateTo('list');
       renderEmployeeGrid();
       initializeNativePushNotifications();
+      initializeWebPushNotifications();
+      navigateFromWebPushLaunch();
+    }
+
+    function navigateFromWebPushLaunch() {
+      const query = new URLSearchParams(location.search);
+      if (!query.has('view') && !query.has('cycle_id')) return;
+      navigateFromPushData({
+        cycle_id: query.get('cycle_id'),
+        view: query.get('view'),
+        subtab: query.get('subtab')
+      });
+      history.replaceState({}, '', location.pathname);
     }
 
     // Modal Password Change Controls
@@ -8936,6 +9059,9 @@
       if (nativePushToken) {
         await callPushApi({ action: 'push_unregister', token: nativePushToken }).catch(() => {});
       }
+      if (webPushToken) {
+        await callPushApi({ action: 'push_unregister', token: webPushToken }).catch(() => {});
+      }
       if (supabaseClient) await supabaseClient.auth.signOut();
       sessionStorage.removeItem('cnhy_session_user');
       sessionStorage.removeItem('cnhy_session_view');
@@ -8944,7 +9070,9 @@
       localStorage.removeItem('cnhy_last_view');
       currentLoggedInUser = null;
       nativePushInitialized = false;
+      webPushInitialized = false;
       removeNativePushPermissionNotice();
+      removeWebPushPermissionNotice();
       evaluationHistoryDb = [];
       cycleScoresDb = {};
       finalResultsByCycle = {};
@@ -9002,6 +9130,8 @@
 
         navigateTo(targetView);
         initializeNativePushNotifications();
+        initializeWebPushNotifications();
+        navigateFromWebPushLaunch();
 
         if (targetView === 'evalmanage') {
           switchAdminTab(evaluationSetupSubtabs.includes(lastSubtab) ? lastSubtab : 'cycles');
@@ -9014,6 +9144,7 @@
     });
 
     window.addEventListener('focus', refreshNativePushPermission);
+    window.addEventListener('focus', initializeWebPushNotifications);
 
     const summaryViewState = {
       query: '', company: '', dept: '', workplace: '', role: '', type: '',
