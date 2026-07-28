@@ -62,6 +62,19 @@ test('archived history uses the same immutable final score and approved grade as
   assert.match(index, /resolveArchivedHistoryPerson\(histArchive\.cycleId, archivedPerson\)/);
 });
 
+test('archived history remains visible across publication changes and state reloads', async () => {
+  const index = await readFile(indexUrl, 'utf8');
+  const historyRenderer = index.match(/function renderHistoryTable\(\) \{[\s\S]*?\n    \}/)?.[0] ?? '';
+  const serverLoader = index.match(/async function loadFromServer\(\) \{[\s\S]*?\n    \}/)?.[0] ?? '';
+
+  assert.match(historyRenderer, /const archivedHistoryDb = \[\.\.\.evaluationHistoryDb\]/);
+  assert.doesNotMatch(historyRenderer, /results_published/);
+  assert.doesNotMatch(serverLoader, /evaluationHistoryDb = \[\]/);
+  assert.match(serverLoader, /if \(cyclesResult\.error\) throw cyclesResult\.error/);
+  assert.match(index, /if \(toolbar\.querySelector\('\[data-directory="company"\]'\)\.value !== state\.company\) state\.company = ''/);
+  assert.match(index, /if \(status\.value !== state\.status\) state\.status = ''/);
+});
+
 test('expired sessions are handled consistently by closing-management API wrappers', async () => {
   const index = await readFile(indexUrl, 'utf8');
   for (const name of ['callResultStateApi', 'callEvaluationDetailApi', 'callMailApi']) {

@@ -3505,10 +3505,6 @@
         }
 
         const profile = profileResult.data[0];
-        evaluationHistoryDb = [];
-        cycleScoresDb = {};
-        finalResultsByCycle = {};
-        allGoalsDb = [];
         currentLoggedInUser = {
           ...profile,
           sysRole: profile.sys_role,
@@ -3555,7 +3551,8 @@
           targetId: target.id,
           type: '서버 배정'
         }));
-        cyclesDb = cyclesResult.error ? [] : (cyclesResult.data || []).map(cycle => ({
+        if (cyclesResult.error) throw cyclesResult.error;
+        cyclesDb = (cyclesResult.data || []).map(cycle => ({
           ...cycle,
           desc: cycle.description || '',
           start: cycle.start_date,
@@ -3813,7 +3810,7 @@
       if (!select) return;
       select.replaceChildren(new Option(label, ''));
       values.forEach(value => select.add(new Option(value, value)));
-      select.value = selected;
+      select.value = values.includes(selected) ? selected : '';
     }
 
     function ensureDirectoryToolbar(view, anchor, items, config) {
@@ -3847,13 +3844,16 @@
       const companyAccessor = config.companyValue;
       const deptAccessor = config.deptValue;
       populateDirectorySelect(toolbar.querySelector('[data-directory="company"]'), config.companyLabel || '전체 소속사', directoryUniqueValues(items, companyAccessor), state.company);
+      if (toolbar.querySelector('[data-directory="company"]').value !== state.company) state.company = '';
       const deptItems = items.filter(item => !state.company || !companyAccessor || String(companyAccessor(item) || '') === state.company);
       populateDirectorySelect(toolbar.querySelector('[data-directory="dept"]'), config.deptLabel || '전체 부서', directoryUniqueValues(deptItems, deptAccessor), state.dept);
+      if (toolbar.querySelector('[data-directory="dept"]').value !== state.dept) state.dept = '';
       const status = toolbar.querySelector('[data-directory="status"]');
       const statuses = config.statusOptions || [];
       status.replaceChildren(new Option(config.statusLabel || '전체 상태', ''));
       statuses.forEach(option => status.add(new Option(option.label, option.value)));
-      status.value = state.status;
+      status.value = statuses.some(option => option.value === state.status) ? state.status : '';
+      if (status.value !== state.status) state.status = '';
       status.classList.toggle('hidden', statuses.length === 0);
       const sort = toolbar.querySelector('[data-directory="sort"]');
       sort.replaceChildren(...config.sortOptions.map(option => new Option(option.label, option.key)));
@@ -3951,13 +3951,11 @@
       const countEl = document.getElementById('archived-cycles-count');
       if (!container) return;
 
-      const publishedHistoryDb = evaluationHistoryDb.filter(archive =>
-        cyclesDb.find(cycle => Number(cycle.id) === Number(archive.cycleId))?.results_published === true
-      ).sort((left, right) =>
+      const archivedHistoryDb = [...evaluationHistoryDb].sort((left, right) =>
         String(right.closedAt || '').localeCompare(String(left.closedAt || ''))
         || Number(right.cycleId) - Number(left.cycleId)
       );
-      const historyRows = publishedHistoryDb.flatMap((archive, archiveIndex) =>
+      const historyRows = archivedHistoryDb.flatMap((archive, archiveIndex) =>
         (archive.snapshot || []).map((person, rowIndex) => ({
           ...resolveArchivedHistoryPerson(archive.cycleId, person),
           archiveIndex, rowIndex, cycleName: archive.cycleName, closedAt: archive.closedAt
@@ -3973,7 +3971,7 @@
         sortValues: { closedAt: row => row.closedAt, name: row => row.name, company: row => [row.company, row.dept].join(' '), score: row => Number(row.score || 0), grade: row => ({ EX: 0, S: 1, A: 2, B: 3, C: 4, D: 5 }[row.grade] ?? 99) }
       });
       const visibleHistoryRows = filterDirectoryItems('history', historyRows);
-      const visibleHistory = publishedHistoryDb.map((archive, archiveIndex) => ({ ...archive, snapshot: visibleHistoryRows.filter(row => row.archiveIndex === archiveIndex) })).filter(archive => archive.snapshot.length > 0);
+      const visibleHistory = archivedHistoryDb.map((archive, archiveIndex) => ({ ...archive, snapshot: visibleHistoryRows.filter(row => row.archiveIndex === archiveIndex) })).filter(archive => archive.snapshot.length > 0);
       const archivedCycleIds = new Set(evaluationHistoryDb.map(archive => Number(archive.cycleId)));
       const closedWithoutArchive = cyclesDb.filter(cycle =>
         isClosedEvaluationCycle(cycle) && !archivedCycleIds.has(Number(cycle.id))
