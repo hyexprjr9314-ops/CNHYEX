@@ -2634,7 +2634,7 @@
 
       <div class="flex justify-end gap-3 pt-2">
         <button onclick="closePreviewModal()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl font-bold text-xs">수정하기</button>
-        <button onclick="confirmFinalSubmission()" class="px-5 py-2 bg-brandTeal hover:bg-teal-600 text-white rounded-xl font-bold text-xs">최종 제출 완료</button>
+        <button id="evaluation-final-submit-button" onclick="confirmFinalSubmission()" class="px-5 py-2 bg-brandTeal hover:bg-teal-600 disabled:cursor-wait disabled:opacity-60 text-white rounded-xl font-bold text-xs">최종 제출 완료</button>
       </div>
     </div>
   </div>
@@ -5151,6 +5151,8 @@
     let centralBroadcastChannel = null;
     let centralReloadTimer = null;
     let lastCentralLoadAt = 0;
+    let centralReloadDeferred = false;
+    let evaluationSubmissionPending = false;
 
     async function callAdminStateApi(body, method = 'POST') {
       if (!supabaseClient) throw new Error('Supabase 연결이 없습니다.');
@@ -5278,6 +5280,11 @@
 
     function scheduleCentralReload() {
       clearTimeout(centralReloadTimer);
+      if (isEvaluationInteractionActive() || evaluationSubmissionPending) {
+        centralReloadDeferred = true;
+        setCentralSyncStatus('ready');
+        return;
+      }
       setCentralSyncStatus('syncing');
       centralReloadTimer = setTimeout(async () => {
         if (!currentLoggedInUser) {
@@ -5293,6 +5300,18 @@
           setCentralSyncStatus('error');
         }
       }, 250);
+    }
+
+    function isEvaluationInteractionActive() {
+      return currentActiveView === 'eval'
+        || !document.getElementById('modal-privacy-pledge')?.classList.contains('hidden')
+        || !document.getElementById('modal-preview')?.classList.contains('hidden');
+    }
+
+    function flushDeferredCentralReload() {
+      if (!centralReloadDeferred || isEvaluationInteractionActive() || evaluationSubmissionPending) return;
+      centralReloadDeferred = false;
+      scheduleCentralReload();
     }
 
     function announceCentralChange() {
@@ -6423,50 +6442,67 @@
       return '평가 제출 실패: ' + (known ? known[1] : detail);
     }
     async function confirmFinalSubmission() {
+      if (evaluationSubmissionPending) return;
       closePreviewModal();
-      if (currentTargetEmp) {
-
-        const dynamicRadios = document.querySelectorAll(`input[name^="pq_dynamic_"]:checked`);
-        const centralAnswers = [...dynamicRadios].map(radio => ({
-          question_id: Number(String(radio.name).replace('pq_dynamic_', '')),
-          score: Number(radio.value)
-        })).filter(answer => answer.question_id && answer.score >= 1 && answer.score <= 5);
-
-        const commentVal = document.getElementById('eval-comment-input').value;
-
-        if (!supabaseClient || !currentTargetEmp.matchingId) {
-          alert('유효한 서버 평가 배정을 찾지 못했습니다. 새로고침 후 다시 시도해 주세요.');
-          return;
-        }
-
-        const { error: submitError } = await supabaseClient.rpc('submit_evaluation_central', {
-          p_matching_id: currentTargetEmp.matchingId,
-          p_perf_score: null,
-          p_collab_score: null,
-          p_growth_score: null,
-          p_harmony_score: null,
-          p_comment: commentVal,
-          p_answers: centralAnswers
-        });
-        if (submitError) {
-          console.error('Secure evaluation submission failed:', submitError);
-          alert(evaluationSubmitErrorMessage(submitError));
-          return;
-        }
-        await loadFromServer();
+      const submitButton = document.getElementById('evaluation-final-submit-button');
+      evaluationSubmissionPending = true;
+      if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.textContent = '제출 처리 중...';
       }
+      try {
+        if (currentTargetEmp) {
 
-      triggerRealtimeCloudSync(false); // Cloud broadcast evaluation submission to all devices
-      renderEmployeeGrid();
-      renderAdminSummaryTable();
-      renderUsersTable();
-      updateCompletedCounts();
+          const dynamicRadios = document.querySelectorAll(`input[name^="pq_dynamic_"]:checked`);
+          const centralAnswers = [...dynamicRadios].map(radio => ({
+            question_id: Number(String(radio.name).replace('pq_dynamic_', '')),
+            score: Number(radio.value)
+          })).filter(answer => answer.question_id && answer.score >= 1 && answer.score <= 5);
 
-      alert(`[${currentTargetEmp ? currentTargetEmp.name : ''}] 님에 대한 360° 동료평가 제출 내용이 성공적으로 ${isCurrentFormEditMode ? '수정/재제출' : '제출'}되었습니다!`);
-      navigateTo('list');
-      showMascotGuide(isCurrentFormEditMode
-        ? '수정한 평가 내용이 안전하게 다시 저장되었습니다.'
-        : '수고하셨어요! 평가가 정상적으로 제출되었습니다.', { celebrate: true });
+          const commentVal = document.getElementById('eval-comment-input').value;
+
+          if (!supabaseClient || !currentTargetEmp.matchingId) {
+            alert('유효한 서버 평가 배정을 찾지 못했습니다. 새로고침 후 다시 시도해 주세요.');
+            return;
+          }
+
+          const { error: submitError } = await supabaseClient.rpc('submit_evaluation_central', {
+            p_matching_id: currentTargetEmp.matchingId,
+            p_perf_score: null,
+            p_collab_score: null,
+            p_growth_score: null,
+            p_harmony_score: null,
+            p_comment: commentVal,
+            p_answers: centralAnswers
+          });
+          if (submitError) {
+            console.error('Secure evaluation submission failed:', submitError);
+            alert(evaluationSubmitErrorMessage(submitError));
+            return;
+          }
+          currentTargetEmp.completed = 1;
+          currentTargetEmp.total = 1;
+        }
+
+        triggerRealtimeCloudSync(false); // Cloud broadcast evaluation submission to all devices
+        renderEmployeeGrid();
+        renderAdminSummaryTable();
+        renderUsersTable();
+        updateCompletedCounts();
+
+        alert(`[${currentTargetEmp ? currentTargetEmp.name : ''}] 님에 대한 360° 동료평가 제출 내용이 성공적으로 ${isCurrentFormEditMode ? '수정/재제출' : '제출'}되었습니다!`);
+        navigateTo('list');
+        showMascotGuide(isCurrentFormEditMode
+          ? '수정한 평가 내용이 안전하게 다시 저장되었습니다.'
+          : '수고하셨어요! 평가가 정상적으로 제출되었습니다.', { celebrate: true });
+      } finally {
+        evaluationSubmissionPending = false;
+        if (submitButton) {
+          submitButton.disabled = false;
+          submitButton.textContent = '최종 제출 완료';
+        }
+        flushDeferredCentralReload();
+      }
     }
 
     let currentEditingUserId = null;
@@ -8524,6 +8560,7 @@
       currentActiveView = viewId;
       sessionStorage.setItem('cnhy_session_view', viewId);
       if (viewId !== 'list') hideMascotGuide();
+      if (viewId !== 'eval') setTimeout(flushDeferredCentralReload, 0);
 
       // Hide all main section views
       const views = ['login', 'list', 'eval', 'myresults', 'evalmanage', 'closingmanage', 'admin'];

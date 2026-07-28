@@ -213,6 +213,22 @@ test('cycle lifecycle actions finish evaluation setup before closing management 
   assert.doesNotMatch(cycleRenderer, /cycle_close/);
 });
 
+test('evaluation submission defers realtime reloads and prevents duplicate clicks', async () => {
+  const index = await readFile(indexUrl, 'utf8');
+  const scheduler = index.match(/function scheduleCentralReload\(\) \{[\s\S]*?\n    \}/)?.[0] ?? '';
+  const submitter = index.match(/async function confirmFinalSubmission\(\) \{[\s\S]*?\n    \}/)?.[0] ?? '';
+
+  assert.match(index, /id="evaluation-final-submit-button"/);
+  assert.match(scheduler, /isEvaluationInteractionActive\(\) \|\| evaluationSubmissionPending/);
+  assert.match(scheduler, /centralReloadDeferred = true/);
+  assert.match(submitter, /if \(evaluationSubmissionPending\) return/);
+  assert.match(submitter, /submitButton\.disabled = true/);
+  assert.match(submitter, /currentTargetEmp\.completed = 1/);
+  assert.doesNotMatch(submitter, /await loadFromServer\(\)/);
+  assert.match(submitter, /finally \{/);
+  assert.match(submitter, /flushDeferredCentralReload\(\)/);
+});
+
 test('administrator setup reveals existing evaluation tabs step by step without changing APIs', async () => {
   const index = await readFile(indexUrl, 'utf8');
   const permissions = index.slice(
