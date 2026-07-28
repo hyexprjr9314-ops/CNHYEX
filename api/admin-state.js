@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { readFileSync } from 'node:fs';
 import { buildRelativeGradePlan, cohortKeyForUser } from './relative-grading.js';
 import { ROLES } from './role-policy.js';
 import { normalizeTrack, relationshipType, targetTrack, TRACK_CATEGORIES } from './evaluation-classification.js';
@@ -15,6 +16,34 @@ const ADMIN_ONLY = new Set([
 ]);
 const EXECUTIVE_ALLOWED = new Set(['notification_read', 'notification_read_all', 'push_web_config', 'push_register', 'push_unregister']);
 const send = (res, status, payload) => res.status(status).json(payload);
+const PWA_ASSETS = Object.freeze({
+  manifest: {
+    type: 'application/manifest+json; charset=utf-8',
+    body: readFileSync(new URL('../manifest.webmanifest', import.meta.url))
+  },
+  'service-worker': {
+    type: 'application/javascript; charset=utf-8',
+    body: readFileSync(new URL('../service-worker.js', import.meta.url))
+  },
+  'icon-192': {
+    type: 'image/png',
+    body: readFileSync(new URL('../assets/pwa-icon-192.png', import.meta.url))
+  },
+  'icon-512': {
+    type: 'image/png',
+    body: readFileSync(new URL('../assets/pwa-icon-512.png', import.meta.url))
+  }
+});
+
+function sendPublicPwaAsset(req, res) {
+  if (req.method !== 'GET') return false;
+  const asset = PWA_ASSETS[String(req.query?.asset || '')];
+  if (!asset) return false;
+  res.setHeader('Content-Type', asset.type);
+  res.setHeader('Cache-Control', 'public, max-age=3600, must-revalidate');
+  res.status(200).send(asset.body);
+  return true;
+}
 
 export async function fetchAllRows(buildQuery, pageSize = 1000) {
   const rows = [];
@@ -579,6 +608,7 @@ async function closeCycle(service, rpcService, cycleId, authUser) {
 }
 
 export default async function handler(req, res) {
+  if (sendPublicPwaAsset(req, res)) return;
   try {
     const service = serviceClient();
     const { authUser, profile } = await authenticate(req, service);
