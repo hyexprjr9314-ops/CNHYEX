@@ -4086,7 +4086,7 @@
       if (!supabaseClient) return null;
       const { data } = await supabaseClient.auth.getSession();
       if (!data.session) return null;
-      const response = await fetch('/api/push-notifications', {
+      const response = await fetch('/api/admin-state', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -4150,7 +4150,7 @@
         nativePushToken = value;
         localStorage.setItem('cnhy_native_push_token', value);
         try {
-          await callPushApi({ action: 'register', token: value, platform: 'android', app_version: '1.2' });
+          await callPushApi({ action: 'push_register', token: value, platform: 'android', app_version: '1.2' });
           removeNativePushPermissionNotice();
         } catch (error) {
           console.warn('기기 푸시 토큰을 서버에 등록하지 못했습니다.', error);
@@ -7821,7 +7821,7 @@
             return;
           }
           callPushApi({
-            action: 'evaluation_submitted',
+            action: 'push_evaluation_submitted',
             cycle_id: Number(currentTargetEmp.cycleId)
           }).catch(error => console.warn('평가 취합 푸시 확인을 건너뜁니다.', error));
           currentTargetEmp.completed = 1;
@@ -8930,7 +8930,7 @@
     async function handleLogout() {
       hideMascotGuide();
       if (nativePushToken) {
-        await callPushApi({ action: 'unregister', token: nativePushToken }).catch(() => {});
+        await callPushApi({ action: 'push_unregister', token: nativePushToken }).catch(() => {});
       }
       if (supabaseClient) await supabaseClient.auth.signOut();
       sessionStorage.removeItem('cnhy_session_user');

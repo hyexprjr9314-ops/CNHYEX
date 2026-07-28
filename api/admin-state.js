@@ -4,7 +4,7 @@ import { ROLES } from './role-policy.js';
 import { normalizeTrack, relationshipType, targetTrack, TRACK_CATEGORIES } from './evaluation-classification.js';
 import { isMutableDraftCycle } from './questions.js';
 import { planAutoMatchings } from './auto-matching.js';
-import { notifyAndDispatch } from './_push.js';
+import { notifyAndDispatch } from '../lib/push.js';
 
 const PRIVILEGED = new Set([ROLES.admin, ROLES.executive]);
 const SUPER_ADMIN_EMAIL = 'admin@cnhyex.com';
@@ -13,7 +13,7 @@ const ADMIN_ONLY = new Set([
   'question_delete', 'matching_toggle', 'matching_replace', 'matching_generate', 'matching_mode_update', 'permission_update', 'permission_bulk_update', 'settings_update',
   'goal_status', 'cycle_close', 'cycle_pause', 'cycle_resume', 'cycle_force_close', 'cycle_cancel', 'cycle_hard_delete'
 ]);
-const EXECUTIVE_ALLOWED = new Set(['notification_read', 'notification_read_all']);
+const EXECUTIVE_ALLOWED = new Set(['notification_read', 'notification_read_all', 'push_register', 'push_unregister']);
 const send = (res, status, payload) => res.status(status).json(payload);
 
 export async function fetchAllRows(buildQuery, pageSize = 1000) {
@@ -475,6 +475,43 @@ async function readState(service, profile) {
   };
 }
 
+async function notifyCollectionComplete(service, profile, cycleId) {
+  const matchingResult = await service.from('matchings')
+    .select('id,evaluator_id')
+    .eq('cycle_id', cycleId);
+  if (matchingResult.error) throw matchingResult.error;
+  const matching = matchingResult.data || [];
+  if (!matching.some(row => Number(row.evaluator_id) === Number(profile.id))) {
+    throw Object.assign(new Error('본인에게 배정된 평가주기가 아닙니다.'), { status: 403 });
+  }
+  const matchingIds = matching.map(row => Number(row.id));
+  if (!matchingIds.length) return { complete: false };
+  const evaluations = await service.from('evaluations')
+    .select('matching_id')
+    .eq('cycle_id', cycleId)
+    .in('matching_id', matchingIds);
+  if (evaluations.error) throw evaluations.error;
+  const submitted = new Set((evaluations.data || []).map(row => Number(row.matching_id)));
+  const complete = matchingIds.every(id => submitted.has(id));
+  if (!complete) return { complete: false };
+  const recipients = await service.from('users')
+    .select('id')
+    .eq('active', true)
+    .in('sys_role', [ROLES.admin, ROLES.executive]);
+  if (recipients.error) throw recipients.error;
+  await notifyAndDispatch(service, {
+    eventKey: `collection_complete:${cycleId}`,
+    cycleId,
+    type: 'collection_completed',
+    title: '평가 취합 완료',
+    message: '평가자들의 평가 결과 취합이 완료되었습니다.',
+    recipientUserIds: (recipients.data || []).map(row => row.id),
+    targetView: 'closingmanage',
+    targetSubtab: 'progress'
+  });
+  return { complete: true };
+}
+
 async function closeCycle(service, rpcService, cycleId, authUser) {
   const [cycle, users, matchings, scores, adjustments, settings] = await Promise.all([
     service.from('evaluation_cycles').select('*').eq('id', cycleId).single(),
@@ -549,6 +586,36 @@ export default async function handler(req, res) {
     if (req.method !== 'POST') return send(res, 405, { error: '지원하지 않는 요청입니다.' });
     const action = String(req.body?.action || '');
     if (profile.sys_role === ROLES.executive && !EXECUTIVE_ALLOWED.has(action)) return send(res, 403, { error: '임원은 점수 집계 및 마감 이력 작업만 수행할 수 있습니다.' });
+    if (action === 'push_register') {
+      const token = String(req.body?.token || '').trim();
+      if (token.length < 20) return send(res, 400, { error: '유효한 기기 토큰이 필요합니다.' });
+      const registered = await service.from('push_device_tokens').upsert({
+        user_id: profile.id,
+        token,
+        platform: 'android',
+        device_id: String(req.body?.device_id || '').slice(0, 200) || null,
+        app_version: String(req.body?.app_version || '').slice(0, 50) || null,
+        active: true,
+        last_seen_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'token' }).select('id,user_id,active').single();
+      if (registered.error) throw registered.error;
+      return send(res, 200, { data: registered.data });
+    }
+    if (action === 'push_unregister') {
+      const unregistered = await service.from('push_device_tokens')
+        .update({ active: false, updated_at: new Date().toISOString() })
+        .eq('user_id', profile.id)
+        .eq('token', String(req.body?.token || '').trim())
+        .select('id');
+      if (unregistered.error) throw unregistered.error;
+      return send(res, 200, { data: unregistered.data || [] });
+    }
+    if (action === 'push_evaluation_submitted') {
+      const cycleId = Number(req.body?.cycle_id);
+      if (!cycleId) return send(res, 400, { error: '평가주기 ID가 필요합니다.' });
+      return send(res, 200, { data: await notifyCollectionComplete(service, profile, cycleId) });
+    }
     if (action === 'goal_create') {
       const title = String(req.body?.title || '').trim();
       const category = String(req.body?.category || '').trim();

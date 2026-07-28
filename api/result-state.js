@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { TRACK_CATEGORIES, targetTrack } from './evaluation-classification.js';
 import { ROLES } from './role-policy.js';
-import { dispatchPushNotifications, notifyAndDispatch } from './_push.js';
+import { dispatchPushNotifications, notifyAndDispatch } from '../lib/push.js';
 
 const PRIVILEGED_ROLES = new Set([ROLES.admin, ROLES.executive]);
 const send = (res, status, payload) => res.status(status).json(payload);
