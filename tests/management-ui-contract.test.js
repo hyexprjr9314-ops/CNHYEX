@@ -60,6 +60,7 @@ test('score summary shows compact cohort percentile reasons and stable mail acti
   assert.match(basisBuilder, /정비사/);
   assert.match(basisBuilder, /상위 \$\{percentByTarget\.get\(targetId\) \|\| '-'\}%/);
   assert.match(basisBuilder, /승인 \$\{calculatedGrade\}→\$\{score\.grade_override\}/);
+  assert.ok(basisBuilder.indexOf('Number(b.score.raw)') < basisBuilder.indexOf('Number(b.score.final)'));
   assert.match(index, /inline-flex h-7 w-7 shrink-0 items-center justify-center/);
   assert.match(index, /<span class="sr-only">발송 완료<\/span>/);
 });
@@ -71,9 +72,35 @@ test('archived history uses the same immutable final score and approved grade as
   assert.match(resolver, /finalResultsByCycle\[Number\(cycleId\)\]\?\.\[Number\(person\.id\)\]/);
   assert.match(resolver, /finalResult\.effective_score \?\? person\.score/);
   assert.match(resolver, /finalResult\.approved_grade \|\| finalResult\.relative_grade \|\| person\.grade/);
+  assert.match(resolver, /calculated_grade: finalResult\.relative_grade/);
+  assert.match(resolver, /grade_override: finalResult\.approved_grade/);
   assert.match(index, /resolveArchivedHistoryPerson\(archive\.cycleId, person\)/);
   assert.match(index, /resolveArchivedHistoryPerson\(cycleId, snapshotPerson\)/);
   assert.match(index, /resolveArchivedHistoryPerson\(histArchive\.cycleId, archivedPerson\)/);
+});
+
+test('archived history shows adjustment state and a compact immutable grade basis', async () => {
+  const index = await readFile(indexUrl, 'utf8');
+  const basisBuilder = index.slice(
+    index.indexOf('function buildArchivedGradeBasisMap'),
+    index.indexOf('function downloadArchivedCycleCSV')
+  );
+  const historyRenderer = index.slice(
+    index.indexOf('function renderHistoryTable()'),
+    index.indexOf('function renderMyResults()')
+  );
+
+  assert.match(basisBuilder, /본사/);
+  assert.match(basisBuilder, /영업소/);
+  assert.match(basisBuilder, /정비사/);
+  assert.match(basisBuilder, /상위 \$\{percentByTarget\.get\(Number\(person\.id\)\) \|\| '-'\}%/);
+  assert.match(basisBuilder, /승인 \$\{calculatedGrade\}→\$\{person\.grade_override\}/);
+  assert.ok(basisBuilder.indexOf('right.raw_score') < basisBuilder.indexOf('right.score'));
+  assert.match(historyRenderer, /<th class="py-2 px-3 font-bold">조정 여부<\/th>/);
+  assert.match(historyRenderer, /<th class="py-2 px-3 font-bold">등급 책정사유<\/th>/);
+  assert.match(historyRenderer, /s\.is_adjusted \? '조정됨' : '미조정'/);
+  assert.match(historyRenderer, /gradeBasisByTarget\.get\(Number\(s\.id\)\)/);
+  assert.match(historyRenderer, /colspan="7"/);
 });
 
 test('archived history remains visible across publication changes and state reloads', async () => {

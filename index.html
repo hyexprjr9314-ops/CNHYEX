@@ -3950,10 +3950,45 @@
         raw_score: rawScore,
         score: finalScore,
         grade,
+        calculated_grade: finalResult.relative_grade || person.calculated_grade || person.grade,
+        grade_override: finalResult.approved_grade && finalResult.approved_grade !== finalResult.relative_grade
+          ? finalResult.approved_grade
+          : null,
         is_adjusted: person.is_adjusted === true
           || rawScore !== finalScore
           || Boolean(finalResult.approved_grade && finalResult.approved_grade !== finalResult.relative_grade)
       };
+    }
+
+    function buildArchivedGradeBasisMap(people = []) {
+      const cohortInfo = person => {
+        const dept = String(person?.dept || '');
+        const workplace = String(person?.workplace || '');
+        if (dept.includes('정비')) return { key: 'mechanic', label: '정비사' };
+        if (dept.includes('영업소') || workplace.includes('영업소')) return { key: 'branch', label: '영업소' };
+        return { key: 'headquarters', label: '본사' };
+      };
+      const percentByTarget = new Map();
+      for (const cohortKey of ['headquarters', 'branch', 'mechanic']) {
+        const ranked = people
+          .filter(person => cohortInfo(person).key === cohortKey && (person.calculated_grade || person.grade) !== 'EX')
+          .sort((left, right) => Number(right.raw_score ?? right.score) - Number(left.raw_score ?? left.score)
+            || Number(right.score) - Number(left.score)
+            || Number(left.id) - Number(right.id));
+        ranked.forEach((person, index) => {
+          percentByTarget.set(Number(person.id), Math.max(1, Math.ceil(((index + 1) / ranked.length) * 100)));
+        });
+      }
+      return new Map(people.map(person => {
+        const { label } = cohortInfo(person);
+        const calculatedGrade = person.calculated_grade || person.grade;
+        const base = calculatedGrade === 'EX'
+          ? `${label} 100점 · EX`
+          : `${label} 상위 ${percentByTarget.get(Number(person.id)) || '-'}%`;
+        return [Number(person.id), person.grade_override
+          ? `${base} · 승인 ${calculatedGrade}→${person.grade_override}`
+          : base];
+      }));
     }
 
     function downloadArchivedCycleCSV(cycleId) {
@@ -4080,6 +4115,7 @@
       visibleHistory.forEach(archive => {
         const div = document.createElement('div');
         const expanded = Number(expandedHistoryCycleId) === Number(archive.cycleId);
+        const gradeBasisByTarget = buildArchivedGradeBasisMap(archive.fullSnapshot);
         const cycleState = getHistoryCycleViewState(archive.cycleId);
         const departments = [...new Set(archive.fullSnapshot
           .filter(person => !cycleState.company || person.company === cycleState.company)
@@ -4113,9 +4149,11 @@
               <td class="py-2.5 px-3 text-slate-400">${escapeHtml(s.role)}</td>
               <td class="py-2.5 px-3 font-mono font-bold text-brandTeal">${s.score.toFixed(1)}점</td>
               <td class="py-2.5 px-3">${badge}</td>
+              <td class="py-2.5 px-3"><span class="${s.is_adjusted ? 'font-bold text-amber-700' : 'text-slate-500'}">${s.is_adjusted ? '조정됨' : '미조정'}</span></td>
+              <td class="py-2.5 px-3 text-slate-400"><span class="block max-w-56 truncate" title="${escapeHtml(gradeBasisByTarget.get(Number(s.id)) || '책정 사유 없음')}">${escapeHtml(gradeBasisByTarget.get(Number(s.id)) || '책정 사유 없음')}</span></td>
             </tr>
           `;
-        }).join('') || `<tr><td colspan="5" class="py-8 px-3 text-center text-slate-500">선택한 조건에 해당하는 평가 이력이 없습니다.</td></tr>`;
+        }).join('') || `<tr><td colspan="7" class="py-8 px-3 text-center text-slate-500">선택한 조건에 해당하는 평가 이력이 없습니다.</td></tr>`;
 
         div.innerHTML = `
           <div class="flex items-center gap-2">
@@ -4165,6 +4203,8 @@
                   <th class="py-2 px-3 font-bold">직위</th>
                   <th class="py-2 px-3 font-bold">최종점수</th>
                   <th class="py-2 px-3 font-bold">평가등급</th>
+                  <th class="py-2 px-3 font-bold">조정 여부</th>
+                  <th class="py-2 px-3 font-bold">등급 책정사유</th>
                 </tr>
               </thead>
               <tbody>
@@ -7922,8 +7962,8 @@
         for (const cohortKey of ['headquarters', 'branch', 'mechanic']) {
           const ranked = rows
             .filter(row => cohortInfo(row.employee).key === cohortKey && row.score.calculated_grade !== 'EX')
-            .sort((a, b) => Number(b.score.final) - Number(a.score.final)
-              || Number(b.score.raw) - Number(a.score.raw)
+            .sort((a, b) => Number(b.score.raw) - Number(a.score.raw)
+              || Number(b.score.final) - Number(a.score.final)
               || a.targetId - b.targetId);
           ranked.forEach((row, index) => {
             percentByTarget.set(row.targetId, Math.max(1, Math.ceil(((index + 1) / ranked.length) * 100)));
