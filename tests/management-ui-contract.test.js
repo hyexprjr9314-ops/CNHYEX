@@ -50,6 +50,18 @@ test('closing management owns progress, summary, and history without duplicating
   assert.match(index, /id="bulk-grade-mail-btn"[^>]+class="hidden /);
 });
 
+test('archived history uses the same immutable final score and approved grade as summary', async () => {
+  const index = await readFile(indexUrl, 'utf8');
+  const resolver = index.match(/function resolveArchivedHistoryPerson\(cycleId, person = \{\}\) \{[\s\S]*?\n    \}/)?.[0] ?? '';
+
+  assert.match(resolver, /finalResultsByCycle\[Number\(cycleId\)\]\?\.\[Number\(person\.id\)\]/);
+  assert.match(resolver, /finalResult\.effective_score \?\? person\.score/);
+  assert.match(resolver, /finalResult\.approved_grade \|\| finalResult\.relative_grade \|\| person\.grade/);
+  assert.match(index, /resolveArchivedHistoryPerson\(archive\.cycleId, person\)/);
+  assert.match(index, /resolveArchivedHistoryPerson\(cycleId, snapshotPerson\)/);
+  assert.match(index, /resolveArchivedHistoryPerson\(histArchive\.cycleId, archivedPerson\)/);
+});
+
 test('expired sessions are handled consistently by closing-management API wrappers', async () => {
   const index = await readFile(indexUrl, 'utf8');
   for (const name of ['callResultStateApi', 'callEvaluationDetailApi', 'callMailApi']) {

@@ -3863,18 +3863,34 @@
       renderHistoryTable();
     }
 
+    function resolveArchivedHistoryPerson(cycleId, person = {}) {
+      const finalResult = finalResultsByCycle[Number(cycleId)]?.[Number(person.id)];
+      if (!finalResult) return person;
+      const rawScore = Number(finalResult.raw_score ?? person.raw_score ?? person.score);
+      const finalScore = Number(finalResult.effective_score ?? person.score);
+      const grade = finalResult.approved_grade || finalResult.relative_grade || person.grade;
+      return {
+        ...person,
+        raw_score: rawScore,
+        score: finalScore,
+        grade,
+        is_adjusted: person.is_adjusted === true
+          || rawScore !== finalScore
+          || Boolean(finalResult.approved_grade && finalResult.approved_grade !== finalResult.relative_grade)
+      };
+    }
+
     function downloadArchivedCycleCSV(cycleId) {
       const archive = evaluationHistoryDb.find(item => Number(item.cycleId) === Number(cycleId));
       if (!archive) return alert('보관된 평가 결과를 찾지 못했습니다.');
-      const finalResults = finalResultsByCycle[Number(cycleId)] || {};
       const escapeCsv = value => `"${String(value ?? '').replace(/"/g, '""')}"`;
-      const rows = (archive.snapshot || []).map(person => {
-        const finalResult = finalResults[Number(person.id)] || {};
+      const rows = (archive.snapshot || []).map(snapshotPerson => {
+        const person = resolveArchivedHistoryPerson(cycleId, snapshotPerson);
         return [
           archive.cycleName, archive.closedAt, person.name, person.company, person.dept, person.role,
-          finalResult.raw_score ?? person.raw_score ?? person.score,
-          finalResult.effective_score ?? person.score,
-          finalResult.approved_grade || finalResult.relative_grade || person.grade,
+          person.raw_score ?? person.score,
+          person.score,
+          person.grade,
           person.is_adjusted ? '조정' : '미조정'
         ].map(escapeCsv).join(',');
       });
@@ -3898,7 +3914,12 @@
         String(right.closedAt || '').localeCompare(String(left.closedAt || ''))
         || Number(right.cycleId) - Number(left.cycleId)
       );
-      const historyRows = publishedHistoryDb.flatMap((archive, archiveIndex) => (archive.snapshot || []).map((person, rowIndex) => ({ ...person, archiveIndex, rowIndex, cycleName: archive.cycleName, closedAt: archive.closedAt })));
+      const historyRows = publishedHistoryDb.flatMap((archive, archiveIndex) =>
+        (archive.snapshot || []).map((person, rowIndex) => ({
+          ...resolveArchivedHistoryPerson(archive.cycleId, person),
+          archiveIndex, rowIndex, cycleName: archive.cycleName, closedAt: archive.closedAt
+        }))
+      );
       ensureDirectoryToolbar('history', container, historyRows, {
         render: renderHistoryTable, placeholder: '평가 주기·이름·소속·부서·직급 검색', sortKey: 'closedAt', sortDirection: 'desc',
         companyValue: row => row.company, deptValue: row => row.dept,
@@ -4017,10 +4038,11 @@
         const histId = parseInt(selectedVal.replace('history_', ''));
         const histArchive = evaluationHistoryDb.find(h => h.cycleId === histId);
         if (histArchive) {
-          const snap = histArchive.snapshot.find(s => Number(s.id) === Number(currentLoggedInUser?.id));
+          const archivedPerson = histArchive.snapshot.find(s => Number(s.id) === Number(currentLoggedInUser?.id));
+          const snap = archivedPerson && resolveArchivedHistoryPerson(histArchive.cycleId, archivedPerson);
           if (snap) {
             empScoreData = {
-              raw: snap.score,
+              raw: snap.raw_score ?? snap.score,
               final: snap.score,
               grade: snap.grade,
               is_adjusted: snap.is_adjusted
