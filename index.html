@@ -4145,6 +4145,10 @@
       if (!isNativeAndroidApp() || nativePushInitialized || !currentLoggedInUser) return;
       const push = window.Capacitor?.Plugins?.PushNotifications;
       if (!push) return;
+      const settings = window.Capacitor?.Plugins?.NotificationSettings;
+      if (!settings?.status) return;
+      const nativeStatus = await settings.status().catch(() => null);
+      if (!nativeStatus?.pushConfigured) return;
       nativePushInitialized = true;
       await push.addListener('registration', async ({ value }) => {
         nativePushToken = value;

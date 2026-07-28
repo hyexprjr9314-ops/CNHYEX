@@ -5,6 +5,7 @@ import fs from 'node:fs';
 const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const migration = fs.readFileSync(new URL('../supabase/migrations/202607290001_android_push_notifications.sql', import.meta.url), 'utf8');
 const manifest = fs.readFileSync(new URL('../android/app/src/main/AndroidManifest.xml', import.meta.url), 'utf8');
+const nativePlugin = fs.readFileSync(new URL('../android/app/src/main/java/com/cnhyex/hr/NotificationSettingsPlugin.java', import.meta.url), 'utf8');
 const pushApi = fs.readFileSync(new URL('../api/admin-state.js', import.meta.url), 'utf8');
 const pushHelper = fs.readFileSync(new URL('../lib/push.js', import.meta.url), 'utf8');
 
@@ -12,6 +13,9 @@ test('Android notification permission is requested and denied users can open set
   assert.match(manifest, /android\.permission\.POST_NOTIFICATIONS/);
   assert.match(html, /requestPermissions\(\)/);
   assert.match(html, /NotificationSettings\?\.open/);
+  assert.match(nativePlugin, /pushConfigured/);
+  assert.match(html, /if \(!settings\?\.status\) return/);
+  assert.match(html, /if \(!nativeStatus\?\.pushConfigured\) return/);
   assert.match(html, /앱 알림이 꺼져 있습니다/);
 });
 

@@ -12,6 +12,18 @@ import com.getcapacitor.PluginMethod;
 @CapacitorPlugin(name = "NotificationSettings")
 public class NotificationSettingsPlugin extends Plugin {
     @PluginMethod
+    public void status(PluginCall call) {
+        int appId = getContext().getResources().getIdentifier(
+            "google_app_id",
+            "string",
+            getContext().getPackageName()
+        );
+        JSObject result = new JSObject();
+        result.put("pushConfigured", appId != 0);
+        call.resolve(result);
+    }
+
+    @PluginMethod
     public void open(PluginCall call) {
         Intent intent = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS);
         intent.putExtra(Settings.EXTRA_APP_PACKAGE, getContext().getPackageName());
