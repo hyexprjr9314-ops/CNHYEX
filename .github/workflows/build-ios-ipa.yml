@@ -15,6 +15,11 @@ on:
 jobs:
   build:
     runs-on: macos-15
+    env:
+      APPLE_CERTIFICATE_BASE64: ${{ secrets.CNHYEX_APPLE_CERTIFICATE_BASE64 }}
+      APPLE_CERTIFICATE_PASSWORD: ${{ secrets.CNHYEX_APPLE_CERTIFICATE_PASSWORD }}
+      APPLE_PROVISIONING_PROFILE_BASE64: ${{ secrets.CNHYEX_APPLE_PROVISIONING_PROFILE_BASE64 }}
+      APPLE_TEAM_ID: ${{ secrets.CNHYEX_APPLE_TEAM_ID }}
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -67,4 +72,74 @@ jobs:
             CNHYEX-iOS-display-name.txt
             CNHYEX-iOS-sha256.txt
             CNHYEX-iOS-signing-status.txt
+          if-no-files-found: error
+      - name: Install optional Apple signing assets
+        id: signing
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "$APPLE_CERTIFICATE_BASE64" || -z "$APPLE_CERTIFICATE_PASSWORD" || -z "$APPLE_PROVISIONING_PROFILE_BASE64" || -z "$APPLE_TEAM_ID" ]]; then
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "available=true" >> "$GITHUB_OUTPUT"
+          CERTIFICATE_PATH="$RUNNER_TEMP/cnhyex-distribution.p12"
+          PROFILE_PATH="$RUNNER_TEMP/cnhyex.mobileprovision"
+          KEYCHAIN_PATH="$RUNNER_TEMP/cnhyex-signing.keychain-db"
+          KEYCHAIN_PASSWORD="$(openssl rand -hex 24)"
+
+          printf '%s' "$APPLE_CERTIFICATE_BASE64" | base64 --decode > "$CERTIFICATE_PATH"
+          printf '%s' "$APPLE_PROVISIONING_PROFILE_BASE64" | base64 --decode > "$PROFILE_PATH"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERTIFICATE_PATH" -P "$APPLE_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security list-keychain -d user -s "$KEYCHAIN_PATH"
+
+          security cms -D -i "$PROFILE_PATH" > "$RUNNER_TEMP/profile.plist"
+          PROFILE_UUID="$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$RUNNER_TEMP/profile.plist")"
+          PROFILE_NAME="$(/usr/libexec/PlistBuddy -c 'Print :Name' "$RUNNER_TEMP/profile.plist")"
+          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+          cp "$PROFILE_PATH" "$HOME/Library/MobileDevice/Provisioning Profiles/$PROFILE_UUID.mobileprovision"
+          echo "APPLE_PROFILE_NAME=$PROFILE_NAME" >> "$GITHUB_ENV"
+      - name: Build signed iPhone archive
+        if: ${{ steps.signing.outputs.available == 'true' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/CNHYEX.xcarchive" \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+            CODE_SIGN_STYLE=Manual \
+            PROVISIONING_PROFILE_SPECIFIER="$APPLE_PROFILE_NAME" \
+            archive
+      - name: Package signed IPA
+        if: ${{ steps.signing.outputs.available == 'true' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP_PATH="$RUNNER_TEMP/CNHYEX.xcarchive/Products/Applications/App.app"
+          test -d "$APP_PATH"
+          test -f "$APP_PATH/embedded.mobileprovision"
+          codesign --verify --deep --strict --verbose=2 "$APP_PATH"
+          mkdir -p "$RUNNER_TEMP/CNHYEXSignedPayload/Payload"
+          cp -R "$APP_PATH" "$RUNNER_TEMP/CNHYEXSignedPayload/Payload/CNHYEX.app"
+          (
+            cd "$RUNNER_TEMP/CNHYEXSignedPayload"
+            /usr/bin/zip -qry "$GITHUB_WORKSPACE/CNHYEX-iOS-signed.ipa" Payload
+          )
+          shasum -a 256 CNHYEX-iOS-signed.ipa | tee CNHYEX-iOS-signed-sha256.txt
+      - uses: actions/upload-artifact@v4
+        if: ${{ steps.signing.outputs.available == 'true' }}
+        with:
+          name: CNHYEX-iOS-signed
+          path: |
+            CNHYEX-iOS-signed.ipa
+            CNHYEX-iOS-signed-sha256.txt
           if-no-files-found: error

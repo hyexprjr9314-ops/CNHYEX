@@ -28,4 +28,8 @@ test('macOS workflow builds and packages a deterministic IPA artifact', () => {
   assert.match(workflow, /CODE_SIGNING_ALLOWED=NO/);
   assert.match(workflow, /CNHYEX-iOS-unsigned\.ipa/);
   assert.match(workflow, /shasum -a 256/);
+  assert.match(workflow, /CNHYEX_APPLE_CERTIFICATE_BASE64/);
+  assert.match(workflow, /PROVISIONING_PROFILE_SPECIFIER/);
+  assert.match(workflow, /codesign --verify --deep --strict/);
+  assert.match(workflow, /CNHYEX-iOS-signed\.ipa/);
 });
