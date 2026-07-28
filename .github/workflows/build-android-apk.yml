@@ -46,9 +46,17 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleRelease
       - name: Name APK
-        run: cp android/app/build/outputs/apk/release/app-release.apk CNHYEX-Android.apk
+        shell: bash
+        run: |
+          cp android/app/build/outputs/apk/release/app-release.apk CNHYEX-Android.apk
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -1)"
+          "$APKSIGNER" verify --verbose --print-certs CNHYEX-Android.apk | tee CNHYEX-Android-signature.txt
+          sha256sum CNHYEX-Android.apk | tee CNHYEX-Android-sha256.txt
       - uses: actions/upload-artifact@v4
         with:
           name: CNHYEX-Android
-          path: CNHYEX-Android.apk
+          path: |
+            CNHYEX-Android.apk
+            CNHYEX-Android-signature.txt
+            CNHYEX-Android-sha256.txt
           if-no-files-found: error

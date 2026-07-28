@@ -21,4 +21,5 @@ test('Android release build is signed and disables cleartext and backups', async
   assert.match(manifest, /android:allowBackup="false"/);
   assert.match(manifest, /android:usesCleartextTraffic="false"/);
   assert.match(workflow, /assembleRelease/);
+  assert.match(workflow, /apksigner[\s\S]*verify --verbose --print-certs/);
 });
