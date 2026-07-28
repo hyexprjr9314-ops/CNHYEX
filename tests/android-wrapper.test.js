@@ -23,3 +23,14 @@ test('Android release build is signed and disables cleartext and backups', async
   assert.match(workflow, /assembleRelease/);
   assert.match(workflow, /apksigner[\s\S]*verify --verbose --print-certs/);
 });
+
+test('Android launcher matches the teal bus used by the web header', async () => {
+  const [gradle, background, foreground] = await Promise.all([
+    read('../android/app/build.gradle'),
+    read('../android/app/src/main/res/values/ic_launcher_background.xml'),
+    read('../android/app/src/main/res/drawable-v24/ic_launcher_foreground.xml')
+  ]);
+  assert.match(gradle, /versionCode 2[\s\S]*versionName "1\.1"/);
+  assert.match(background, /#0D9488/);
+  assert.match(foreground, /android:fillColor="#FFFFFF"/);
+});
