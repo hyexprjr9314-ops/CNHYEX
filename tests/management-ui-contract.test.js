@@ -212,10 +212,13 @@ test('administrator setup reveals existing evaluation tabs step by step without 
   assert.match(index, /data-admin-setup-next/);
   assert.doesNotMatch(permissions, /평가 주기 선택:/);
   assert.match(permissions, /data-admin-setup-next="permissions"/);
+  assert.match(permissions, /data-admin-setup-next="permissions"[^>]+class="sm:ml-auto/);
   assert.match(permissions, /id="perm-cycle-select"[^>]+class="hidden"/);
   assert.match(questions, /data-admin-setup-next="questions"/);
+  assert.match(questions, /data-admin-setup-next="questions"[^>]+class="sm:ml-auto/);
   assert.match(questions, /CSV Import & Download Action Buttons[\s\S]*data-admin-setup-next="questions"/);
   assert.match(matching, /data-admin-setup-next="matching"/);
+  assert.match(matching, /data-admin-setup-next="matching"[^>]+class="sm:ml-auto/);
   assert.match(matching, /toggle-matching-mode-btn[\s\S]*data-admin-setup-next="matching"/);
   assert.match(advance, /usersDb\.some\(user => user\.can_evaluate !== false\)/);
   assert.match(advance, /customQuestionsDb\.filter/);
