@@ -996,6 +996,11 @@
       background: #334155 !important;
       color: #FFFFFF !important;
     }
+    .super-admin-badge {
+      background: #EDE9FE !important;
+      border-color: #8B5CF6 !important;
+      color: #5B21B6 !important;
+    }
     [class*="from-brandTeal"][class*="to-teal"] *,
     [class~="bg-brandTeal"] *,
     [class~="bg-brandBlue"] *,
@@ -6358,7 +6363,7 @@
         const accountStatus = u.auth_user_id ? 'Auth 연결됨' : 'Auth 미연결';
         const isSuperAdmin = u.email?.toLowerCase() === 'admin@cnhyex.com';
         const roleBadge = isSuperAdmin
-          ? `<span class="bg-purple-500/20 text-purple-200 border border-purple-500/40 px-2 py-0.5 rounded font-bold text-[10px]">🛡️ 최고관리자</span>`
+          ? `<span class="super-admin-badge border px-2 py-0.5 rounded font-bold text-[10px]">🛡️ 최고관리자</span>`
           : u.sysRole === '관리자'
           ? `<span class="bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded font-bold text-[10px]">👑 관리자</span>`
           : u.sysRole === '임원'

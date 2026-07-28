@@ -30,9 +30,10 @@ test('project 2 bulk permission changes use one administrator API action', async
 
 test('project 3 uses scoped light-theme contrast classes', async () => {
   const index = await read('../index.html');
-  for (const className of ['progress-stat-neutral', 'progress-stat-complete', 'approval-panel']) {
+  for (const className of ['progress-stat-neutral', 'progress-stat-complete', 'approval-panel', 'super-admin-badge']) {
     assert.match(index, new RegExp(className));
   }
+  assert.match(index, /\.super-admin-badge\s*\{[\s\S]*color:\s*#5B21B6\s*!important/);
 });
 
 test('project 4 stores and calculates four independent track weight sets', async () => {
