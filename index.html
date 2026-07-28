@@ -965,6 +965,34 @@
       #view-list #directory-toolbar-targets {
         display: none !important;
       }
+      button[onclick^="downloadCSV"],
+      button[onclick*="downloadArchivedCycleCSV"],
+      #bulk-grade-mail-btn {
+        display: none !important;
+      }
+      #my-report-cycle-select,
+      #management-cycle-select,
+      #question-cycle-select,
+      #matching-cycle-select,
+      #summary-cycle-select,
+      #progress-cycle-select {
+        width: min(100%, 15rem) !important;
+        min-width: 0 !important;
+        max-width: 15rem !important;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      #management-cycle-toolbar {
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: flex-start;
+        gap: 0.5rem;
+      }
+      #management-cycle-toolbar > div,
+      label[for="matching-cycle-select"] {
+        display: none !important;
+      }
       #view-list #welcome-assignment-message,
       #view-list #welcome-company-dept + span,
       .relationship-group .relationship-description,
@@ -1222,7 +1250,6 @@
       #view-myresults #my-chart-card .space-y-4 {
         gap: 0.75rem;
       }
-      #view-myresults #my-report-cycle-select,
       #view-myresults .no-print {
         width: 100%;
       }

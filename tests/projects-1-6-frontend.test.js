@@ -29,6 +29,8 @@ test('mobile regular-user flow uses swipe decks without changing evaluation acti
   assert.match(index, /\.relationship-target-card[\s\S]*touch-action: pan-y/);
   assert.match(index, /stableCardHeight[\s\S]*deck\.style\.maxHeight/);
   assert.match(index, /#mobile-target-welcome-hero,[\s\S]*#view-list #directory-toolbar-targets[\s\S]*display: none/);
+  assert.match(index, /button\[onclick\^="downloadCSV"\],[\s\S]*#bulk-grade-mail-btn[\s\S]*display: none/);
+  assert.match(index, /#my-report-cycle-select,[\s\S]*#summary-cycle-select[\s\S]*max-width: 15rem/);
   assert.match(index, /function initializeMobileTargetDeck\(deck\)/);
   assert.match(index, /card\.addEventListener\('pointerdown'/);
   assert.match(index, /card\.addEventListener\('pointermove'/);
