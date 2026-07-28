@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { readFileSync } from 'node:fs';
 import { buildRelativeGradePlan, cohortKeyForUser } from './relative-grading.js';
 import { ROLES } from './role-policy.js';
 import { normalizeTrack, relationshipType, targetTrack, TRACK_CATEGORIES } from './evaluation-classification.js';
@@ -13,8 +14,36 @@ const ADMIN_ONLY = new Set([
   'question_delete', 'matching_toggle', 'matching_replace', 'matching_generate', 'matching_mode_update', 'permission_update', 'permission_bulk_update', 'settings_update',
   'goal_status', 'cycle_close', 'cycle_pause', 'cycle_resume', 'cycle_force_close', 'cycle_cancel', 'cycle_hard_delete'
 ]);
-const EXECUTIVE_ALLOWED = new Set(['notification_read', 'notification_read_all', 'push_register', 'push_unregister']);
+const EXECUTIVE_ALLOWED = new Set(['notification_read', 'notification_read_all', 'push_web_config', 'push_register', 'push_unregister']);
 const send = (res, status, payload) => res.status(status).json(payload);
+const PWA_ASSETS = Object.freeze({
+  manifest: {
+    type: 'application/manifest+json; charset=utf-8',
+    body: readFileSync(new URL('../manifest.webmanifest', import.meta.url))
+  },
+  'service-worker': {
+    type: 'application/javascript; charset=utf-8',
+    body: readFileSync(new URL('../service-worker.js', import.meta.url))
+  },
+  'icon-192': {
+    type: 'image/png',
+    body: readFileSync(new URL('../assets/pwa-icon-192.png', import.meta.url))
+  },
+  'icon-512': {
+    type: 'image/png',
+    body: readFileSync(new URL('../assets/pwa-icon-512.png', import.meta.url))
+  }
+});
+
+function sendPublicPwaAsset(req, res) {
+  if (req.method !== 'GET') return false;
+  const asset = PWA_ASSETS[String(req.query?.asset || '')];
+  if (!asset) return false;
+  res.setHeader('Content-Type', asset.type);
+  res.setHeader('Cache-Control', 'public, max-age=3600, must-revalidate');
+  res.status(200).send(asset.body);
+  return true;
+}
 
 export async function fetchAllRows(buildQuery, pageSize = 1000) {
   const rows = [];
@@ -579,6 +608,7 @@ async function closeCycle(service, rpcService, cycleId, authUser) {
 }
 
 export default async function handler(req, res) {
+  if (sendPublicPwaAsset(req, res)) return;
   try {
     const service = serviceClient();
     const { authUser, profile } = await authenticate(req, service);
@@ -586,13 +616,21 @@ export default async function handler(req, res) {
     if (req.method !== 'POST') return send(res, 405, { error: '지원하지 않는 요청입니다.' });
     const action = String(req.body?.action || '');
     if (profile.sys_role === ROLES.executive && !EXECUTIVE_ALLOWED.has(action)) return send(res, 403, { error: '임원은 점수 집계 및 마감 이력 작업만 수행할 수 있습니다.' });
+    if (action === 'push_web_config') {
+      return send(res, 200, {
+        configured: Boolean(process.env.WEB_PUSH_VAPID_PUBLIC_KEY && process.env.WEB_PUSH_VAPID_PRIVATE_KEY),
+        publicKey: process.env.WEB_PUSH_VAPID_PUBLIC_KEY || ''
+      });
+    }
     if (action === 'push_register') {
       const token = String(req.body?.token || '').trim();
       if (token.length < 20) return send(res, 400, { error: '유효한 기기 토큰이 필요합니다.' });
+      const platform = String(req.body?.platform || 'android');
+      if (!['android', 'web'].includes(platform)) return send(res, 400, { error: '지원하지 않는 푸시 플랫폼입니다.' });
       const registered = await service.from('push_device_tokens').upsert({
         user_id: profile.id,
         token,
-        platform: 'android',
+        platform,
         device_id: String(req.body?.device_id || '').slice(0, 200) || null,
         app_version: String(req.body?.app_version || '').slice(0, 50) || null,
         active: true,

@@ -1,0 +1,26 @@
+{
+  "id": "/",
+  "name": "충남한양 인사평가",
+  "short_name": "충남한양 평가",
+  "description": "충남고속·한양고속 360도 인사평가 시스템",
+  "lang": "ko-KR",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0d9488",
+  "icons": [
+    {
+      "src": "/api/admin-state?asset=icon-192",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/api/admin-state?asset=icon-512",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

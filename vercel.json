@@ -1,0 +1,27 @@
+{
+  "routes": [
+    {
+      "src": "/manifest.webmanifest",
+      "dest": "/api/admin-state?asset=manifest"
+    },
+    {
+      "src": "/service-worker.js",
+      "dest": "/api/admin-state?asset=service-worker"
+    },
+    {
+      "src": "/assets/pwa-icon-192.png",
+      "dest": "/api/admin-state?asset=icon-192"
+    },
+    {
+      "src": "/assets/pwa-icon-512.png",
+      "dest": "/api/admin-state?asset=icon-512"
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/.*",
+      "dest": "/index.html"
+    }
+  ]
+}

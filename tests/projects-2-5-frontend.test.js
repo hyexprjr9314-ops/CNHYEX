@@ -37,7 +37,7 @@ test('internal approval UI collects an ordered executive line and supports recal
   assert.match(index, /request\.steps/);
 });
 
-test('pending executive approvals use deduplicated in-app toasts without browser push', async () => {
+test('pending executive approvals keep deduplicated in-app toasts beside opt-in web push', async () => {
   const index = await readIndex();
   assert.match(index, /id="approval-toast-container"/);
   assert.match(index, /cnhy_approval_toast_/);
@@ -48,7 +48,8 @@ test('pending executive approvals use deduplicated in-app toasts without browser
   assert.match(index, /approval-action-white[^"]*bg-teal-700[^"]*text-white/);
   assert.match(index, /approval-action-white[^"]*bg-rose-700[^"]*text-white/);
   assert.match(index, /\.approval-action-white,\s*\.approval-action-white \*\s*\{\s*color: #FFFFFF !important;/);
-  assert.doesNotMatch(index, /Notification\.requestPermission|new Notification\(/);
+  assert.doesNotMatch(index, /new Notification\(/);
+  assert.match(index, /onclick="enableWebPushNotifications\(\)"/);
 });
 
 test('mobile results can hide the header and put the grade first', async () => {
