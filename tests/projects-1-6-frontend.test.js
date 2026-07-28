@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readFile, stat } from 'node:fs/promises';
 import test from 'node:test';
 
 const readIndex = () => readFile(new URL('../index.html', import.meta.url), 'utf8');
@@ -81,6 +81,15 @@ test('mobile regular-user flow uses swipe decks without changing evaluation acti
   assert.match(index, /<span>평가 시작<\/span>/);
   assert.doesNotMatch(index, /평가권한 활성화/);
   assert.doesNotMatch(index, /\$\{myCurrentStageText\}/);
+});
+
+test('empty evaluation assignments show the company video on autoplay loop', async () => {
+  const index = await readIndex();
+  const video = await stat(new URL('../assets/chungnam-hanyang.mp4', import.meta.url));
+  assert.ok(video.size > 1_000_000);
+  assert.match(index, /if \(allTargetEmployees\.length === 0\)[\s\S]*id="empty-evaluation-video"/);
+  assert.match(index, /<video[^>]*autoplay muted loop playsinline controls preload="metadata"/);
+  assert.match(index, /src="assets\/chungnam-hanyang\.mp4"/);
 });
 
 test('published results require one dinosaur egg reveal per user and cycle on desktop and mobile', async () => {

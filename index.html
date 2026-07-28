@@ -7243,10 +7243,22 @@
       });
       targetEmployees = filterDirectoryItems('targets', targetEmployees);
       if (targetEmployees.length === 0) {
-        const emptyMessage = allTargetEmployees.length === 0
-          ? '현재 배정된 평가 대상자가 없습니다.'
-          : '검색·필터 조건에 맞는 평가 대상자가 없습니다.';
-        container.innerHTML = `<div class="col-span-full bg-slate-900/60 p-8 rounded-2xl border border-slate-800 text-center text-slate-400 text-xs">${emptyMessage}</div>`;
+        if (allTargetEmployees.length === 0) {
+          container.innerHTML = `
+            <section id="empty-evaluation-video" class="col-span-full overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-sm">
+              <div class="px-4 py-3 text-center">
+                <h3 class="text-sm font-black text-slate-900">현재 진행할 평가가 없습니다</h3>
+                <p class="mt-1 text-xs text-slate-500">다음 평가가 시작될 때까지 충남고속·한양고속 이야기를 만나보세요.</p>
+              </div>
+              <video class="block max-h-[70vh] w-full bg-black object-contain" autoplay muted loop playsinline controls preload="metadata" aria-label="충남고속과 한양고속 소개 영상">
+                <source src="assets/chungnam-hanyang.mp4" type="video/mp4">
+                브라우저가 동영상 재생을 지원하지 않습니다.
+              </video>
+            </section>
+          `;
+        } else {
+          container.innerHTML = '<div class="col-span-full bg-slate-900/60 p-8 rounded-2xl border border-slate-800 text-center text-slate-400 text-xs">검색·필터 조건에 맞는 평가 대상자가 없습니다.</div>';
+        }
         return;
       }
 
