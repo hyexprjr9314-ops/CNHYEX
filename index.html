@@ -5203,7 +5203,8 @@
 
     function canCurrentUserViewResults() {
       const roleInfo = checkUserRole(currentLoggedInUser);
-      if (roleInfo.isPrivileged) return true;
+      if (roleInfo.isExecutive) return false;
+      if (roleInfo.isAdmin) return true;
       return cyclesDb.some(cycle => cycle.results_published === true);
     }
 

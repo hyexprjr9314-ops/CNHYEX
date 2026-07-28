@@ -50,6 +50,14 @@ test('closing management owns progress, summary, and history without duplicating
   assert.match(index, /id="bulk-grade-mail-btn"[^>]+class="hidden /);
 });
 
+test('executives cannot see or directly open personal results', async () => {
+  const index = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+
+  assert.match(index, /function canCurrentUserViewResults\(\)[\s\S]*if \(roleInfo\.isExecutive\) return false;[\s\S]*if \(roleInfo\.isAdmin\) return true;/);
+  assert.match(index, /if \(viewId === 'myresults' && !canCurrentUserViewResults\(\)\)[\s\S]*viewId = 'list';/);
+  assert.match(index, /myresults: canCurrentUserViewResults\(\)/);
+});
+
 test('score summary shows compact cohort percentile reasons and stable mail actions', async () => {
   const index = await readFile(indexUrl, 'utf8');
   const basisBuilder = index.match(/function buildSummaryGradeBasisMap\(cycleScores = \{\}\) \{[\s\S]*?\n      \}/)?.[0] ?? '';
