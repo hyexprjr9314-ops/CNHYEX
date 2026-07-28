@@ -1,0 +1,51 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - android/**
+      - mobile-shell/**
+      - capacitor.config.json
+      - package.json
+      - pnpm-lock.yaml
+      - .github/workflows/build-android-apk.yml
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm android:sync
+      - name: Restore release signing key
+        shell: bash
+        run: echo "${{ secrets.CNHYEX_KEYSTORE_BASE64 }}" | base64 --decode > android/app/cnhyex-release.jks
+      - name: Build signed release APK
+        working-directory: android
+        env:
+          CNHYEX_KEYSTORE_FILE: cnhyex-release.jks
+          CNHYEX_KEYSTORE_PASSWORD: ${{ secrets.CNHYEX_KEYSTORE_PASSWORD }}
+          CNHYEX_KEY_ALIAS: cnhyex
+          CNHYEX_KEY_PASSWORD: ${{ secrets.CNHYEX_KEY_PASSWORD }}
+        run: ./gradlew assembleRelease
+      - name: Name APK
+        run: cp android/app/build/outputs/apk/release/app-release.apk CNHYEX-Android.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CNHYEX-Android
+          path: CNHYEX-Android.apk
+          if-no-files-found: error

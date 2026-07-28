@@ -1,0 +1,10 @@
+{
+  "appId": "com.cnhyex.hr",
+  "appName": "충남한양 인사평가",
+  "webDir": "mobile-shell",
+  "server": {
+    "url": "https://cnhyex.vercel.app",
+    "cleartext": false,
+    "androidScheme": "https"
+  }
+}

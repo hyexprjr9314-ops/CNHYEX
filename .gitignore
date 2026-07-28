@@ -16,4 +16,6 @@ exports/
 downloads/
 credentials*.md
 secrets*
+*.jks
+*.keystore
 
