@@ -988,6 +988,14 @@
     [class*="from-brandTeal"][class*="to-teal"] {
       background: var(--brand) !important;
     }
+    .permission-disable-evaluatee {
+      background: #EA580C !important;
+      color: #FFFFFF !important;
+    }
+    .permission-disable-both {
+      background: #334155 !important;
+      color: #FFFFFF !important;
+    }
     [class*="from-brandTeal"][class*="to-teal"] *,
     [class~="bg-brandTeal"] *,
     [class~="bg-brandBlue"] *,
@@ -1098,7 +1106,7 @@
       <div>
         <div class="flex items-center gap-2">
           <h1 class="font-extrabold text-base md:text-lg tracking-tight text-white">충남한양 인사평가 시스템</h1>
-          <span class="text-[10px] bg-teal-500/10 text-brandTeal border border-brandTeal/30 px-2 py-0.5 rounded-full font-bold">2026 360° ENGINE</span>
+          <span class="text-[10px] bg-teal-500/10 text-brandTeal border border-brandTeal/30 px-2 py-0.5 rounded-full font-bold">360° +Alpha Engine</span>
         </div>
         <p class="text-xs text-slate-400 font-medium">Chungnam Express & Hanyang Express HR Portal</p>
       </div>
@@ -1471,12 +1479,14 @@
           <h2 class="text-2xl font-black text-white flex items-center gap-2">
             <span>📊 내 평가 결과 리포트</span>
           </h2>
-          <div class="flex items-center gap-3 mt-2">
-            <span class="text-xs text-slate-300 font-bold whitespace-nowrap"><i class="fa-solid fa-clock-rotate-left text-brandTeal mr-1"></i>평가 주기/이력 선택:</span>
-            <select id="my-report-cycle-select" onchange="renderMyResults()" class="bg-slate-900 border border-slate-700 text-xs font-bold text-white rounded-xl px-3 py-1.5 focus:border-brandTeal outline-none">
-              <!-- Dynamically Populated -->
-            </select>
-            <button onclick="downloadPDFReport()" class="no-print bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-white font-bold px-3.5 py-1.5 rounded-xl transition text-xs flex items-center gap-1.5 shadow-lg shadow-teal-900/40 border border-emerald-400/30">
+          <div class="flex flex-col items-start gap-2 mt-2">
+            <div class="flex items-center gap-3">
+              <span class="text-xs text-slate-300 font-bold whitespace-nowrap"><i class="fa-solid fa-clock-rotate-left text-brandTeal mr-1"></i>평가 주기/이력 선택:</span>
+              <select id="my-report-cycle-select" onchange="renderMyResults()" class="bg-slate-900 border border-slate-700 text-xs font-bold text-white rounded-xl px-3 py-1.5 focus:border-brandTeal outline-none">
+                <!-- Dynamically Populated -->
+              </select>
+            </div>
+            <button onclick="downloadPDFReport()" class="no-print hidden md:flex bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-white font-bold px-3.5 py-1.5 rounded-xl transition text-xs items-center gap-1.5 shadow-lg shadow-teal-900/40 border border-emerald-400/30">
               <i class="fa-solid fa-file-pdf text-amber-300 text-sm"></i>
               <span>📥 A4 PDF 리포트 다운로드</span>
             </button>
@@ -2029,8 +2039,8 @@
             <button id="bulk-permission-both-btn" type="button" onclick="bulkSetPermissions('both', true)" class="rounded-lg bg-violet-600 px-3 py-2 text-xs font-bold text-white hover:bg-violet-700"><i class="fa-solid fa-user-shield mr-1"></i>두 권한 모두 활성</button>
             <span class="mx-1 h-6 border-l border-slate-300"></span>
             <button type="button" onclick="bulkSetPermissions('evaluator', false)" class="rounded-lg bg-rose-600 px-3 py-2 text-xs font-bold text-white hover:bg-rose-700">평가 작성 일괄 비활성</button>
-            <button type="button" onclick="bulkSetPermissions('evaluatee', false)" class="rounded-lg bg-orange-600 px-3 py-2 text-xs font-bold text-white hover:bg-orange-700">피평가 대상 일괄 비활성</button>
-            <button type="button" onclick="bulkSetPermissions('both', false)" class="rounded-lg bg-slate-700 px-3 py-2 text-xs font-bold text-white hover:bg-slate-800">두 권한 모두 비활성</button>
+            <button type="button" onclick="bulkSetPermissions('evaluatee', false)" class="permission-disable-evaluatee rounded-lg px-3 py-2 text-xs font-bold hover:bg-orange-700">피평가 대상 일괄 비활성</button>
+            <button type="button" onclick="bulkSetPermissions('both', false)" class="permission-disable-both rounded-lg px-3 py-2 text-xs font-bold hover:bg-slate-800">두 권한 모두 비활성</button>
           </div>
 
           <div class="overflow-x-auto">
