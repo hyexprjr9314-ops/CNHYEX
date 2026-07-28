@@ -49,3 +49,8 @@ test('inactive-cycle mascot guide remains scoped to regular users', async () => 
   assert.match(html, /function showNoActiveEvaluationGuide\(\)[\s\S]*roleInfo\.isPrivileged[\s\S]*현재 시작된 평가가 없습니다/);
   assert.match(html, /renderLoggedInWelcome\(totalAssignmentCount\);[\s\S]*showNoActiveEvaluationGuide\(\);/);
 });
+
+test('mobile UI hides the mascot guide and its target cue', async () => {
+  const html = await readFile(indexUrl, 'utf8');
+  assert.match(html, /@media \(max-width: 640px\)[\s\S]*#mascot-guide,[\s\S]*#mascot-target-cue[\s\S]*display: none !important/);
+});

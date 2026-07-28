@@ -23,6 +23,27 @@ test('mobile UI keeps role-filtered navigation fluid and progress tables readabl
   assert.match(index, /\.evaluation-score-option \{/);
 });
 
+test('mobile regular-user flow uses swipe decks without changing evaluation actions', async () => {
+  const index = await readIndex();
+  assert.match(index, /\.relationship-card-deck[\s\S]*scroll-snap-type: x mandatory/);
+  assert.match(index, /\.relationship-target-card[\s\S]*scroll-snap-align: center/);
+  assert.match(index, /#statutory-questions-container[\s\S]*scroll-snap-type: x mandatory/);
+  assert.match(index, /\.mobile-question-card[\s\S]*scroll-snap-stop: always/);
+  assert.match(index, /card\.onclick = \(\) => openEvaluationForm\(emp, false\)/);
+  assert.match(index, /onclick="openPreviewModal\(\)"/);
+});
+
+test('mobile published results require a dinosaur egg tap before reveal', async () => {
+  const index = await readIndex();
+  assert.match(index, /id="mobile-result-hatch"[\s\S]*onclick="hatchMobileResult\(\)"/);
+  assert.match(index, /function prepareMobileResultHatch\(grade\)/);
+  assert.match(index, /function hatchMobileResult\(\)/);
+  assert.match(index, /mobile-results-concealed/);
+  assert.match(index, /sessionStorage\.setItem\(mobileResultHatchKey\(\), '1'\)/);
+  assert.match(index, /@keyframes dinosaur-egg-wobble/);
+  assert.match(index, /@keyframes dinosaur-egg-crack/);
+});
+
 test('target hero omits the redundant self-evaluation note without changing exclusion copy elsewhere', async () => {
   const index = await readIndex();
   assert.match(index, /배정된 동료들에 대한 360° 다면평가를 성실히 진행해 주세요\.'/);

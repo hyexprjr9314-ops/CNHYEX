@@ -659,6 +659,23 @@
       35% { transform: translateY(-16px) rotate(-4deg) scale(1.04); }
       65% { transform: translateY(-10px) rotate(4deg) scale(1.04); }
     }
+    .mobile-result-hatch { display: none; }
+    @keyframes dinosaur-egg-wobble {
+      0%, 100% { transform: rotate(0deg) translateY(0); }
+      18% { transform: rotate(-8deg) translateY(-4px); }
+      36% { transform: rotate(8deg) translateY(-7px); }
+      54% { transform: rotate(-6deg) translateY(-4px); }
+      72% { transform: rotate(5deg) translateY(-2px); }
+    }
+    @keyframes dinosaur-egg-crack {
+      0%, 42% { opacity: 0; transform: scale(.7); }
+      58%, 100% { opacity: 1; transform: scale(1); }
+    }
+    @keyframes dinosaur-hatch-flash {
+      0%, 48% { opacity: 0; transform: scale(.45); }
+      72% { opacity: .95; }
+      100% { opacity: 0; transform: scale(1.7); }
+    }
     @keyframes mascot-target-glow {
       0%, 100% { box-shadow: 0 0 0 0 rgba(13, 148, 136, 0); }
       50% { box-shadow: 0 0 0 5px rgba(13, 148, 136, 0.25); }
@@ -767,6 +784,11 @@
       #mascot-target-cue {
         animation: none !important;
       }
+      .mobile-result-hatch.is-hatching .dinosaur-egg,
+      .mobile-result-hatch.is-hatching .dinosaur-egg::before,
+      .mobile-result-hatch.is-hatching .dinosaur-hatch-flash {
+        animation: none !important;
+      }
     }
 
     @media (min-width: 768px) {
@@ -775,6 +797,10 @@
     }
 
     @media (max-width: 640px) {
+      #mascot-guide,
+      #mascot-target-cue {
+        display: none !important;
+      }
       #mascot-guide {
         right: 0.5rem;
         bottom: 0.5rem;
@@ -795,6 +821,193 @@
       }
       body {
         padding-bottom: 5.5rem;
+      }
+      main {
+        padding: 0.75rem !important;
+      }
+      #view-list,
+      #view-eval,
+      #view-myresults {
+        gap: 0.75rem !important;
+      }
+      #view-list > .app-section-hero {
+        padding: 1rem !important;
+      }
+      #view-list #welcome-assignment-message,
+      #view-list #welcome-company-dept + span,
+      .relationship-group .relationship-description,
+      .relationship-target-card .mobile-tmi,
+      #view-eval .mobile-eval-tmi,
+      #statutory-questions-container > .question-track-badge {
+        display: none !important;
+      }
+      #view-list #welcome-user-title {
+        font-size: 1.15rem !important;
+      }
+      #employee-card-grid {
+        display: block !important;
+      }
+      .relationship-group {
+        margin-bottom: 0.75rem;
+        padding: 0.75rem !important;
+      }
+      .relationship-group > div:first-child {
+        align-items: center !important;
+      }
+      .relationship-card-deck {
+        display: flex !important;
+        gap: 0.75rem !important;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        overscroll-behavior-inline: contain;
+        scrollbar-width: none;
+        padding: 0.1rem 8vw 0.6rem 0.1rem;
+      }
+      .relationship-card-deck::-webkit-scrollbar { display: none; }
+      .relationship-target-card {
+        flex: 0 0 84vw;
+        min-height: 230px;
+        scroll-snap-align: center;
+        scroll-snap-stop: always;
+        padding: 1rem !important;
+      }
+      .relationship-target-card h4 {
+        font-size: 1.25rem !important;
+      }
+      #view-eval > div:first-child {
+        position: sticky;
+        top: 0.5rem;
+        z-index: 20;
+        padding: 0.65rem 0.8rem !important;
+      }
+      #view-eval > div:first-child > span { display: none; }
+      #view-eval > .mobile-eval-target-card {
+        padding: 1rem !important;
+      }
+      #view-eval > .mobile-eval-target-card h2 {
+        font-size: 1.25rem !important;
+      }
+      #view-eval > .mobile-eval-questions-card {
+        overflow: hidden;
+        padding: 0.75rem !important;
+      }
+      #view-eval > .mobile-eval-questions-card > h3 {
+        margin-bottom: 0.5rem;
+        font-size: 0.95rem !important;
+      }
+      #statutory-questions-container {
+        display: flex;
+        gap: 0.75rem;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        overscroll-behavior-inline: contain;
+        scrollbar-width: none;
+        padding: 0.1rem 7vw 0.75rem 0.1rem;
+      }
+      #statutory-questions-container::-webkit-scrollbar { display: none; }
+      #statutory-questions-container > .mobile-question-card {
+        flex: 0 0 84vw;
+        min-height: 250px;
+        scroll-snap-align: center;
+        scroll-snap-stop: always;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 1rem !important;
+      }
+      #view-eval > .mobile-eval-feedback-card {
+        padding: 1rem !important;
+      }
+      #view-eval > .mobile-eval-feedback-card h3 {
+        font-size: 0.95rem !important;
+      }
+      #eval-comment-input {
+        min-height: 150px;
+      }
+      #view-eval > .mobile-eval-feedback-card button {
+        position: sticky;
+        bottom: 5.25rem;
+        width: 100%;
+        justify-content: center;
+      }
+      .mobile-result-hatch.is-ready {
+        display: flex;
+        min-height: 68vh;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #99F6E4;
+        border-radius: 1.5rem;
+        background:
+          radial-gradient(circle at 50% 28%, rgba(45,212,191,.18), transparent 34%),
+          linear-gradient(160deg, #F0FDFA, #EFF6FF 62%, #FFF7ED);
+        box-shadow: 0 18px 45px rgba(15,118,110,.16);
+        overflow: hidden;
+      }
+      #my-result-cards.mobile-results-concealed {
+        display: none !important;
+      }
+      .dinosaur-hatch-button {
+        position: relative;
+        display: flex;
+        width: 100%;
+        min-height: 62vh;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1.25rem;
+        color: #0F172A;
+      }
+      .dinosaur-egg {
+        position: relative;
+        width: 154px;
+        height: 198px;
+        border: 4px solid #0F766E;
+        border-radius: 48% 48% 46% 46% / 58% 58% 42% 42%;
+        background:
+          radial-gradient(circle at 28% 35%, #0F766E 0 8px, transparent 9px),
+          radial-gradient(circle at 68% 28%, #1D4ED8 0 11px, transparent 12px),
+          radial-gradient(circle at 38% 68%, #EA580C 0 9px, transparent 10px),
+          radial-gradient(circle at 70% 70%, #0F766E 0 7px, transparent 8px),
+          linear-gradient(145deg, #FEF3C7, #CCFBF1 54%, #DBEAFE);
+        box-shadow: inset -18px -20px 28px rgba(15,118,110,.18), inset 14px 12px 20px rgba(255,255,255,.75), 0 20px 34px rgba(15,23,42,.2);
+        transform-origin: 50% 90%;
+      }
+      .dinosaur-egg::before {
+        content: "";
+        position: absolute;
+        inset: 22% 17%;
+        opacity: 0;
+        background: linear-gradient(145deg, transparent 44%, #0F172A 45% 48%, transparent 49%) 0 0 / 52px 46px;
+      }
+      .dinosaur-hatch-flash {
+        position: absolute;
+        width: 210px;
+        height: 210px;
+        border-radius: 999px;
+        background: radial-gradient(circle, rgba(255,255,255,.98), rgba(45,212,191,.5) 38%, transparent 70%);
+        opacity: 0;
+        pointer-events: none;
+      }
+      .mobile-result-hatch.is-hatching .dinosaur-egg {
+        animation: dinosaur-egg-wobble 950ms ease-in-out both;
+      }
+      .mobile-result-hatch.is-hatching .dinosaur-egg::before {
+        animation: dinosaur-egg-crack 950ms ease-out both;
+      }
+      .mobile-result-hatch.is-hatching .dinosaur-hatch-flash {
+        animation: dinosaur-hatch-flash 1.25s ease-out 700ms both;
+      }
+      .dinosaur-hatch-copy strong {
+        display: block;
+        font-size: 1.15rem;
+        font-weight: 900;
+      }
+      .dinosaur-hatch-copy span {
+        display: block;
+        margin-top: 0.35rem;
+        color: #475569;
+        font-size: 0.8rem;
+        font-weight: 700;
       }
       header {
         padding: 0.625rem 0.75rem !important;
@@ -1422,7 +1635,7 @@
       </div>
 
       <!-- Target Info -->
-      <div class="glass-card rounded-2xl p-6 border border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div class="mobile-eval-target-card glass-card rounded-2xl p-6 border border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <span class="text-xs text-brandTeal font-bold uppercase tracking-wider" id="eval-target-company">(주)한양고속</span>
           <h2 class="text-2xl font-black text-white mt-1" id="eval-target-name">홍길동 과장</h2>
@@ -1434,7 +1647,7 @@
         </div>
       </div>
       <!-- Peer Questions Container -->
-      <div class="glass-card rounded-2xl p-6 border border-slate-800 space-y-6">
+      <div class="mobile-eval-questions-card glass-card rounded-2xl p-6 border border-slate-800 space-y-6">
         <h3 class="text-lg font-bold text-white border-b border-slate-800 pb-3 flex items-center gap-2">
           <i class="fa-solid fa-comments text-brandTeal"></i>
           <span>동료평가 전용 문항</span>
@@ -1446,7 +1659,7 @@
       </div>
 
       <!-- Anonymous Feedback -->
-      <div class="glass-card rounded-2xl p-6 border border-slate-800 space-y-4">
+      <div class="mobile-eval-feedback-card glass-card rounded-2xl p-6 border border-slate-800 space-y-4">
         <div class="flex justify-between items-center">
           <h3 class="text-lg font-bold text-white flex items-center gap-2">
             <i class="fa-solid fa-pen-nib text-brandGold"></i>
@@ -1593,6 +1806,17 @@
             </button>
           </div>
         </div>
+      </div>
+
+      <div id="mobile-result-hatch" class="mobile-result-hatch hidden" aria-live="polite">
+        <button type="button" class="dinosaur-hatch-button" onclick="hatchMobileResult()">
+          <span class="dinosaur-hatch-flash" aria-hidden="true"></span>
+          <span class="dinosaur-egg" aria-hidden="true"></span>
+          <span class="dinosaur-hatch-copy">
+            <strong>두근두근… 결과가 도착했습니다!</strong>
+            <span>공룡알을 터치하면 최종 결과가 부화합니다.</span>
+          </span>
+        </button>
       </div>
 
       <div id="my-result-cards" class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -4293,6 +4517,48 @@
       });
     }
 
+    function mobileResultHatchKey() {
+      const cycleValue = document.getElementById('my-report-cycle-select')?.value || 'unknown';
+      return `cnhy_result_hatched_${Number(currentLoggedInUser?.id || 0)}_${cycleValue}`;
+    }
+
+    function prepareMobileResultHatch(grade) {
+      const hatch = document.getElementById('mobile-result-hatch');
+      const resultCards = document.getElementById('my-result-cards');
+      if (!hatch || !resultCards) return;
+
+      const isMobile = window.matchMedia?.('(max-width: 640px)').matches;
+      const hasGrade = ['EX', 'S', 'A', 'B', 'C', 'D'].includes(String(grade || '').toUpperCase());
+      const alreadyHatched = sessionStorage.getItem(mobileResultHatchKey()) === '1';
+      const shouldShow = isMobile && hasGrade && !alreadyHatched;
+
+      hatch.classList.toggle('hidden', !shouldShow);
+      hatch.classList.toggle('is-ready', shouldShow);
+      hatch.classList.remove('is-hatching');
+      hatch.dataset.grade = hasGrade ? String(grade).toUpperCase() : '';
+      resultCards.classList.toggle('mobile-results-concealed', shouldShow);
+      hatch.querySelector('button')?.removeAttribute('disabled');
+    }
+
+    function hatchMobileResult() {
+      const hatch = document.getElementById('mobile-result-hatch');
+      const resultCards = document.getElementById('my-result-cards');
+      if (!hatch?.classList.contains('is-ready') || !resultCards) return;
+
+      const button = hatch.querySelector('button');
+      button?.setAttribute('disabled', 'disabled');
+      sessionStorage.setItem(mobileResultHatchKey(), '1');
+      hatch.classList.add('is-hatching');
+      const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+      window.setTimeout(() => {
+        hatch.classList.add('hidden');
+        hatch.classList.remove('is-ready', 'is-hatching');
+        resultCards.classList.remove('mobile-results-concealed');
+        resultCards.querySelector('#my-grade-card')?.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'center' });
+      }, reducedMotion ? 20 : 1650);
+    }
+
     function renderMyResults() {
       const selectEl = document.getElementById('my-report-cycle-select');
       if (!selectEl) return;
@@ -4430,6 +4696,8 @@
           if (hBar) hBar.style.width = '0%';
         }
       }
+
+      prepareMobileResultHatch(hasActualEvaluations ? empScoreData.grade : null);
 
       if (selectedVal && !selectedVal.startsWith('history_')) {
         loadServerResultState(parseInt(selectedVal));
@@ -5769,6 +6037,7 @@
         title.textContent = normalized;
       }
       if (description) description.textContent = '최종 확정·공개된 인사평가 등급입니다.';
+      prepareMobileResultHatch(normalized);
     }
 
     function applyPublishedScores(scores) {
@@ -6383,14 +6652,14 @@
               </span>
               <div>
                 <h4 class="text-sm font-black text-white">${relationship.title}</h4>
-                <p class="text-[11px] text-slate-400 mt-1">${relationship.description}</p>
+                <p class="relationship-description text-[11px] text-slate-400 mt-1">${relationship.description}</p>
               </div>
             </div>
             <div class="text-xs font-bold ${toneClasses.count} whitespace-nowrap">
               완료 ${completedInGroup} / 전체 ${groupEmployees.length}
             </div>
           </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" data-relationship-card-grid="${relationship.key}"></div>
+          <div class="relationship-card-deck grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" data-relationship-card-grid="${relationship.key}"></div>
         `;
         const groupGrid = section.querySelector(`[data-relationship-card-grid="${relationship.key}"]`);
 
@@ -6417,14 +6686,14 @@
         const card = document.createElement('div');
 
         if (isDone) {
-          card.className = `glass-card rounded-2xl p-5 border border-emerald-500/30 bg-emerald-950/10 transition flex flex-col justify-between space-y-4 ${isCycleClosed ? 'cursor-default' : 'hover:border-emerald-400/60 cursor-pointer'}`;
+          card.className = `relationship-target-card glass-card rounded-2xl p-5 border border-emerald-500/30 bg-emerald-950/10 transition flex flex-col justify-between space-y-4 ${isCycleClosed ? 'cursor-default' : 'hover:border-emerald-400/60 cursor-pointer'}`;
           if (!isCycleClosed) {
             card.onclick = () => openEvaluationForm(emp, true);
           }
         } else if (!isStageUnlocked) {
-          card.className = `glass-card rounded-2xl p-5 border border-slate-800/80 bg-slate-950/60 opacity-60 cursor-not-allowed flex flex-col justify-between space-y-4`;
+          card.className = `relationship-target-card glass-card rounded-2xl p-5 border border-slate-800/80 bg-slate-950/60 opacity-60 cursor-not-allowed flex flex-col justify-between space-y-4`;
         } else {
-          card.className = `glass-card rounded-2xl p-5 border border-slate-800 hover:border-brandTeal/50 transition cursor-pointer flex flex-col justify-between space-y-4 ${!emp.active ? 'opacity-50 pointer-events-none' : ''}`;
+          card.className = `relationship-target-card glass-card rounded-2xl p-5 border border-slate-800 hover:border-brandTeal/50 transition cursor-pointer flex flex-col justify-between space-y-4 ${!emp.active ? 'opacity-50 pointer-events-none' : ''}`;
           card.onclick = () => openEvaluationForm(emp, false);
           card.dataset.mascotPending = 'true';
         }
@@ -6442,7 +6711,7 @@
             <h4 class="text-base font-bold text-white">${emp.name} ${emp.role}</h4>
             <p class="text-xs text-slate-400 mt-1">${emp.dept} • ${emp.assigned_task || emp.workplace}</p>
             
-            <div class="mt-2.5 space-y-1">
+            <div class="mobile-tmi mt-2.5 space-y-1">
               <span class="text-[9px] font-bold px-2 py-0.5 rounded block w-fit bg-purple-500/20 text-purple-300 border border-purple-500/30">
                 <i class="fa-solid fa-layer-group mr-1"></i> ${trackTitle}
               </span>
@@ -6450,7 +6719,7 @@
           </div>
 
           <div class="border-t border-slate-800/80 pt-3 flex justify-between items-center text-xs">
-            <span class="text-slate-400 text-[11px]">${emp.active ? '평가권한 활성화' : '권한 비활성화'}</span>
+            <span class="mobile-tmi text-slate-400 text-[11px]">${emp.active ? '평가권한 활성화' : '권한 비활성화'}</span>
             ${isDone ? (
               isCycleClosed ? `
                 <span class="text-slate-400 font-bold"><i class="fa-solid fa-lock text-amber-400 mr-1"></i>🔒 마감됨 (수정불가)</span>
@@ -6565,7 +6834,7 @@
 
       // Update Top Track Info Badge Header
       const trackBadge = document.createElement('div');
-      trackBadge.className = 'app-section-hero p-3.5 rounded-xl border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-xs mb-4';
+      trackBadge.className = 'question-track-badge app-section-hero p-3.5 rounded-xl border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-xs mb-4';
       trackBadge.innerHTML = `
         <div class="flex items-center gap-2">
           <span class="bg-brandTeal/20 text-brandTeal border border-brandTeal/40 px-2.5 py-0.5 rounded-full font-bold text-[10px]">SMART DYNAMIC MATCH</span>
@@ -6589,7 +6858,7 @@
 
       matchedQuestions.forEach((q, idx) => {
         const item = document.createElement('div');
-        item.className = 'bg-slate-900/60 p-4 rounded-xl border border-slate-800 space-y-2.5 hover:border-slate-700 transition';
+        item.className = 'mobile-question-card bg-slate-900/60 p-4 rounded-xl border border-slate-800 space-y-2.5 hover:border-slate-700 transition';
 
         let categoryBadge = "bg-teal-500/20 text-brandTeal border border-brandTeal/30";
         if (q.category === "성과") categoryBadge = "bg-amber-500/20 text-amber-300 border border-amber-500/30";
