@@ -4141,6 +4141,9 @@
           if (s.grade === 'EX') badge = `<span class="glitter-another-level grade-label-ex border px-2 py-0.5 rounded text-[10px] font-bold">🪽 EX (ANOTHER LEVEL)</span>`;
           else if (s.grade === 'S') badge = `<span class="glitter-diamond grade-label-s border px-2 py-0.5 rounded text-[10px] font-bold">💎 S Grade</span>`;
           else if (s.grade === 'A') badge = `<span class="glitter-gold grade-label-a border px-2 py-0.5 rounded text-[10px] font-bold">🥇 A Grade</span>`;
+          else if (s.grade === 'B') badge = `<span class="inline-flex items-center gap-1 bg-slate-800/90 text-slate-200 border border-slate-700 px-2 py-0.5 rounded text-[10px] font-bold"><i class="fa-solid fa-medal text-slate-300"></i>B Grade</span>`;
+          else if (s.grade === 'C') badge = `<span class="inline-flex items-center gap-1 grade-surface-c grade-label-c border px-2 py-0.5 rounded text-[10px] font-bold"><i class="fa-solid fa-shield grade-icon-c"></i>C Grade</span>`;
+          else if (s.grade === 'D') badge = `<span class="inline-flex items-center gap-1 bg-stone-900/90 text-stone-300 border border-stone-700 px-2 py-0.5 rounded text-[10px] font-bold"><i class="fa-solid fa-cube"></i>D Grade</span>`;
 
           return `
             <tr class="border-b border-slate-800/60 hover:bg-slate-800/40">

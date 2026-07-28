@@ -111,6 +111,21 @@ test('archived history shows adjustment state and a compact immutable grade basi
   assert.match(historyRenderer, /colspan="7"/);
 });
 
+test('archived history renders a distinct badge for every supported grade', async () => {
+  const index = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  const historyRenderer = index.slice(
+    index.indexOf('function renderHistoryTable()'),
+    index.indexOf('function renderMyResults()')
+  );
+
+  for (const grade of ['EX', 'S', 'A', 'B', 'C', 'D']) {
+    assert.match(historyRenderer, new RegExp(`s\\.grade === '${grade}'`));
+  }
+  assert.match(historyRenderer, /fa-medal[\s\S]*B Grade/);
+  assert.match(historyRenderer, /fa-shield[\s\S]*C Grade/);
+  assert.match(historyRenderer, /fa-cube[\s\S]*D Grade/);
+});
+
 test('archived history remains visible across publication changes and state reloads', async () => {
   const index = await readFile(indexUrl, 'utf8');
   const historyRenderer = index.match(/function renderHistoryTable\(\) \{[\s\S]*?\n    \}/)?.[0] ?? '';
