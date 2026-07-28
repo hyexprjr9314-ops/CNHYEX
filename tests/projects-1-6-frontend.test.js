@@ -58,6 +58,8 @@ test('mobile administrator dashboard uses compact cards, short labels, and non-o
 test('mobile regular-user flow uses swipe decks without changing evaluation actions', async () => {
   const index = await readIndex();
   assert.match(index, /\.relationship-card-deck[\s\S]*position: relative/);
+  assert.match(index, /mobile-swipe-instruction[\s\S]*아래 표시된 카드를 옆으로 넘겨보세요!/);
+  assert.match(index, /@keyframes mobile-swipe-hint/);
   assert.match(index, /\.relationship-target-card[\s\S]*touch-action: pan-y/);
   assert.match(index, /stableCardHeight[\s\S]*deck\.style\.maxHeight/);
   assert.match(index, /#mobile-target-welcome-hero,[\s\S]*#view-list #directory-toolbar-targets[\s\S]*display: none/);

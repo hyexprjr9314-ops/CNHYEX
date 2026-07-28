@@ -930,6 +930,9 @@
       #mascot-target-cue {
         animation: none !important;
       }
+      .mobile-swipe-instruction i {
+        animation: none !important;
+      }
       .mobile-result-hatch.is-hatching .dinosaur-egg,
       .mobile-result-hatch.is-hatching .egg-crack,
       .mobile-result-hatch.is-hatching .egg-crack-light,
@@ -946,6 +949,25 @@
     }
 
     @media (max-width: 640px) {
+      .mobile-swipe-instruction {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        gap: 0.55rem;
+        margin: 0.1rem 0 0.75rem;
+        color: #0F766E;
+        font-size: 0.9rem;
+        font-weight: 700;
+        letter-spacing: -0.025em;
+      }
+      .mobile-swipe-instruction i {
+        color: #14B8A6;
+        animation: mobile-swipe-hint 1.8s ease-in-out infinite;
+      }
+      @keyframes mobile-swipe-hint {
+        0%, 100% { transform: translateX(-0.2rem); opacity: 0.65; }
+        50% { transform: translateX(0.2rem); opacity: 1; }
+      }
       #mascot-guide,
       #mascot-target-cue {
         display: none !important;
@@ -7273,6 +7295,14 @@
       targetEmployees.forEach(emp => {
         emp.evaluationRelationship = resolveEvaluationRelationship(loggedInUserObj, emp);
       });
+
+      container.insertAdjacentHTML('beforeend', `
+        <div class="mobile-swipe-instruction col-span-full hidden" aria-label="카드 넘기기 안내">
+          <i class="fa-solid fa-hand-pointer" aria-hidden="true"></i>
+          <span>아래 표시된 카드를 옆으로 넘겨보세요!</span>
+          <i class="fa-solid fa-arrow-right-arrow-left" aria-hidden="true"></i>
+        </div>
+      `);
 
       relationshipGroupDefinitions.forEach(groupDefinition => {
         const groupEmployees = targetEmployees.filter(emp => emp.evaluationRelationship.key === groupDefinition.key);
