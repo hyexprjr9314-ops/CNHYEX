@@ -90,8 +90,16 @@ test('empty evaluation assignments autoplay the company video once', async () =>
   assert.match(index, /if \(allTargetEmployees\.length === 0\)[\s\S]*id="empty-evaluation-video"/);
   assert.match(index, /<video class="block h-auto w-full"[^>]*autoplay muted playsinline controls preload="metadata"/);
   assert.doesNotMatch(index, /<video[^>]*\bloop\b/);
+  assert.match(index, /onended="this\.currentTime = Math\.max\(0, this\.duration - 0\.5\); this\.pause\(\);"/);
   assert.doesNotMatch(index, /empty-evaluation-video[\s\S]{0,800}max-h-\[70vh\]|empty-evaluation-video[\s\S]{0,800}object-contain/);
   assert.match(index, /src="assets\/chungnam-hanyang\.mp4"/);
+});
+
+test('executives cannot open the target list or its hidden company video', async () => {
+  const index = await readIndex();
+  assert.match(index, /list: !roleInfo\.isExecutive/);
+  assert.match(index, /if \(targetView === 'list' && roleInfo\.isExecutive\) targetView = 'closingmanage';/);
+  assert.match(index, /if \(viewId === 'list' && roleInfo\.isExecutive\) viewId = 'closingmanage';/);
 });
 
 test('published results require one dinosaur egg reveal per user and cycle on desktop and mobile', async () => {

@@ -6103,6 +6103,7 @@
     function applyRoleBasedNavigationVisibility() {
       const roleInfo = checkUserRole(currentLoggedInUser);
       const visibility = {
+        list: !roleInfo.isExecutive,
         myresults: canCurrentUserViewResults(),
         evalmanage: roleInfo.isAdmin,
         closingmanage: roleInfo.isPrivileged,
@@ -7250,7 +7251,7 @@
                 <h3 class="text-sm font-black text-slate-900">현재 진행할 평가가 없습니다</h3>
                 <p class="mt-1 text-xs text-slate-500">다음 평가가 시작될 때까지 충남고속·한양고속 이야기를 만나보세요.</p>
               </div>
-              <video class="block h-auto w-full" autoplay muted playsinline controls preload="metadata" aria-label="충남고속과 한양고속 소개 영상">
+              <video class="block h-auto w-full" autoplay muted playsinline controls preload="metadata" onended="this.currentTime = Math.max(0, this.duration - 0.5); this.pause();" aria-label="충남고속과 한양고속 소개 영상">
                 <source src="assets/chungnam-hanyang.mp4" type="video/mp4">
                 브라우저가 동영상 재생을 지원하지 않습니다.
               </video>
@@ -8816,7 +8817,8 @@
         setupCentralStateSync();
         renderEmployeeGrid();
 
-        let targetView = (storedView && storedView !== 'login') ? storedView : 'list';
+        let targetView = (storedView && storedView !== 'login') ? storedView : (roleInfo.isExecutive ? 'closingmanage' : 'list');
+        if (targetView === 'list' && roleInfo.isExecutive) targetView = 'closingmanage';
         if (targetView === 'evalmanage' && !roleInfo.isAdmin) {
           targetView = roleInfo.isExecutive ? 'closingmanage' : 'list';
         }
@@ -9871,6 +9873,7 @@
 
       // Dynamic Permission Guard for Admin/Management Pages
       const roleInfo = checkUserRole(currentLoggedInUser);
+      if (viewId === 'list' && roleInfo.isExecutive) viewId = 'closingmanage';
       if (viewId === 'evalmanage' || viewId === 'closingmanage' || viewId === 'admin') {
         const allowed = viewId === 'closingmanage'
           ? roleInfo.isPrivileged
