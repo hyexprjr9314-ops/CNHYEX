@@ -326,6 +326,17 @@
     #password-reset-request-button i {
       color: #FFFFFF !important;
     }
+    .admin-setup-step-reveal {
+      animation: admin-setup-step-reveal 520ms cubic-bezier(.2,.8,.2,1) both;
+    }
+    @keyframes admin-setup-step-reveal {
+      0% { opacity: 0; transform: translateX(-14px) scale(.96); }
+      70% { opacity: 1; transform: translateX(3px) scale(1.02); }
+      100% { opacity: 1; transform: translateX(0) scale(1); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .admin-setup-step-reveal { animation: none; }
+    }
     .approval-toast {
       background: #FFFFFF;
       border: 1px solid #0F766E;
@@ -3199,6 +3210,138 @@
     let selectedEvaluationCycleId = null;
     const evaluationSetupSubtabs = ['cycles', 'permissions', 'questions', 'matching', 'lifecycle'];
     const closingManagementSubtabs = ['progress', 'summary', 'history'];
+    const adminSetupStepIndex = Object.freeze({
+      cycles: 0, permissions: 1, questions: 2, matching: 3, lifecycle: 4
+    });
+
+    function getAdminSetupCycle() {
+      const selectedId = Number(selectedEvaluationCycleId || currentSelectedSummaryCycleId);
+      return cyclesDb.find(cycle => Number(cycle.id) === selectedId)
+        || [...cyclesDb].sort((a, b) => Number(b.id) - Number(a.id))
+          .find(cycle => !isClosedEvaluationCycle(cycle))
+        || null;
+    }
+
+    function adminSetupAcknowledgementKey(cycleId) {
+      return `cnhy_admin_setup_ack_${Number(cycleId)}`;
+    }
+
+    function getAdminSetupAcknowledgement(cycleId) {
+      try {
+        return Number(sessionStorage.getItem(adminSetupAcknowledgementKey(cycleId)) || 0);
+      } catch (_) {
+        return 0;
+      }
+    }
+
+    function setAdminSetupAcknowledgement(cycleId, stepIndex) {
+      try {
+        sessionStorage.setItem(adminSetupAcknowledgementKey(cycleId), String(stepIndex));
+      } catch (error) {
+        console.error('Admin setup progress write failed:', error);
+      }
+    }
+
+    function getAdminSetupUnlockedStep() {
+      const cycle = getAdminSetupCycle();
+      if (!cycle || isClosedEvaluationCycle(cycle)) return 0;
+      if (['진행중', '일시정지'].includes(String(cycle.status || ''))) return 4;
+
+      const cycleId = Number(cycle.id);
+      const questionCount = customQuestionsDb.filter(question =>
+        !question.cycleId || Number(question.cycleId) === cycleId
+      ).length;
+      const matchingCount = customManualMatchingsDb.filter(matching => Number(matching.cycleId) === cycleId).length;
+      const inferredStep = matchingCount > 0 ? 4 : questionCount > 0 ? 3 : 1;
+      return Math.max(inferredStep, getAdminSetupAcknowledgement(cycleId));
+    }
+
+    function ensureAdminSetupNextButtons() {
+      const steps = [
+        ['permissions', '질문·가중치 설정으로 이동'],
+        ['questions', '평가 매칭 관리로 이동'],
+        ['matching', '평가 진행 관리로 이동']
+      ];
+      steps.forEach(([step, label]) => {
+        const container = document.getElementById(`admin-subtab-${step}`);
+        if (!container || container.querySelector(`[data-admin-setup-next="${step}"]`)) return;
+        const wrapper = document.createElement('div');
+        wrapper.dataset.adminSetupNext = step;
+        wrapper.className = 'flex justify-end rounded-2xl border border-teal-200 bg-teal-50 p-4 shadow-sm';
+        wrapper.innerHTML = `<button type="button" onclick="advanceAdminSetupStep('${step}')" class="rounded-xl bg-brandTeal px-5 py-3 text-xs font-black text-white shadow-lg transition hover:bg-teal-700">
+          다음 스텝으로 진행 <i class="fa-solid fa-arrow-right ml-1"></i>
+          <span class="sr-only">${label}</span>
+        </button>`;
+        container.appendChild(wrapper);
+      });
+    }
+
+    function applyAdminSetupVisibility(animateStep = null) {
+      if (!currentLoggedInUser?.isAdmin) return;
+      ensureAdminSetupNextButtons();
+      const unlockedStep = getAdminSetupUnlockedStep();
+      evaluationSetupSubtabs.forEach(subtab => {
+        const button = document.getElementById(`admin-tab-${subtab}`);
+        if (!button) return;
+        const visible = adminSetupStepIndex[subtab] <= unlockedStep;
+        button.classList.toggle('hidden', !visible);
+        if (visible && subtab === animateStep) {
+          button.classList.remove('admin-setup-step-reveal');
+          void button.offsetWidth;
+          button.classList.add('admin-setup-step-reveal');
+          window.setTimeout(() => button.classList.remove('admin-setup-step-reveal'), 600);
+        }
+      });
+    }
+
+    function isAdminSetupSubtabUnlocked(subtab) {
+      return !evaluationSetupSubtabs.includes(subtab)
+        || adminSetupStepIndex[subtab] <= getAdminSetupUnlockedStep();
+    }
+
+    async function advanceAdminSetupStep(currentStep) {
+      const cycle = getAdminSetupCycle();
+      if (!cycle || isClosedEvaluationCycle(cycle)) {
+        alert('먼저 진행할 평가 주기를 생성하거나 선택해 주세요.');
+        switchAdminTab('cycles');
+        return;
+      }
+
+      const cycleId = Number(cycle.id);
+      let nextStep = null;
+      if (currentStep === 'permissions') {
+        const hasEvaluator = usersDb.some(user => user.can_evaluate !== false);
+        const hasEvaluatee = usersDb.some(user => user.is_evaluatee !== false);
+        if (!hasEvaluator || !hasEvaluatee) {
+          alert('평가 작성 권한과 피평가 대상 권한을 각각 한 명 이상 활성화해 주세요.');
+          return;
+        }
+        nextStep = 'questions';
+      } else if (currentStep === 'questions') {
+        const questions = customQuestionsDb.filter(question =>
+          !question.cycleId || Number(question.cycleId) === cycleId
+        );
+        const validWeights = Object.values(trackCategoryWeights)
+          .every(weights => Math.abs(weights.reduce((sum, value) => sum + Number(value || 0), 0) - 100) <= 0.1);
+        if (!questions.length || !validWeights) {
+          alert('선택한 평가 주기의 질문을 한 개 이상 등록하고 모든 직군 가중치 합계를 100%로 저장해 주세요.');
+          return;
+        }
+        nextStep = 'matching';
+      } else if (currentStep === 'matching') {
+        const matchingCount = customManualMatchingsDb.filter(matching => Number(matching.cycleId) === cycleId).length;
+        if (!matchingCount) {
+          alert('선택한 평가 주기의 평가 매칭을 한 건 이상 저장해 주세요.');
+          return;
+        }
+        nextStep = 'lifecycle';
+      }
+      if (!nextStep) return;
+
+      setAdminSetupAcknowledgement(cycleId, adminSetupStepIndex[nextStep]);
+      applyAdminSetupVisibility(nextStep);
+      switchAdminTab(nextStep);
+    }
 
     function saveUiPreferences() {
       try {
@@ -3517,6 +3660,7 @@
         if (managementToolbar) managementToolbar.classList.add('hidden');
         selectedEvaluationCycleId = null;
         currentSelectedSummaryCycleId = null;
+        applyAdminSetupVisibility();
         return;
       }
 
@@ -3569,6 +3713,7 @@
       if (myReportSelect && previousMyReportValue && [...myReportSelect.options].some(option => option.value === previousMyReportValue)) {
         myReportSelect.value = previousMyReportValue;
       }
+      applyAdminSetupVisibility();
     }
 
     async function deleteArchivedHistory(cycleId) {
@@ -4126,6 +4271,10 @@
         subtab = 'summary';
       }
 
+      if (currentLoggedInUser.isAdmin && evaluationSetupSubtabs.includes(subtab) && !isAdminSetupSubtabUnlocked(subtab)) {
+        subtab = 'cycles';
+      }
+
       // Hide/Show subtab navigation buttons for Executives
       ['users', 'cycles', 'questions', 'permissions', 'matching', 'lifecycle', 'progress'].forEach(st => {
         const btn = document.getElementById(`admin-tab-${st}`);
@@ -4134,6 +4283,7 @@
           else btn.classList.remove('hidden');
         }
       });
+      if (!isExecOnly) applyAdminSetupVisibility();
 
       const subtabs = ['users', 'cycles', 'questions', 'permissions', 'matching', 'lifecycle', 'progress', 'summary', 'history'];
       subtabs.forEach(st => {
@@ -6734,6 +6884,9 @@
         if (newId) {
           setSelectedEvaluationCycleId(newId);
           handleCycleSelectChange({ value: String(newId) });
+          setAdminSetupAcknowledgement(newId, adminSetupStepIndex.permissions);
+          applyAdminSetupVisibility('permissions');
+          switchAdminTab('permissions');
         }
         renderAdminSummaryTable();
         alert(`새 평가 주기 [${name}]가 서버에 등록되었습니다.`);

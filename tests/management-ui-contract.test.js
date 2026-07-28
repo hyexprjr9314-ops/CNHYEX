@@ -187,3 +187,21 @@ test('cycle lifecycle actions finish evaluation setup before closing management 
   assert.match(cycleRenderer, /cycle_force_close/);
   assert.doesNotMatch(cycleRenderer, /cycle_close/);
 });
+
+test('administrator setup reveals existing evaluation tabs step by step without changing APIs', async () => {
+  const index = await readFile(indexUrl, 'utf8');
+  const visibility = index.match(/function applyAdminSetupVisibility\(animateStep = null\) \{[\s\S]*?\n    \}/)?.[0] ?? '';
+  const advance = index.match(/async function advanceAdminSetupStep\(currentStep\) \{[\s\S]*?\n    \}/)?.[0] ?? '';
+
+  assert.match(index, /const adminSetupStepIndex = Object\.freeze/);
+  assert.match(index, /cycles: 0, permissions: 1, questions: 2, matching: 3, lifecycle: 4/);
+  assert.match(visibility, /button\.classList\.toggle\('hidden', !visible\)/);
+  assert.match(index, /prefers-reduced-motion: reduce/);
+  assert.match(index, /data-admin-setup-next/);
+  assert.match(advance, /usersDb\.some\(user => user\.can_evaluate !== false\)/);
+  assert.match(advance, /customQuestionsDb\.filter/);
+  assert.match(advance, /customManualMatchingsDb\.filter/);
+  assert.match(index, /if \(\['진행중', '일시정지'\]\.includes/);
+  assert.match(index, /if \(!cycle \|\| isClosedEvaluationCycle\(cycle\)\) return 0/);
+  assert.doesNotMatch(index, /action:\s*'admin_setup_step'/);
+});
