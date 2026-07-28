@@ -866,13 +866,16 @@
       .relationship-card-deck::-webkit-scrollbar { display: none; }
       .relationship-target-card {
         flex: 0 0 84vw;
-        min-height: 230px;
+        min-height: 190px;
         scroll-snap-align: center;
         scroll-snap-stop: always;
         padding: 1rem !important;
       }
       .relationship-target-card h4 {
         font-size: 1.25rem !important;
+      }
+      .mobile-stage-short {
+        display: inline !important;
       }
       #view-eval > div:first-child {
         position: sticky;
@@ -6731,7 +6734,9 @@
             ) : (
               isStageUnlocked ? `
                 <span class="text-brandTeal font-bold flex items-center gap-1">
-                  📝 ${myCurrentStageText} <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                  <span class="mobile-tmi">📝 ${myCurrentStageText}</span>
+                  <span class="mobile-stage-short hidden">평가 시작</span>
+                  <i class="fa-solid fa-arrow-right text-[10px]"></i>
                 </span>
               ` : `
                 <span class="text-slate-500 font-bold"><i class="fa-solid fa-lock text-slate-500 mr-1"></i>🔒 이전 차수 대기 중</span>
