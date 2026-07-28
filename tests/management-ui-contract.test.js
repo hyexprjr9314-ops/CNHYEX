@@ -106,7 +106,8 @@ test('archived history shows adjustment state and a compact immutable grade basi
   assert.ok(basisBuilder.indexOf('right.raw_score') < basisBuilder.indexOf('right.score'));
   assert.match(historyRenderer, /<th class="py-2 px-3 font-bold">조정 여부<\/th>/);
   assert.match(historyRenderer, /<th class="py-2 px-3 font-bold">등급 책정사유<\/th>/);
-  assert.match(historyRenderer, /s\.is_adjusted \? '조정됨' : '미조정'/);
+  assert.match(historyRenderer, /s\.is_adjusted[\s\S]*openAdjustmentHistoryModal/);
+  assert.match(historyRenderer, /조정 사유와 전체 이력 보기/);
   assert.match(historyRenderer, /gradeBasisByTarget\.get\(Number\(s\.id\)\)/);
   assert.match(historyRenderer, /colspan="7"/);
 });

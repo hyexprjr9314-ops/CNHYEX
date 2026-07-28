@@ -3088,6 +3088,28 @@
     </div>
   </div>
 
+  <!-- MODAL: ADJUSTMENT HISTORY -->
+  <div id="modal-adjustment-history" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
+    <div class="glass-card flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-amber-400/40 bg-white shadow-2xl">
+      <div class="flex items-center gap-3 border-b border-slate-200 px-5 py-4">
+        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+          <i class="fa-solid fa-clock-rotate-left"></i>
+        </div>
+        <div class="min-w-0 flex-1">
+          <h3 class="font-black text-slate-900">최종 점수·등급 조정 이력</h3>
+          <p id="adjustment-history-target" class="truncate text-xs text-slate-500"></p>
+        </div>
+        <button type="button" onclick="closeAdjustmentHistoryModal()" aria-label="조정 이력 닫기" class="rounded-lg px-3 py-2 text-slate-500 hover:bg-slate-100">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div id="adjustment-history-list" class="space-y-3 overflow-y-auto bg-slate-50 p-5"></div>
+      <div class="border-t border-slate-200 bg-white px-5 py-3 text-right">
+        <button type="button" onclick="closeAdjustmentHistoryModal()" class="rounded-lg bg-slate-700 px-5 py-2 text-sm font-bold text-white hover:bg-slate-800">닫기</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: INTERNAL APPROVAL LINE -->
   <div id="modal-approval-line" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 p-4">
     <div class="glass-card w-full max-w-md space-y-4 rounded-2xl border border-slate-500 p-5 shadow-2xl">
@@ -3747,6 +3769,7 @@
     let isResultPublished = false;
     let selectedAdjustId = null;
     let approvalRequestsDb = [];
+    let adjustmentEventsDb = [];
     let pendingApprovalNotifications = [];
     let notificationsDb = [];
     let sentGradeMailKeys = new Set();
@@ -4669,7 +4692,9 @@
               <td class="py-2.5 px-3 text-slate-400">${escapeHtml(s.role)}</td>
               <td class="py-2.5 px-3 font-mono font-bold text-brandTeal">${s.score.toFixed(1)}점</td>
               <td class="py-2.5 px-3">${badge}</td>
-              <td class="py-2.5 px-3"><span class="${s.is_adjusted ? 'font-bold text-amber-700' : 'text-slate-500'}">${s.is_adjusted ? '조정됨' : '미조정'}</span></td>
+              <td class="py-2.5 px-3">${s.is_adjusted
+                ? `<button type="button" onclick="event.stopPropagation(); openAdjustmentHistoryModal(${Number(s.id)}, ${Number(archive.cycleId)})" class="inline-flex items-center gap-1 rounded-lg border border-amber-300 bg-amber-50 px-2 py-1 text-xs font-black text-amber-800 hover:bg-amber-100" title="조정 사유와 전체 이력 보기">조정됨 <i class="fa-solid fa-clock-rotate-left"></i></button>`
+                : '<span class="text-slate-500">미조정</span>'}</td>
               <td class="py-2.5 px-3 text-slate-400"><span class="block max-w-56 truncate" title="${escapeHtml(gradeBasisByTarget.get(Number(s.id)) || '책정 사유 없음')}">${escapeHtml(gradeBasisByTarget.get(Number(s.id)) || '책정 사유 없음')}</span></td>
             </tr>
           `;
@@ -5969,6 +5994,7 @@
         `${Number(row.cycle_id)}:${Number(row.target_id)}:${Number(row.result_version)}`
       ));
       approvalRequestsDb = Array.isArray(payload.approval_requests) ? payload.approval_requests : [];
+      adjustmentEventsDb = Array.isArray(payload.adjustment_events) ? payload.adjustment_events : [];
       pendingApprovalNotifications = Array.isArray(payload.pending_approval_notifications) ? payload.pending_approval_notifications : [];
       notificationsDb = Array.isArray(payload.notifications) ? payload.notifications : [];
       updateNotificationCenterBadge();
@@ -8751,10 +8777,14 @@
         if (empScoreData) {
           rawScoreStr = `${empScoreData.raw.toFixed(1)}점`;
           finalScoreStr = `${empScoreData.final.toFixed(1)}점`;
-          const gradeOverrideLabel = empScoreData.grade_override
-            ? ` · 등급 ${empScoreData.calculated_grade || '-'}→${empScoreData.grade_override}`
+          const originalGrade = empScoreData.calculated_grade || empScoreData.grade || '-';
+          const adjustedGrade = empScoreData.grade_override || empScoreData.grade || originalGrade;
+          const gradeOverrideLabel = originalGrade !== adjustedGrade
+            ? ` · 등급 ${originalGrade} → ${adjustedGrade}`
             : '';
-          isAdjustedStr = `<span class="${empScoreData.is_adjusted ? 'text-amber-400 font-bold' : 'text-slate-500'}">${empScoreData.is_adjusted ? `조정됨${gradeOverrideLabel}` : '미조정'}</span>`;
+          isAdjustedStr = empScoreData.is_adjusted
+            ? `<button type="button" onclick="event.stopPropagation(); openAdjustmentHistoryModal(${Number(emp.id)})" class="inline-flex items-center gap-1 rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-black text-amber-800 transition hover:bg-amber-100" title="조정 사유와 전체 이력 보기">조정됨${gradeOverrideLabel}<i class="fa-solid fa-clock-rotate-left ml-0.5"></i></button>`
+            : '<span class="text-slate-500">미조정</span>';
 
           const g = empScoreData.grade;
           if (g === 'EX') {
@@ -8951,6 +8981,82 @@
     function closeScoreAdjustmentModal() {
       document.getElementById('modal-score-adjustment').classList.add('hidden');
       document.getElementById('adjust-reason-input').value = '';
+    }
+
+    function openAdjustmentHistoryModal(targetId, cycleId = currentSelectedSummaryCycleId) {
+      const role = checkUserRole(currentLoggedInUser);
+      if (!role.isAdmin && !role.isExecutive) return;
+
+      const normalizedTargetId = Number(targetId);
+      const normalizedCycleId = Number(cycleId);
+      const target = usersDb.find(user => Number(user.id) === normalizedTargetId);
+      const events = adjustmentEventsDb
+        .filter(event => Number(event.target_id) === normalizedTargetId && Number(event.cycle_id) === normalizedCycleId)
+        .sort((left, right) => {
+          const timeDiff = new Date(right.occurred_at).getTime() - new Date(left.occurred_at).getTime();
+          return timeDiff || Number(right.id) - Number(left.id);
+        });
+
+      document.getElementById('adjustment-history-target').textContent =
+        `${target?.name || '평가 대상자'} · ${events.length}건의 감사 기록`;
+
+      const eventTypeLabels = {
+        created: '최초 조정',
+        updated: '재조정',
+        cancelled: '조정 취소',
+        reactivated: '조정 재개'
+      };
+      const list = document.getElementById('adjustment-history-list');
+      if (!events.length) {
+        list.innerHTML = `
+          <div class="rounded-xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-500">
+            <i class="fa-solid fa-circle-info mb-2 block text-xl text-slate-400"></i>
+            저장된 조정 감사 기록이 없습니다.
+          </div>`;
+      } else {
+        list.innerHTML = events.map((item, index) => {
+          const actor = usersDb.find(user => String(user.auth_user_id || '') === String(item.acted_by || ''));
+          const occurredAt = item.occurred_at
+            ? new Date(item.occurred_at).toLocaleString('ko-KR', { dateStyle: 'medium', timeStyle: 'short' })
+            : '-';
+          const previousScore = Number(item.previous_final_score);
+          const nextScore = Number(item.next_final_score);
+          const scoreChange = Number.isFinite(previousScore) && Number.isFinite(nextScore)
+            ? `${previousScore.toFixed(1)}점 → ${nextScore.toFixed(1)}점`
+            : '점수 기록 없음';
+          const gradeChange = item.previous_grade || item.next_grade
+            ? `${escapeHtml(item.previous_grade || '-')} → ${escapeHtml(item.next_grade || item.previous_grade || '-')}`
+            : '등급 변경 없음';
+          const sequence = events.length - index;
+          const isCancelled = item.event_type === 'cancelled';
+          return `
+            <article class="rounded-xl border ${isCancelled ? 'border-rose-200' : 'border-amber-200'} bg-white p-4 shadow-sm">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-2">
+                  <span class="rounded-full ${isCancelled ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-800'} px-2.5 py-1 text-[11px] font-black">${sequence}차 · ${eventTypeLabels[item.event_type] || '조정'}</span>
+                  <span class="text-xs font-bold text-slate-700">${scoreChange}</span>
+                  <span class="text-xs font-bold text-slate-500">등급 ${gradeChange}</span>
+                </div>
+                <time class="text-[11px] text-slate-500">${escapeHtml(occurredAt)}</time>
+              </div>
+              <div class="mt-3 rounded-lg bg-slate-50 px-3 py-2.5">
+                <p class="text-[11px] font-bold text-slate-500">조정 사유</p>
+                <p class="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-slate-800">${escapeHtml(item.reason || '기록된 사유 없음')}</p>
+              </div>
+              <p class="mt-2 text-right text-[11px] text-slate-500">처리자: ${escapeHtml(actor?.name || '권한 사용자')}</p>
+            </article>`;
+        }).join('');
+      }
+
+      const modal = document.getElementById('modal-adjustment-history');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeAdjustmentHistoryModal() {
+      const modal = document.getElementById('modal-adjustment-history');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
     }
 
     function openScoreAdjustmentCancelModal(emp, empScoreData) {

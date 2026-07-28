@@ -371,11 +371,16 @@ async function readState(service, profile) {
   if (settingsResult.error) throw settingsResult.error;
   if (goalsResult.error) throw goalsResult.error;
   if (!PRIVILEGED.has(profile.sys_role)) return { settings: settingsResult.data, goals: goalsResult.data || [] };
-  const [matchings, archives, evaluations, adjustments, allGoals, users, cycles, finalResults, approvalRequests, approvalSteps, gradeMailDispatches, notifications] = await Promise.all([
+  const [matchings, archives, evaluations, adjustments, adjustmentEvents, allGoals, users, cycles, finalResults, approvalRequests, approvalSteps, gradeMailDispatches, notifications] = await Promise.all([
     fetchAllRows(() => service.from('matchings').select('*').order('id')),
     service.from('evaluation_archives').select('*').order('closed_at', { ascending: false }),
     fetchAllRows(() => service.from('evaluations').select('matching_id,cycle_id,target_id,perf_score,collab_score,growth_score,harmony_score').order('id')),
     service.from('evaluation_result_adjustments').select('*'),
+    fetchAllRows(() => service.from('evaluation_result_adjustment_events')
+      // Keep the read compatible while the additive grade-history migration
+      // rolls out; older schemas still return score/reason audit events.
+      .select('*')
+      .order('occurred_at', { ascending: true })),
     service.from('employee_goals').select('*').order('created_at', { ascending: false }),
     service.from('users').select('id,active,can_evaluate,is_evaluatee,company,dept,workplace,role,type'),
     service.from('evaluation_cycles').select('id,result_version'),
@@ -394,7 +399,7 @@ async function readState(service, profile) {
       .order('created_at', { ascending: false })
       .limit(100)
   ]);
-  for (const result of [matchings, archives, evaluations, adjustments, allGoals, users, cycles, finalResults, approvalRequests, approvalSteps, gradeMailDispatches, notifications]) if (result.error) throw result.error;
+  for (const result of [matchings, archives, evaluations, adjustments, adjustmentEvents, allGoals, users, cycles, finalResults, approvalRequests, approvalSteps, gradeMailDispatches, notifications]) if (result.error) throw result.error;
   const userMap = new Map((users.data || []).map(user => [Number(user.id), user]));
   const eligibleMatchings = (matchings.data || []).filter(row => {
     const evaluator = userMap.get(Number(row.evaluator_id));
@@ -460,6 +465,7 @@ async function readState(service, profile) {
     submitted_matching_ids: eligibleEvaluations.map(row => Number(row.matching_id)),
     eligible_matching_ids: eligibleMatchings.map(row => Number(row.id)),
     archives: archives.data || [], cycle_scores: cycleScores,
+    adjustment_events: adjustmentEvents.data || [],
     final_results: currentFinalResults,
     grade_mail_dispatches: gradeMailDispatches.data || [],
     approval_requests: approvalLines,
