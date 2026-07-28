@@ -27,6 +27,8 @@ test('mobile regular-user flow uses swipe decks without changing evaluation acti
   const index = await readIndex();
   assert.match(index, /\.relationship-card-deck[\s\S]*position: relative/);
   assert.match(index, /\.relationship-target-card[\s\S]*touch-action: pan-y/);
+  assert.match(index, /stableCardHeight[\s\S]*deck\.style\.maxHeight/);
+  assert.match(index, /#mobile-target-welcome-hero,[\s\S]*#view-list #directory-toolbar-targets[\s\S]*display: none/);
   assert.match(index, /function initializeMobileTargetDeck\(deck\)/);
   assert.match(index, /card\.addEventListener\('pointerdown'/);
   assert.match(index, /card\.addEventListener\('pointermove'/);
@@ -54,6 +56,9 @@ test('published results require one dinosaur egg reveal per user and cycle on de
   assert.match(index, /sessionStorage\.setItem\(mobileResultHatchKey\(\), '1'\)/);
   assert.match(index, /@keyframes dinosaur-egg-wobble/);
   assert.match(index, /@keyframes dinosaur-egg-crack/);
+  assert.match(index, /@keyframes dinosaur-crack-light/);
+  assert.match(index, /@keyframes dinosaur-light-rays/);
+  assert.match(index, /reducedMotion \? 20 : 2950/);
 });
 
 test('target hero omits the redundant self-evaluation note without changing exclusion copy elsewhere', async () => {

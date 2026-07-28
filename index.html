@@ -699,13 +699,32 @@
         linear-gradient(145deg, #FEF3C7, #CCFBF1 54%, #DBEAFE);
       box-shadow: inset -18px -20px 28px rgba(15,118,110,.18), inset 14px 12px 20px rgba(255,255,255,.75), 0 20px 34px rgba(15,23,42,.2);
       transform-origin: 50% 90%;
+      backface-visibility: hidden;
+      will-change: transform, filter;
     }
-    .dinosaur-egg::before {
-      content: "";
+    .egg-crack {
       position: absolute;
-      inset: 22% 17%;
+      z-index: 3;
+      width: 8px;
+      height: 84px;
       opacity: 0;
-      background: linear-gradient(145deg, transparent 44%, #0F172A 45% 48%, transparent 49%) 0 0 / 52px 46px;
+      background: linear-gradient(90deg, #FFF7AE 0 28%, #FFFFFF 42% 58%, #FFF7AE 72% 100%);
+      clip-path: polygon(44% 0, 100% 0, 62% 20%, 100% 32%, 48% 48%, 84% 62%, 28% 100%, 0 100%, 38% 66%, 0 52%, 48% 35%, 12% 22%);
+      filter: drop-shadow(0 0 5px #FFF8A8) drop-shadow(0 0 12px rgba(45,212,191,.95));
+      transform-origin: 50% 0;
+    }
+    .egg-crack-one { top: 28px; left: 73px; transform: rotate(4deg) scaleY(.05); }
+    .egg-crack-two { top: 76px; left: 48px; height: 62px; transform: rotate(54deg) scaleY(.05); }
+    .egg-crack-three { top: 82px; right: 43px; height: 58px; transform: rotate(-48deg) scaleY(.05); }
+    .egg-crack-light {
+      position: absolute;
+      z-index: 2;
+      inset: 24% 18%;
+      border-radius: 50%;
+      opacity: 0;
+      background: radial-gradient(circle, rgba(255,255,255,1) 0 14%, rgba(254,240,138,.94) 28%, rgba(45,212,191,.64) 52%, transparent 74%);
+      filter: blur(3px);
+      transform: scale(.2);
     }
     .dinosaur-hatch-flash {
       position: absolute;
@@ -716,9 +735,22 @@
       opacity: 0;
       pointer-events: none;
     }
-    .mobile-result-hatch.is-hatching .dinosaur-egg { animation: dinosaur-egg-wobble 950ms ease-in-out both; }
-    .mobile-result-hatch.is-hatching .dinosaur-egg::before { animation: dinosaur-egg-crack 950ms ease-out both; }
-    .mobile-result-hatch.is-hatching .dinosaur-hatch-flash { animation: dinosaur-hatch-flash 1.25s ease-out 700ms both; }
+    .dinosaur-hatch-flash::before,
+    .dinosaur-hatch-flash::after {
+      content: "";
+      position: absolute;
+      inset: -34px;
+      border-radius: 50%;
+      opacity: 0;
+      background: repeating-conic-gradient(from 8deg, rgba(255,255,255,.92) 0 2deg, transparent 2deg 16deg);
+    }
+    .dinosaur-hatch-flash::after { inset: -62px; transform: rotate(9deg); }
+    .mobile-result-hatch.is-hatching .dinosaur-egg { animation: dinosaur-egg-wobble 2.8s cubic-bezier(.36,.07,.19,.97) both; }
+    .mobile-result-hatch.is-hatching .egg-crack { animation: dinosaur-egg-crack 2.8s cubic-bezier(.2,.8,.2,1) both; }
+    .mobile-result-hatch.is-hatching .egg-crack-light { animation: dinosaur-crack-light 2.8s ease-out both; }
+    .mobile-result-hatch.is-hatching .dinosaur-hatch-flash { animation: dinosaur-hatch-flash 2.8s ease-out both; }
+    .mobile-result-hatch.is-hatching .dinosaur-hatch-flash::before,
+    .mobile-result-hatch.is-hatching .dinosaur-hatch-flash::after { animation: dinosaur-light-rays 2.8s ease-out both; }
     .dinosaur-hatch-copy strong {
       display: block;
       font-size: 1.15rem;
@@ -732,20 +764,45 @@
       font-weight: 700;
     }
     @keyframes dinosaur-egg-wobble {
-      0%, 100% { transform: rotate(0deg) translateY(0); }
-      18% { transform: rotate(-8deg) translateY(-4px); }
-      36% { transform: rotate(8deg) translateY(-7px); }
-      54% { transform: rotate(-6deg) translateY(-4px); }
-      72% { transform: rotate(5deg) translateY(-2px); }
+      0%, 8% { transform: translate3d(0,0,0) rotate(0deg) scale(1); }
+      12% { transform: translate3d(-2px,0,0) rotate(-1.5deg) scale(1); }
+      16% { transform: translate3d(3px,-1px,0) rotate(2deg) scale(1.01); }
+      21% { transform: translate3d(-5px,-2px,0) rotate(-3.5deg) scale(1.01); }
+      27% { transform: translate3d(7px,-3px,0) rotate(5deg) scale(1.015); }
+      34% { transform: translate3d(-10px,-5px,0) rotate(-7deg) scale(1.02); }
+      42% { transform: translate3d(12px,-7px,0) rotate(8deg) scale(1.025); }
+      50% { transform: translate3d(-13px,-9px,0) rotate(-9deg) scale(1.03); }
+      58% { transform: translate3d(11px,-12px,0) rotate(7deg) scale(1.035); }
+      65% { transform: translate3d(-8px,-18px,0) rotate(-5deg) scale(1.04); }
+      72% { transform: translate3d(5px,-10px,0) rotate(3deg) scale(1.055); filter: brightness(1); }
+      79% { transform: translate3d(-3px,-14px,0) rotate(-2deg) scale(1.08); filter: brightness(1.18); }
+      86% { transform: translate3d(0,-20px,0) rotate(0deg) scale(1.12); filter: brightness(1.38); }
+      100% { transform: translate3d(0,-16px,0) rotate(0deg) scale(1.16); filter: brightness(1.55); }
     }
     @keyframes dinosaur-egg-crack {
-      0%, 42% { opacity: 0; transform: scale(.7); }
-      58%, 100% { opacity: 1; transform: scale(1); }
+      0%, 38% { opacity: 0; }
+      44% { opacity: .45; transform: rotate(var(--crack-rotation, 0deg)) scaleY(.18); }
+      63%, 100% { opacity: 1; transform: rotate(var(--crack-rotation, 0deg)) scaleY(1); }
+    }
+    .egg-crack-one { --crack-rotation: 4deg; }
+    .egg-crack-two { --crack-rotation: 54deg; }
+    .egg-crack-three { --crack-rotation: -48deg; }
+    @keyframes dinosaur-crack-light {
+      0%, 48% { opacity: 0; transform: scale(.2); }
+      65% { opacity: .62; transform: scale(.72); }
+      82% { opacity: 1; transform: scale(1.35); }
+      100% { opacity: .15; transform: scale(2.05); }
     }
     @keyframes dinosaur-hatch-flash {
-      0%, 48% { opacity: 0; transform: scale(.45); }
-      72% { opacity: .95; }
-      100% { opacity: 0; transform: scale(1.7); }
+      0%, 54% { opacity: 0; transform: scale(.35); }
+      70% { opacity: .35; transform: scale(.75); }
+      84% { opacity: 1; transform: scale(1.28); }
+      100% { opacity: 0; transform: scale(2.05); }
+    }
+    @keyframes dinosaur-light-rays {
+      0%, 66% { opacity: 0; transform: rotate(0deg) scale(.45); }
+      84% { opacity: .78; }
+      100% { opacity: 0; transform: rotate(18deg) scale(1.7); }
     }
     @keyframes mascot-target-glow {
       0%, 100% { box-shadow: 0 0 0 0 rgba(13, 148, 136, 0); }
@@ -856,8 +913,11 @@
         animation: none !important;
       }
       .mobile-result-hatch.is-hatching .dinosaur-egg,
-      .mobile-result-hatch.is-hatching .dinosaur-egg::before,
-      .mobile-result-hatch.is-hatching .dinosaur-hatch-flash {
+      .mobile-result-hatch.is-hatching .egg-crack,
+      .mobile-result-hatch.is-hatching .egg-crack-light,
+      .mobile-result-hatch.is-hatching .dinosaur-hatch-flash,
+      .mobile-result-hatch.is-hatching .dinosaur-hatch-flash::before,
+      .mobile-result-hatch.is-hatching .dinosaur-hatch-flash::after {
         animation: none !important;
       }
     }
@@ -901,8 +961,9 @@
       #view-myresults {
         gap: 0.75rem !important;
       }
-      #view-list > .app-section-hero {
-        padding: 1rem !important;
+      #mobile-target-welcome-hero,
+      #view-list #directory-toolbar-targets {
+        display: none !important;
       }
       #view-list #welcome-assignment-message,
       #view-list #welcome-company-dept + span,
@@ -929,8 +990,10 @@
         position: relative;
         display: block !important;
         min-height: 215px;
+        max-height: min(64vh, 520px);
         overflow: hidden;
         padding: 0.1rem 0 1rem;
+        contain: layout paint;
       }
       .relationship-target-card {
         position: absolute;
@@ -942,6 +1005,8 @@
         user-select: none;
         transform-origin: 50% 100%;
         will-change: transform, opacity;
+        backface-visibility: hidden;
+        contain: paint;
       }
       .relationship-target-card h4 {
         font-size: 1.25rem !important;
@@ -1044,13 +1109,6 @@
         box-shadow: inset -18px -20px 28px rgba(15,118,110,.18), inset 14px 12px 20px rgba(255,255,255,.75), 0 20px 34px rgba(15,23,42,.2);
         transform-origin: 50% 90%;
       }
-      .dinosaur-egg::before {
-        content: "";
-        position: absolute;
-        inset: 22% 17%;
-        opacity: 0;
-        background: linear-gradient(145deg, transparent 44%, #0F172A 45% 48%, transparent 49%) 0 0 / 52px 46px;
-      }
       .dinosaur-hatch-flash {
         position: absolute;
         width: 210px;
@@ -1059,15 +1117,6 @@
         background: radial-gradient(circle, rgba(255,255,255,.98), rgba(45,212,191,.5) 38%, transparent 70%);
         opacity: 0;
         pointer-events: none;
-      }
-      .mobile-result-hatch.is-hatching .dinosaur-egg {
-        animation: dinosaur-egg-wobble 950ms ease-in-out both;
-      }
-      .mobile-result-hatch.is-hatching .dinosaur-egg::before {
-        animation: dinosaur-egg-crack 950ms ease-out both;
-      }
-      .mobile-result-hatch.is-hatching .dinosaur-hatch-flash {
-        animation: dinosaur-hatch-flash 1.25s ease-out 700ms both;
       }
       .dinosaur-hatch-copy strong {
         display: block;
@@ -1640,7 +1689,7 @@
 
     <!-- VIEW 2: EMPLOYEE LIST -->
     <section id="view-list" class="hidden space-y-6">
-      <div class="app-section-hero glass-card rounded-2xl p-6 border relative overflow-hidden">
+      <div id="mobile-target-welcome-hero" class="app-section-hero glass-card rounded-2xl p-6 border relative overflow-hidden">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative z-10">
           <div>
             <div class="flex items-center gap-2 mb-1">
@@ -1883,7 +1932,12 @@
       <div id="mobile-result-hatch" class="mobile-result-hatch hidden" aria-live="polite">
         <button type="button" class="dinosaur-hatch-button" onclick="hatchMobileResult()">
           <span class="dinosaur-hatch-flash" aria-hidden="true"></span>
-          <span class="dinosaur-egg" aria-hidden="true"></span>
+          <span class="dinosaur-egg" aria-hidden="true">
+            <span class="egg-crack egg-crack-one"></span>
+            <span class="egg-crack egg-crack-two"></span>
+            <span class="egg-crack egg-crack-three"></span>
+            <span class="egg-crack-light"></span>
+          </span>
           <span class="dinosaur-hatch-copy">
             <strong>두근두근… 결과가 도착했습니다!</strong>
             <span>공룡알을 터치하면 최종 결과가 부화합니다.</span>
@@ -4627,7 +4681,7 @@
         hatch.classList.remove('is-ready', 'is-hatching');
         resultCards.classList.remove('mobile-results-concealed');
         resultCards.querySelector('#my-grade-card')?.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'center' });
-      }, reducedMotion ? 20 : 1650);
+      }, reducedMotion ? 20 : 2950);
     }
 
     function renderMyResults() {
@@ -6609,6 +6663,16 @@
       if (!deck || !window.matchMedia?.('(max-width: 640px)').matches) return;
       const cards = () => Array.from(deck.querySelectorAll('.relationship-target-card'));
       const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      const initialCards = cards();
+      const stableCardHeight = Math.max(190, ...initialCards.map(card => Math.ceil(card.getBoundingClientRect().height || card.scrollHeight)));
+      deck.style.height = `${stableCardHeight + 22}px`;
+      deck.style.minHeight = `${stableCardHeight + 22}px`;
+      deck.style.maxHeight = `${stableCardHeight + 22}px`;
+      initialCards.forEach(card => {
+        card.style.height = `${stableCardHeight}px`;
+        card.style.maxHeight = `${stableCardHeight}px`;
+        card.style.overflowY = 'auto';
+      });
 
       const arrange = () => {
         const items = cards();
@@ -6616,13 +6680,11 @@
           card.style.zIndex = String(items.length - index);
           card.style.opacity = index < 3 ? String(1 - (index * 0.12)) : '0';
           card.style.pointerEvents = index === 0 ? 'auto' : 'none';
-          card.style.transition = reducedMotion ? 'none' : 'transform 280ms cubic-bezier(.2,.8,.2,1), opacity 220ms ease';
+          card.style.transition = reducedMotion ? 'none' : 'transform 360ms cubic-bezier(.22,1.32,.36,1), opacity 220ms ease';
           card.style.transform = index === 0
             ? 'translate3d(0,0,0) rotate(0deg) scale(1)'
             : `translate3d(0,${Math.min(index, 2) * 10}px,0) rotate(0deg) scale(${1 - (Math.min(index, 2) * 0.035)})`;
         });
-        const tallest = Math.max(190, ...items.map(card => card.scrollHeight));
-        deck.style.height = `${tallest + 22}px`;
       };
 
       cards().forEach(card => {
