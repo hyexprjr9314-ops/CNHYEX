@@ -23,6 +23,19 @@ test('mobile UI keeps role-filtered navigation fluid and progress tables readabl
   assert.match(index, /\.evaluation-score-option \{/);
 });
 
+test('mobile administrator dashboard uses compact cards, short labels, and non-overlapping actions', async () => {
+  const index = await readIndex();
+  assert.match(index, /id="admin-user-entry-grid"/);
+  assert.match(index, /id="admin-csv-card"/);
+  assert.match(index, /id="admin-user-list-header"/);
+  assert.match(index, /<span class="md:hidden">계정 관리<\/span>/);
+  assert.match(index, /<span class="md:hidden">사용자 직접 추가<\/span>/);
+  assert.match(index, /<span class="md:hidden">사용자 목록<\/span>/);
+  assert.match(index, /#directory-toolbar-users[\s\S]*grid-template-columns: minmax\(0, 1fr\) minmax\(7\.5rem, 0\.48fr\)/);
+  assert.match(index, /#view-admin table td:nth-child\(3\),[\s\S]*display: none !important/);
+  assert.match(index, /#view-admin #user-table-body td:last-child > div[\s\S]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
+});
+
 test('mobile regular-user flow uses swipe decks without changing evaluation actions', async () => {
   const index = await readIndex();
   assert.match(index, /\.relationship-card-deck[\s\S]*position: relative/);

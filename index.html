@@ -1295,6 +1295,98 @@
         font-size: 1.15rem !important;
         line-height: 1.35;
       }
+      #view-admin {
+        gap: 0.75rem !important;
+      }
+      #view-admin .glass-card {
+        padding: 0.85rem !important;
+        border-radius: 1rem !important;
+      }
+      #admin-user-entry-grid {
+        gap: 0.75rem !important;
+      }
+      #admin-csv-card {
+        gap: 0.65rem !important;
+      }
+      #admin-csv-card > p,
+      #csv-user-dropzone p:last-of-type {
+        display: none !important;
+      }
+      #csv-user-dropzone {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: center;
+        gap: 0.65rem;
+        padding: 0.75rem !important;
+        text-align: left;
+      }
+      #csv-user-dropzone > i {
+        grid-row: 1;
+        font-size: 1.35rem !important;
+      }
+      #csv-user-dropzone > p {
+        grid-column: 2;
+        margin: 0;
+      }
+      #admin-direct-user-form {
+        gap: 0.65rem !important;
+      }
+      #admin-user-list-header {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 0.65rem;
+      }
+      #admin-user-list-header > div {
+        display: grid;
+        width: 100%;
+        gap: 0.5rem;
+      }
+      #bulk-password-mail-btn {
+        width: 100%;
+        justify-content: center;
+      }
+      #directory-toolbar-users {
+        grid-template-columns: minmax(0, 1fr) minmax(7.5rem, 0.48fr) !important;
+        padding: 0.65rem !important;
+      }
+      #directory-toolbar-users > label {
+        grid-column: 1 / -1;
+      }
+      #directory-toolbar-users [data-directory="company"],
+      #directory-toolbar-users [data-directory="dept"],
+      #directory-toolbar-users [data-directory="sort"],
+      #directory-toolbar-users [data-directory="direction"] {
+        display: none !important;
+      }
+      #directory-toolbar-users > div:has([data-directory="sort"]) {
+        display: none !important;
+      }
+      #directory-toolbar-users > div:last-child {
+        grid-column: 1 / -1 !important;
+      }
+      #view-admin table td:nth-child(3),
+      #view-admin table td:nth-child(5),
+      #view-admin table td:nth-child(6),
+      #view-admin table td:nth-child(8),
+      #view-admin table td:nth-child(9) {
+        display: none !important;
+      }
+      #view-admin #user-table-body td:last-child > div {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.45rem !important;
+      }
+      #view-admin #user-table-body td:last-child button,
+      #view-admin #user-table-body td:last-child span {
+        min-width: 0;
+        min-height: 40px;
+        justify-content: center;
+        text-align: center;
+        white-space: nowrap;
+      }
+      #view-admin #user-table-body td:last-child button:last-child {
+        grid-column: 1 / -1;
+      }
       #permission-bulk-actions {
         display: grid !important;
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2162,7 +2254,8 @@
           </div>
           <h2 class="text-2xl font-black text-white flex items-center gap-2">
             <i class="fa-solid fa-user-shield text-brandGold"></i>
-            <span>관리자 대시보드 (사용자 일괄 등록 & 계정 관리)</span>
+            <span class="hidden md:inline">관리자 대시보드 (사용자 일괄 등록 & 계정 관리)</span>
+            <span class="md:hidden">계정 관리</span>
           </h2>
           <p class="text-xs text-slate-300 mt-1">임직원 계정 CSV 일괄 등록, 신규 사용자 추가 및 전체 사용자 정보 관리</p>
         </div>
@@ -2170,9 +2263,9 @@
 
       <!-- ADMIN SUB-TAB 1: USER BULK REGISTRATION (CSV / EMAIL ID) -->
       <div id="admin-subtab-users" class="space-y-6">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div id="admin-user-entry-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <!-- CSV Upload Box -->
-          <div class="glass-card rounded-2xl p-6 border border-slate-800 space-y-4">
+          <div id="admin-csv-card" class="glass-card rounded-2xl p-6 border border-slate-800 space-y-4">
             <h3 class="text-base font-bold text-white flex items-center gap-2">
               <i class="fa-solid fa-file-csv text-brandTeal"></i>
               <span>CSV 일괄 사용자 등록</span>
@@ -2193,13 +2286,14 @@
           </div>
 
           <!-- Add User Form -->
-          <div class="glass-card rounded-2xl p-6 border border-slate-800 space-y-4 md:col-span-2">
+          <div id="admin-direct-user-card" class="glass-card rounded-2xl p-6 border border-slate-800 space-y-4 md:col-span-2">
             <h3 class="text-base font-bold text-white flex items-center gap-2">
               <i class="fa-solid fa-user-plus text-brandTeal"></i>
-              <span>신규 평가 대상자/평가자 직접 추가</span>
+              <span class="hidden md:inline">신규 평가 대상자/평가자 직접 추가</span>
+              <span class="md:hidden">사용자 직접 추가</span>
             </h3>
 
-            <form onsubmit="handleAddUserSubmit(event)" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            <form id="admin-direct-user-form" onsubmit="handleAddUserSubmit(event)" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               <div>
                 <label class="block text-[11px] font-bold text-slate-400 mb-1">성명</label>
                 <input type="text" id="user-name-in" placeholder="홍길동" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white">
@@ -2259,10 +2353,11 @@
 
         <!-- Registered User List Table -->
         <div class="glass-card rounded-2xl p-6 border border-slate-800 space-y-4">
-          <div class="flex justify-between items-center">
+          <div id="admin-user-list-header" class="flex justify-between items-center">
             <h3 class="text-base font-bold text-white flex items-center gap-2">
               <i class="fa-solid fa-users text-brandTeal"></i>
-              <span>등록된 사용자/평가자 계정 목록</span>
+              <span class="hidden md:inline">등록된 사용자/평가자 계정 목록</span>
+              <span class="md:hidden">사용자 목록</span>
             </h3>
             <div class="flex flex-wrap items-center gap-2">
               <span class="text-xs text-slate-400">총 <strong id="user-list-count" class="text-brandTeal">0</strong>명 등록됨</span>
