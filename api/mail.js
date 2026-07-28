@@ -10,6 +10,46 @@ import {
 
 const send = (res, status, payload) => res.status(status).json(payload);
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({
+  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+})[character]);
+const gradeMailStyles = {
+  EX: { icon: '🪽', label: 'EX · ANOTHER LEVEL', color: '#7e22ce', background: '#faf5ff', border: '#c084fc' },
+  S: { icon: '💎', label: 'S Grade', color: '#0e7490', background: '#ecfeff', border: '#67e8f9' },
+  A: { icon: '🥇', label: 'A Grade', color: '#b45309', background: '#fffbeb', border: '#fbbf24' },
+  B: { icon: '🥈', label: 'B Grade', color: '#475569', background: '#f8fafc', border: '#94a3b8' },
+  C: { icon: '🛡️', label: 'C Grade', color: '#1e40af', background: '#eff6ff', border: '#93c5fd' },
+  D: { icon: '◼️', label: 'D Grade', color: '#44403c', background: '#f5f5f4', border: '#a8a29e' }
+};
+
+export function buildGradeNoticeEmail({ name, cycleName, grade }) {
+  const normalized = String(grade || '').trim().toUpperCase();
+  const safeName = escapeHtml(name);
+  const safeCycleName = escapeHtml(cycleName);
+  const badge = gradeMailStyles[normalized] || {
+    icon: '🏅', label: `${normalized || '-'} Grade`, color: '#334155', background: '#f8fafc', border: '#cbd5e1'
+  };
+  const warning = '다른 사람과 평가 결과를 공유하는 행위 발생 시 인사상 불이익이 있을 수 있습니다.';
+  const subject = `[충남한양 인사평가] ${cycleName} 최종 평가등급 안내`;
+  const text = `${name} 님, 안녕하세요.\n\n${cycleName}의 최종 평가등급은 ${badge.label}입니다.\n\n자세한 내용은 충남한양 인사평가 시스템의 '내 평가 결과 보기'에서 확인해 주세요.\n\n[보안 안내] ${warning}`;
+  const html = `
+    <div style="margin:0;padding:28px 16px;background:#f1f5f9;font-family:Arial,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;color:#0f172a">
+      <div style="max-width:560px;margin:0 auto;padding:28px;background:#ffffff;border:1px solid #cbd5e1;border-radius:18px">
+        <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#0f766e">360° +Alpha Engine</p>
+        <h1 style="margin:0 0 22px;font-size:22px;line-height:1.4">최종 인사평가 등급 안내</h1>
+        <p style="margin:0 0 20px;font-size:15px;line-height:1.7">${safeName} 님, 안녕하세요.<br>${safeCycleName}의 최종 평가 결과를 안내드립니다.</p>
+        <div style="padding:26px 16px;text-align:center;border:1px solid ${badge.border};border-radius:16px;background:${badge.background}">
+          <div style="margin-bottom:8px;font-size:42px;line-height:1">${badge.icon}</div>
+          <div style="font-size:25px;font-weight:800;color:${badge.color}">${badge.label}</div>
+        </div>
+        <p style="margin:20px 0;font-size:14px;line-height:1.7;color:#475569">세부 결과는 충남한양 인사평가 시스템의 <strong>내 평가 결과 보기</strong>에서 확인해 주세요.</p>
+        <div style="padding:14px 16px;border:1px solid #fca5a5;border-radius:12px;background:#fff1f2;color:#9f1239;font-size:13px;font-weight:700;line-height:1.6">
+          🔒 보안 안내<br>${warning}
+        </div>
+      </div>
+    </div>`;
+  return { subject, text, html };
+}
 
 async function authorize(req, service) {
   const token = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
@@ -73,10 +113,10 @@ async function sendGradeViaSmtp({ to, name, cycleName, grade }) {
   const transport = nodemailer.createTransport({
     host, port, secure: process.env.SMTP_SECURE === 'true', auth: { user, pass }
   });
+  const message = buildGradeNoticeEmail({ name, cycleName, grade });
   await transport.sendMail({
     from, to,
-    subject: `[충남한양 인사평가] ${cycleName} 최종 평가등급 안내`,
-    text: `${name} 님, 안녕하세요.\n\n${cycleName}의 최종 평가등급은 ${grade}등급입니다.\n\n자세한 내용은 충남한양 인사평가 시스템의 '내 평가 결과 보기'에서 확인해 주세요.`
+    ...message
   });
 }
 

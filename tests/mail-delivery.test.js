@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { canSendGradeNotice, mailIdempotencyKey, passwordResetIdempotencyBucket, summarizeDispatch } from '../api/mail-delivery.js';
+import { buildGradeNoticeEmail } from '../api/mail.js';
 
 const read = path => readFile(new URL(path, import.meta.url), 'utf8');
 
@@ -33,7 +34,14 @@ test('sent grade notices are returned to administrators and rendered as complete
   assert.match(adminState, /grade_mail_dispatches: gradeMailDispatches\.data \|\| \[\]/);
   assert.match(html, /sentGradeMailKeys\.has/);
   assert.match(html, /fa-check[\s\S]*?발송 완료/);
-  assert.match(mail, /\[충남한양 인사평가\].*최종 평가등급 안내/);
-  assert.match(mail, /최종 평가등급은 \$\{grade\}등급입니다/);
+  assert.match(mail, /buildGradeNoticeEmail/);
   assert.doesNotMatch(mail, /\[HR evaluation\]|final grade notice|your final grade/);
+});
+
+test('grade notice email mirrors the web badge and includes confidentiality guidance', () => {
+  const message = buildGradeNoticeEmail({ name: '홍길동', cycleName: '2026년 상반기', grade: 'S' });
+  assert.equal(message.subject, '[충남한양 인사평가] 2026년 상반기 최종 평가등급 안내');
+  assert.match(message.html, /💎[\s\S]*S Grade/);
+  assert.match(message.html, /다른 사람과 평가 결과를 공유하는 행위 발생 시 인사상 불이익이 있을 수 있습니다/);
+  assert.match(message.text, /\[보안 안내\]/);
 });
