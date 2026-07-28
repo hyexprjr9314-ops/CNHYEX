@@ -1387,7 +1387,7 @@
       #view-admin #user-table-body td:last-child button:last-child {
         grid-column: 1 / -1;
       }
-      #view-admin th:last-child { font-size: 0; }
+      #view-admin th:last-child { font-size: 0 !important; }
       #view-admin th:last-child::after {
         content: "관리";
         font-size: 0.75rem;
@@ -1411,9 +1411,16 @@
         font-size: 1.05rem !important;
         line-height: 1.3;
       }
-      #my-grade-description.mobile-pending-grade-copy { font-size: 0; }
+      #summary-filter-toolbar {
+        display: block !important;
+        padding: 0.5rem !important;
+      }
+      #summary-filter-toolbar > :not(#summary-company-segments) {
+        display: none !important;
+      }
+      #my-grade-description.mobile-pending-grade-copy { font-size: 0 !important; }
       #my-grade-description.mobile-pending-grade-copy::after {
-        content: "공개 완료 후 등급이 표시됩니다.";
+        content: "결과 공개 후 최종 등급이 표시됩니다.";
         font-size: 0.75rem;
       }
       #permission-bulk-actions {
@@ -1437,13 +1444,39 @@
         font-size: 0.72rem;
       }
       #permission-table-head-evaluator,
-      #permission-table-head-evaluatee { font-size: 0; }
+      #permission-table-head-evaluatee { font-size: 0 !important; }
       #permission-table-head-evaluator::after {
         content: "평가자";
         font-size: 0.75rem;
       }
       #permission-table-head-evaluatee::after {
         content: "피평가자";
+        font-size: 0.75rem;
+      }
+      #history-access-badge {
+        display: none !important;
+      }
+      #history-access-copy,
+      #history-list-title {
+        font-size: 0 !important;
+      }
+      #history-access-copy::after {
+        content: "임원·관리자 전용";
+        font-size: 0.7rem;
+      }
+      #history-list-title::after {
+        content: "과거 이력";
+        font-size: 0.875rem;
+      }
+      #history-count-label {
+        font-size: 0 !important;
+        white-space: nowrap;
+      }
+      #history-count-label::before {
+        content: "보관 ";
+        font-size: 0.75rem;
+      }
+      #history-count-label strong {
         font-size: 0.75rem;
       }
       #question-management-heading .mobile-question-meta,
@@ -3127,8 +3160,8 @@
           <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-800 pb-4">
             <div>
               <div class="flex items-center gap-2 mb-1">
-                <span class="bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full">EXECUTIVE & ADMIN EXCLUSIVE</span>
-                <span class="text-xs text-slate-400">과거 이력 열람 권한: 임원급 / 관리자 전용</span>
+                <span id="history-access-badge" class="bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full">EXECUTIVE & ADMIN EXCLUSIVE</span>
+                <span id="history-access-copy" class="text-xs text-slate-400">과거 이력 열람 권한: 임원급 / 관리자 전용</span>
               </div>
               <h3 class="text-lg font-bold text-white flex items-center gap-2">
                 <i class="fa-solid fa-box-archive text-amber-400"></i>
@@ -3143,9 +3176,9 @@
             <div class="flex justify-between items-center">
               <h4 class="text-sm font-bold text-white flex items-center gap-2">
                 <i class="fa-solid fa-clock-rotate-left text-brandTeal"></i>
-                <span>📜 마감된 과거 평가 이력 목록</span>
+                <span id="history-list-title">📜 마감된 과거 평가 이력 목록</span>
               </h4>
-              <span class="text-xs text-slate-400">보관된 과거 주기 수: <strong id="archived-cycles-count" class="text-brandTeal font-mono font-bold">0건</strong></span>
+              <span id="history-count-label" class="text-xs text-slate-400">보관된 과거 주기 수: <strong id="archived-cycles-count" class="text-brandTeal font-mono font-bold">0건</strong></span>
             </div>
 
             <div id="history-global-toolbar" class="grid grid-cols-1 md:grid-cols-[minmax(260px,1fr)_220px] gap-2 rounded-xl border border-slate-800 bg-slate-950/50 p-3">
