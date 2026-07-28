@@ -44,13 +44,13 @@ export function buildRelativeGradePlan(entries) {
   const allocations = [];
   for (const [cohortKey, members] of cohorts) {
     const exMembers = members.filter(member =>
-      member.rawScore === 100 && member.effectiveFinalScore === 100 && member.isAdjusted !== true
+      member.rawScore === 100
     );
     const quotaMembers = members.filter(member => !exMembers.includes(member));
     exMembers.forEach(member => gradesByTargetId.set(member.targetId, 'EX'));
     const allocation = largestRemainderAllocation(quotaMembers.length);
     allocations.push(...allocation.map(row => ({ cohortKey, ...row })));
-    const ranked = [...quotaMembers].sort((a, b) => b.effectiveFinalScore - a.effectiveFinalScore || b.rawScore - a.rawScore || a.targetId - b.targetId);
+    const ranked = [...quotaMembers].sort((a, b) => b.rawScore - a.rawScore || a.targetId - b.targetId);
     let offset = 0;
     for (const row of allocation) {
       for (const member of ranked.slice(offset, offset + row.allocation_count)) gradesByTargetId.set(member.targetId, row.grade);
