@@ -59,6 +59,7 @@ test('mobile regular-user flow uses swipe decks without changing evaluation acti
   const index = await readIndex();
   assert.match(index, /\.relationship-card-deck[\s\S]*position: relative/);
   assert.match(index, /mobile-swipe-instruction[\s\S]*아래 표시된 카드를 옆으로 넘겨보세요!/);
+  assert.match(index, /\.mobile-swipe-instruction \{[\s\S]*font-size: 1\.1rem;[\s\S]*font-weight: 900;/);
   assert.match(index, /@keyframes mobile-swipe-hint/);
   assert.match(index, /\.relationship-target-card[\s\S]*touch-action: pan-y/);
   assert.match(index, /stableCardHeight[\s\S]*deck\.style\.maxHeight/);
