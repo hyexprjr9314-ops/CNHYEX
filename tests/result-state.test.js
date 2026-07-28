@@ -107,6 +107,16 @@ test('S grade uses an accessible glass-prism effect across cards and badges', as
   assert.match(html, /prefers-reduced-motion: reduce[\s\S]*\.glitter-diamond::before/);
 });
 
+test('A and B grades use restrained gold and silver medal shine effects', async () => {
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  assert.match(html, /\.glitter-gold::after, \.glitter-silver::after[\s\S]*animation: medal-shine 4\.4s ease-in-out infinite/);
+  assert.match(html, /@keyframes medal-shine/);
+  assert.match(html, /\.glitter-silver\s*\{[\s\S]*backdrop-filter: blur\(6px\) saturate\(120%\)/);
+  assert.match(html, /B: \['glitter-silver border'/);
+  assert.match(html, /s\.grade === 'B'[\s\S]*glitter-silver/);
+  assert.match(html, /prefers-reduced-motion: reduce[\s\S]*\.glitter-gold::after, \.glitter-silver::after/);
+});
+
 test('adjusted personal results keep the notice and final grade in the two-column result grid', async () => {
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
   assert.match(html, /id="my-result-cards" class="grid grid-cols-1 md:grid-cols-2/);
