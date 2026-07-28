@@ -338,6 +338,10 @@
     button[data-company-value="(주)한양고속"] {
       background: #0047AB !important;
     }
+    .hard-delete-action-white,
+    .hard-delete-action-white i {
+      color: #FFFFFF !important;
+    }
     .admin-setup-step-reveal {
       animation: admin-setup-step-reveal 520ms cubic-bezier(.2,.8,.2,1) both;
     }
@@ -4062,7 +4066,7 @@
               <span class="text-xs text-slate-400 font-bold">${escapeHtml(cycle.status)}</span>
             </div>
             ${checkUserRole(currentLoggedInUser).isSuperAdmin ? `
-              <button type="button" onclick="runEmergencyCycleAction(${Number(cycle.id)}, 'cycle_hard_delete')" class="bg-rose-700 hover:bg-rose-800 text-white font-bold px-3 py-2 rounded-lg text-xs whitespace-nowrap">
+              <button type="button" onclick="runEmergencyCycleAction(${Number(cycle.id)}, 'cycle_hard_delete')" class="hard-delete-action-white bg-rose-700 hover:bg-rose-800 text-white font-bold px-3 py-2 rounded-lg text-xs whitespace-nowrap">
                 <i class="fa-solid fa-trash-can mr-1"></i>완전 삭제
               </button>
             ` : ''}
@@ -4126,7 +4130,7 @@
               <i class="fa-solid fa-file-csv mr-1"></i>CSV
             </button>
             ${checkUserRole(currentLoggedInUser).isSuperAdmin ? `
-              <button type="button" onclick="event.stopPropagation(); runEmergencyCycleAction(${Number(archive.cycleId)}, 'cycle_hard_delete')" class="bg-rose-700 hover:bg-rose-800 text-white font-bold px-3 py-2 rounded-lg text-xs whitespace-nowrap">
+              <button type="button" onclick="event.stopPropagation(); runEmergencyCycleAction(${Number(archive.cycleId)}, 'cycle_hard_delete')" class="hard-delete-action-white bg-rose-700 hover:bg-rose-800 text-white font-bold px-3 py-2 rounded-lg text-xs whitespace-nowrap">
                 <i class="fa-solid fa-trash-can mr-1"></i>완전 삭제
               </button>
             ` : ''}
@@ -7016,7 +7020,7 @@
               <i class="fa-solid fa-trash-can"></i> 삭제
             </button>` : ''}
             ${roleInfo.isSuperAdmin && isClosed ? `
-            <button onclick="runEmergencyCycleAction(${c.id}, 'cycle_hard_delete')" class="bg-rose-700 hover:bg-rose-800 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 border border-rose-800">
+            <button onclick="runEmergencyCycleAction(${c.id}, 'cycle_hard_delete')" class="hard-delete-action-white bg-rose-700 hover:bg-rose-800 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 border border-rose-800">
               <i class="fa-solid fa-trash-can"></i> 완전 삭제
             </button>` : ''}` : '';
           const div = document.createElement('div');

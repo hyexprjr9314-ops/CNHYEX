@@ -206,6 +206,8 @@ test('matching studio exposes and synchronizes its own cycle selector', async ()
   assert.match(index, /const closedWithoutArchive = cyclesDb\.filter/);
   assert.match(index, /확정 결과 없이 종료된 평가주기입니다/);
   assert.doesNotMatch(index, /onclick="deleteArchivedHistory\(\$\{archive\.cycleId\}\)"/);
+  assert.match(index, /\.hard-delete-action-white,[\s\S]*?color: #FFFFFF !important;/);
+  assert.equal((index.match(/hard-delete-action-white bg-rose-700/g) || []).length, 3);
 });
 
 test('cycle lifecycle actions finish evaluation setup before closing management begins', async () => {
