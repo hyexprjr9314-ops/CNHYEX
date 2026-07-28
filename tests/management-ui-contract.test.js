@@ -233,9 +233,20 @@ test('administrator setup reveals existing evaluation tabs step by step without 
   assert.match(matching, /data-admin-setup-next="matching"[^>]+class="sm:ml-auto/);
   assert.match(matching, /toggle-matching-mode-btn[\s\S]*data-admin-setup-next="matching"/);
   assert.match(advance, /usersDb\.some\(user => user\.can_evaluate !== false\)/);
-  assert.match(advance, /customQuestionsDb\.filter/);
+  assert.match(advance, /questionsForCycle\(cycleId\)/);
   assert.match(advance, /customManualMatchingsDb\.filter/);
   assert.match(index, /if \(\['진행중', '일시정지'\]\.includes/);
   assert.match(index, /if \(!cycle \|\| isClosedEvaluationCycle\(cycle\)\) return 0/);
   assert.doesNotMatch(index, /action:\s*'admin_setup_step'/);
+});
+
+test('question management loads and renders only cycle-scoped questions', async () => {
+  const index = await readFile(indexUrl, 'utf8');
+
+  assert.match(index, /function questionsForCycle\(cycleId\)/);
+  assert.match(index, /\.in\('cycle_id', questionCycleIds\)/);
+  assert.match(index, /let filteredQuestions = questionsForCycle\(selectedCycleId\)/);
+  assert.match(index, /\.eq\('cycle_id', cycleId\)\.order\('id'\)/);
+  assert.doesNotMatch(index, /!question\.cycleId \|\| Number\(question\.cycleId\) === cycleId/);
+  assert.doesNotMatch(index, /!q\.cycleId \|\| String\(q\.cycleId\) === String\(selectedCycleId\)/);
 });

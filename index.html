@@ -3237,6 +3237,23 @@
       cycles: 0, permissions: 1, questions: 2, matching: 3, lifecycle: 4
     });
 
+    function mapQuestionRows(rows = []) {
+      return rows.map(q => ({
+        ...q,
+        cycleId: Number(q.cycle_id),
+        targetTrack: q.target_track,
+        targetDept: q.target_dept,
+        audience: q.audience || 'all',
+        is_default: q.is_default
+      }));
+    }
+
+    function questionsForCycle(cycleId) {
+      const normalizedCycleId = Number(cycleId);
+      if (!Number.isInteger(normalizedCycleId) || normalizedCycleId <= 0) return [];
+      return customQuestionsDb.filter(question => Number(question.cycleId) === normalizedCycleId);
+    }
+
     function getAdminSetupCycle() {
       const selectedId = Number(selectedEvaluationCycleId || currentSelectedSummaryCycleId);
       return cyclesDb.find(cycle => Number(cycle.id) === selectedId)
@@ -3271,9 +3288,7 @@
       if (['진행중', '일시정지'].includes(String(cycle.status || ''))) return 4;
 
       const cycleId = Number(cycle.id);
-      const questionCount = customQuestionsDb.filter(question =>
-        !question.cycleId || Number(question.cycleId) === cycleId
-      ).length;
+      const questionCount = questionsForCycle(cycleId).length;
       const matchingCount = customManualMatchingsDb.filter(matching => Number(matching.cycleId) === cycleId).length;
       const inferredStep = matchingCount > 0 ? 4 : questionCount > 0 ? 3 : 1;
       return Math.max(inferredStep, getAdminSetupAcknowledgement(cycleId));
@@ -3341,9 +3356,7 @@
         }
         nextStep = 'questions';
       } else if (currentStep === 'questions') {
-        const questions = customQuestionsDb.filter(question =>
-          !question.cycleId || Number(question.cycleId) === cycleId
-        );
+        const questions = questionsForCycle(cycleId);
         const validWeights = Object.values(trackCategoryWeights)
           .every(weights => Math.abs(weights.reduce((sum, value) => sum + Number(value || 0), 0) - 100) <= 0.1);
         if (!questions.length || !validWeights) {
@@ -3465,10 +3478,9 @@
           return false;
         }
 
-        const [profileResult, cyclesResult, questionsResult] = await Promise.all([
+        const [profileResult, cyclesResult] = await Promise.all([
           supabaseClient.rpc('my_profile'),
-          supabaseClient.from('evaluation_cycles').select('*').order('id', { ascending: false }),
-          supabaseClient.from('evaluation_questions').select('*').order('id', { ascending: true })
+          supabaseClient.from('evaluation_cycles').select('*').order('id', { ascending: false })
         ]);
 
         if (profileResult.error) throw profileResult.error;
@@ -3537,14 +3549,19 @@
         }));
         const selectedCycle = cyclesDb.find(cycle => Number(cycle.id) === Number(currentSelectedSummaryCycleId)) || cyclesDb[0];
         isResultPublished = selectedCycle?.results_published === true;
-        customQuestionsDb = questionsResult.error ? [] : (questionsResult.data || []).map(q => ({
-          ...q,
-          cycleId: q.cycle_id,
-          targetTrack: q.target_track,
-          targetDept: q.target_dept,
-          audience: q.audience || 'all',
-          is_default: q.is_default
-        }));
+        const questionCycleIds = [...new Set([
+          ...evaluationTargetsDb.map(target => Number(target.cycleId)),
+          ...(roleInfo.isAdmin
+            ? cyclesDb
+              .filter(cycle => ['초안', '일시정지'].includes(cycle.status) && !isClosedEvaluationCycle(cycle))
+              .map(cycle => Number(cycle.id))
+            : [])
+        ].filter(cycleId => Number.isInteger(cycleId) && cycleId > 0))];
+        const questionsResult = questionCycleIds.length
+          ? await supabaseClient.from('evaluation_questions').select('*').in('cycle_id', questionCycleIds).order('id', { ascending: true })
+          : { data: [], error: null };
+        if (questionsResult.error) throw questionsResult.error;
+        customQuestionsDb = mapQuestionRows(questionsResult.data || []);
         await loadCentralState();
         applyRoleBasedNavigationVisibility();
         return true;
@@ -6153,10 +6170,7 @@
       // Dynamically query matching questions from customQuestionsDb
       const selectedCycleId = Number(emp.cycleId);
 
-      const matchedQuestions = customQuestionsDb.filter(q => {
-        // Cycle check
-        if (q.cycleId && String(q.cycleId) !== String(selectedCycleId)) return false;
-
+      const matchedQuestions = questionsForCycle(selectedCycleId).filter(q => {
         const questionTrack = normalizeQuestionTrack(q.targetTrack);
         return questionTrack === 'all' || questionTrack === targetTrack.key;
       });
@@ -7053,9 +7067,7 @@
       const questionSelect = document.getElementById('question-cycle-select');
       const selectedCycleId = questionSelect && questionSelect.value ? parseInt(questionSelect.value) : null;
 
-      let filteredQuestions = selectedCycleId
-        ? customQuestionsDb.filter(q => !q.cycleId || String(q.cycleId) === String(selectedCycleId))
-        : customQuestionsDb;
+      let filteredQuestions = questionsForCycle(selectedCycleId);
 
       if (currentSelectedQuestionTrack !== '전체') {
         filteredQuestions = filteredQuestions.filter(q =>
@@ -7286,12 +7298,11 @@
           });
           const payload = await response.json().catch(() => ({}));
           if (!response.ok) throw new Error(payload.error || '질문 등록 요청에 실패했습니다.');
-          const refreshed = await supabaseClient.from('evaluation_questions').select('*').order('id');
+          const refreshed = await supabaseClient.from('evaluation_questions').select('*').eq('cycle_id', cycleId).order('id');
           if (refreshed.error) throw refreshed.error;
-          customQuestionsDb = (refreshed.data || []).map(q => ({
-            ...q, cycleId: q.cycle_id, targetTrack: q.target_track,
-            targetDept: q.target_dept, is_default: q.is_default
-          }));
+          customQuestionsDb = customQuestionsDb
+            .filter(question => Number(question.cycleId) !== cycleId)
+            .concat(mapQuestionRows(refreshed.data || []));
           announceCentralChange();
           renderQuestionsList();
           alert(`CSV 질문 등록 완료: 성공 ${payload.success}개, 실패 ${payload.failed}개`);
