@@ -1297,7 +1297,7 @@
           <i class="fa-solid fa-chevron-left"></i>
           <span>목록으로 돌아가기</span>
         </button>
-        <span class="text-xs text-brandGold font-bold">동료평가 전용 (자기평가 제외)</span>
+        <span class="text-xs text-brandGold font-bold">동료평가 전용</span>
       </div>
 
       <!-- Target Info -->
@@ -1312,31 +1312,11 @@
           <strong class="text-xs text-slate-200">2026년 상반기 인사평가</strong>
         </div>
       </div>
-      <!-- Server-calculated question scoring guidance -->
-      <div class="glass-card rounded-2xl p-6 border border-slate-800 space-y-5">
-        <div class="border-b border-slate-800 pb-3">
-          <h3 class="text-lg font-bold text-white flex items-center gap-2">
-            <i class="fa-solid fa-server text-brandTeal"></i>
-            <span>5지선다 문항 기반 자동 점수 환산</span>
-          </h3>
-          <p class="text-xs text-slate-400 mt-1 leading-relaxed">
-            별도의 점수 슬라이더는 사용하지 않습니다. 모든 5지선다 문항에 직접 답하면 서버가 질문별 가중치로 영역 점수를 계산하고, 아래 카테고리 가중치를 최종 집계에 반영합니다. 서술형 피드백은 점수에 포함하지 않으며 인사평가 참고자료로만 사용합니다.
-          </p>
-        </div>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800"><span class="text-xs text-slate-400">성과</span><strong id="eval-weight-perf" class="block text-lg text-amber-300">40.0%</strong></div>
-          <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800"><span class="text-xs text-slate-400">협업</span><strong id="eval-weight-collab" class="block text-lg text-blue-300">30.0%</strong></div>
-          <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800"><span class="text-xs text-slate-400">성장</span><strong id="eval-weight-growth" class="block text-lg text-emerald-300">20.0%</strong></div>
-          <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800"><span class="text-xs text-slate-400">조화</span><strong id="eval-weight-harmony" class="block text-lg text-rose-300">10.0%</strong></div>
-        </div>
-      </div>
-
-
       <!-- Peer Questions Container -->
       <div class="glass-card rounded-2xl p-6 border border-slate-800 space-y-6">
         <h3 class="text-lg font-bold text-white border-b border-slate-800 pb-3 flex items-center gap-2">
           <i class="fa-solid fa-comments text-brandTeal"></i>
-          <span>동료평가 전용 문항 (자기평가 제외됨)</span>
+          <span>동료평가 전용 문항</span>
         </h3>
 
         <div id="statutory-questions-container" class="space-y-4">
@@ -5177,7 +5157,6 @@
           trackCategoryWeights = { ...trackCategoryWeights, ...settings.track_category_weights };
         }
         syncSelectedCycleMatchingMode();
-        renderEvaluationWeightGuide();
         [['weight-perf-in', categoryWeights.perf], ['weight-collab-in', categoryWeights.collab],
          ['weight-growth-in', categoryWeights.growth], ['weight-harmony-in', categoryWeights.harmony]]
           .forEach(([id, value]) => { const input = document.getElementById(id); if (input) input.value = value; });
@@ -6994,16 +6973,6 @@
         indicator.className = "text-xs font-bold text-amber-400";
       }
     }
-    function renderEvaluationWeightGuide() {
-      const values = [
-        ['eval-weight-perf', categoryWeights.perf], ['eval-weight-collab', categoryWeights.collab],
-        ['eval-weight-growth', categoryWeights.growth], ['eval-weight-harmony', categoryWeights.harmony]
-      ];
-      values.forEach(([id, value]) => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = `${Number(value).toFixed(1)}%`;
-      });
-    }
     async function saveCategoryWeights() {
       const p = parseFloat(document.getElementById('weight-perf-in').value) || 0;
       const c = parseFloat(document.getElementById('weight-collab-in').value) || 0;
@@ -7034,8 +7003,6 @@
         alert(`가중치 저장 실패: ${error.message}`);
         return;
       }
-      renderEvaluationWeightGuide();
-
       alert(`4대 카테고리 가중치가 중앙 서버에 저장되었습니다!\n\n- 성과: ${p.toFixed(1)}%\n- 협업: ${c.toFixed(1)}%\n- 성장: ${g.toFixed(1)}%\n- 조화: ${h.toFixed(1)}%`);
     }
 

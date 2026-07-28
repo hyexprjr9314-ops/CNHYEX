@@ -27,7 +27,10 @@ test('target hero omits the redundant self-evaluation note without changing excl
   const index = await readIndex();
   assert.match(index, /배정된 동료들에 대한 360° 다면평가를 성실히 진행해 주세요\.'/);
   assert.doesNotMatch(index, /성실히 진행해 주세요\. \(자기평가 제외됨\)/);
-  assert.match(index, /동료평가 전용 문항 \(자기평가 제외됨\)/);
+  assert.match(index, /동료평가 전용 문항/);
+  assert.doesNotMatch(index, /동료평가 전용 \(자기평가 제외\)/);
+  assert.doesNotMatch(index, /동료평가 전용 문항 \(자기평가 제외됨\)/);
+  assert.doesNotMatch(index, /5지선다 문항 기반 자동 점수 환산/);
 });
 
 test('CSV user import supports native single-file drag and drop through the existing parser', async () => {
