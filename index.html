@@ -567,11 +567,6 @@
       70% { opacity: 1; transform: translateY(-4px) scale(1.02); }
       100% { opacity: 1; transform: translateY(0) scale(1); }
     }
-    @keyframes mascot-guide-talk {
-      0%, 100% { transform: translateY(0) rotate(0); }
-      35% { transform: translateY(-4px) rotate(-1.5deg); }
-      70% { transform: translateY(-2px) rotate(1.5deg); }
-    }
     @keyframes mascot-guide-celebrate {
       0%, 100% { transform: translateY(0) rotate(0) scale(1); }
       35% { transform: translateY(-16px) rotate(-4deg) scale(1.04); }
@@ -580,6 +575,10 @@
     @keyframes mascot-target-glow {
       0%, 100% { box-shadow: 0 0 0 0 rgba(13, 148, 136, 0); }
       50% { box-shadow: 0 0 0 5px rgba(13, 148, 136, 0.25); }
+    }
+    @keyframes mascot-click-cue {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-8px) scale(1.04); }
     }
     #mascot-guide {
       position: fixed;
@@ -623,15 +622,39 @@
       right: 0;
       bottom: 0;
       width: 8.25rem;
-      max-height: 11rem;
-      object-fit: contain;
+      height: 11rem;
+      background-repeat: no-repeat;
+      background-size: 400% 200%;
+      background-position: 0 0;
+      cursor: grab;
+      touch-action: none;
+      user-select: none;
       transform-origin: bottom center;
       filter: drop-shadow(0 12px 12px rgba(15, 23, 42, 0.2));
-      will-change: transform;
-      animation: mascot-guide-talk 2.4s ease-in-out 0.55s infinite;
+      will-change: transform, background-position;
+    }
+    .mascot-guide-image.is-chungnam {
+      width: 9.4rem;
+      height: 10rem;
+    }
+    .mascot-guide-image:active {
+      cursor: grabbing;
     }
     #mascot-guide.is-celebrating .mascot-guide-image {
       animation: mascot-guide-celebrate 1.05s ease-in-out 2;
+    }
+    #mascot-target-cue {
+      position: fixed;
+      z-index: 39;
+      border: 2px solid #0D9488;
+      border-radius: 999px;
+      background: #FFFFFF;
+      color: #0F766E;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.75rem;
+      font-weight: 900;
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.18);
+      animation: mascot-click-cue 1.1s ease-in-out infinite;
     }
     .mascot-target-highlight {
       position: relative;
@@ -652,7 +675,8 @@
       #mascot-guide.is-visible .mascot-guide-card,
       .mascot-guide-image,
       #mascot-guide.is-celebrating .mascot-guide-image,
-      .mascot-target-highlight {
+      .mascot-target-highlight,
+      #mascot-target-cue {
         animation: none !important;
       }
     }
@@ -675,7 +699,11 @@
       }
       .mascot-guide-image {
         width: 5.75rem;
-        max-height: 8.5rem;
+        height: 8.5rem;
+      }
+      .mascot-guide-image.is-chungnam {
+        width: 7rem;
+        height: 7.5rem;
       }
       body {
         padding-bottom: 5.5rem;
@@ -2783,9 +2811,12 @@
           다음 단계로 이동
         </button>
       </div>
-      <img id="mascot-guide-image" class="mascot-guide-image" src="" alt="">
+      <div id="mascot-guide-image" class="mascot-guide-image" role="img" aria-label=""></div>
     </div>
   </aside>
+  <button id="mascot-target-cue" type="button" class="hidden" onclick="focusMascotGuideTarget()" aria-label="안내 대상 위치로 이동">
+    <i class="fa-solid fa-hand-pointer mr-1" aria-hidden="true"></i> 여기를 클릭하세요!
+  </button>
 
   <!-- MODAL: INTERACTIVE CAROUSEL GUIDEBOOK -->
   <div id="guide-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
@@ -5669,26 +5700,125 @@
 
     // Employee Track Filter State for Admin/Executive
     let currentSelectedEmpTrackFilter = '전체';
-    let mascotGuideTimer = null;
+    const MASCOT_ANIMATION_ENABLED = true;
     let mascotGuideAction = null;
+    let mascotAnimationTimer = null;
+    let mascotAnimationFrame = 0;
+    let mascotGuideTarget = null;
 
     function mascotForCurrentUser() {
       const isHanyang = String(currentLoggedInUser?.company || '').includes('한양');
       return {
         src: isHanyang ? 'assets/mascot-hanyang-transparent.png' : 'assets/mascot-chungnam-transparent.png',
+        sprite: isHanyang ? 'assets/mascot-hanyang-sprite.png' : 'assets/mascot-chungnam-sprite.png',
+        companyClass: isHanyang ? 'is-hanyang' : 'is-chungnam',
         name: isHanyang ? '하냥이' : '충남이'
       };
     }
 
+    function stopMascotAnimation() {
+      clearInterval(mascotAnimationTimer);
+      mascotAnimationTimer = null;
+    }
+
+    function startMascotAnimation(image) {
+      stopMascotAnimation();
+      mascotAnimationFrame = 0;
+      const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      if (!MASCOT_ANIMATION_ENABLED || reducedMotion) return;
+      mascotAnimationTimer = setInterval(() => {
+        mascotAnimationFrame = (mascotAnimationFrame + 1) % 8;
+        const column = mascotAnimationFrame % 4;
+        const row = Math.floor(mascotAnimationFrame / 4);
+        image.style.backgroundPosition = `${column * 100 / 3}% ${row * 100}%`;
+      }, 320);
+    }
+
+    function clearMascotGuideTarget() {
+      mascotGuideTarget = null;
+      const cue = document.getElementById('mascot-target-cue');
+      if (cue) cue.classList.add('hidden');
+      document.querySelectorAll('.mascot-target-highlight').forEach(element => element.classList.remove('mascot-target-highlight'));
+    }
+
+    function positionMascotTargetCue() {
+      const cue = document.getElementById('mascot-target-cue');
+      if (!cue || !mascotGuideTarget?.isConnected) return clearMascotGuideTarget();
+      const rect = mascotGuideTarget.getBoundingClientRect();
+      cue.style.left = `${Math.max(8, Math.min(window.innerWidth - cue.offsetWidth - 8, rect.left + rect.width / 2 - cue.offsetWidth / 2))}px`;
+      cue.style.top = `${Math.max(8, Math.min(window.innerHeight - cue.offsetHeight - 8, rect.top - cue.offsetHeight - 10))}px`;
+    }
+
+    function pointMascotGuideAt(target) {
+      clearMascotGuideTarget();
+      if (!target) return;
+      mascotGuideTarget = target;
+      target.classList.add('mascot-target-highlight');
+      const cue = document.getElementById('mascot-target-cue');
+      if (cue) {
+        cue.classList.remove('hidden');
+        positionMascotTargetCue();
+      }
+    }
+
+    function focusMascotGuideTarget() {
+      if (!mascotGuideTarget?.isConnected) return clearMascotGuideTarget();
+      mascotGuideTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      mascotGuideTarget.focus?.({ preventScroll: true });
+    }
+
+    function restoreMascotGuidePosition(guide) {
+      try {
+        const saved = JSON.parse(localStorage.getItem('cnhy_mascot_position') || 'null');
+        if (!saved) return;
+        guide.style.right = 'auto';
+        guide.style.bottom = 'auto';
+        guide.style.left = `${Math.max(0, Math.min(window.innerWidth - guide.offsetWidth, Number(saved.left) || 0))}px`;
+        guide.style.top = `${Math.max(0, Math.min(window.innerHeight - guide.offsetHeight, Number(saved.top) || 0))}px`;
+      } catch (_) {}
+    }
+
+    function initializeMascotDragging() {
+      const guide = document.getElementById('mascot-guide');
+      const handle = document.getElementById('mascot-guide-image');
+      if (!guide || !handle || handle.dataset.dragReady) return;
+      handle.dataset.dragReady = 'true';
+      window.addEventListener('scroll', positionMascotTargetCue, { passive: true });
+      window.addEventListener('resize', positionMascotTargetCue);
+      handle.addEventListener('pointerdown', event => {
+        event.preventDefault();
+        handle.setPointerCapture(event.pointerId);
+        const rect = guide.getBoundingClientRect();
+        const offsetX = event.clientX - rect.left;
+        const offsetY = event.clientY - rect.top;
+        const move = moveEvent => {
+          guide.style.right = 'auto';
+          guide.style.bottom = 'auto';
+          guide.style.left = `${Math.max(0, Math.min(window.innerWidth - guide.offsetWidth, moveEvent.clientX - offsetX))}px`;
+          guide.style.top = `${Math.max(0, Math.min(window.innerHeight - guide.offsetHeight, moveEvent.clientY - offsetY))}px`;
+        };
+        const finish = () => {
+          handle.removeEventListener('pointermove', move);
+          localStorage.setItem('cnhy_mascot_position', JSON.stringify({
+            left: parseFloat(guide.style.left) || 0,
+            top: parseFloat(guide.style.top) || 0
+          }));
+        };
+        handle.addEventListener('pointermove', move);
+        handle.addEventListener('pointerup', finish, { once: true });
+        handle.addEventListener('pointercancel', finish, { once: true });
+      });
+    }
+
     function hideMascotGuide() {
-      clearTimeout(mascotGuideTimer);
+      stopMascotAnimation();
       mascotGuideAction = null;
       const guide = document.getElementById('mascot-guide');
       if (guide) {
         guide.classList.add('hidden');
         guide.classList.remove('is-visible', 'is-celebrating');
       }
-      document.querySelectorAll('.mascot-target-highlight').forEach(element => element.classList.remove('mascot-target-highlight'));
+      clearMascotGuideTarget();
     }
 
     function runMascotGuideAction() {
@@ -5701,7 +5831,7 @@
       }
     }
 
-    function showMascotGuide(message, { celebrate = false, duration = 6500, actionLabel = '', action = null } = {}) {
+    function showMascotGuide(message, { celebrate = false, actionLabel = '', action = null } = {}) {
       try {
         if (!currentLoggedInUser) return;
         if (checkUserRole(currentLoggedInUser).isPrivileged) return;
@@ -5711,11 +5841,13 @@
         const messageElement = document.getElementById('mascot-guide-message');
         const actionButton = document.getElementById('mascot-guide-action');
         if (!guide || !image || !title || !messageElement || !actionButton) return;
-        clearTimeout(mascotGuideTimer);
-        document.querySelectorAll('.mascot-target-highlight').forEach(element => element.classList.remove('mascot-target-highlight'));
+        clearMascotGuideTarget();
         const mascot = mascotForCurrentUser();
-        image.src = mascot.src;
-        image.alt = `${mascot.name} 평가 도우미`;
+        image.classList.remove('is-hanyang', 'is-chungnam');
+        image.classList.add(mascot.companyClass);
+        image.style.backgroundImage = `url("${MASCOT_ANIMATION_ENABLED ? mascot.sprite : mascot.src}")`;
+        image.style.backgroundSize = MASCOT_ANIMATION_ENABLED ? '400% 200%' : 'contain';
+        image.setAttribute('aria-label', `${mascot.name} 평가 도우미`);
         title.textContent = `${mascot.name}의 한마디`;
         messageElement.textContent = message;
         mascotGuideAction = typeof action === 'function' ? action : null;
@@ -5725,7 +5857,9 @@
         void guide.offsetWidth;
         guide.classList.add('is-visible');
         guide.classList.toggle('is-celebrating', celebrate);
-        mascotGuideTimer = setTimeout(hideMascotGuide, duration);
+        initializeMascotDragging();
+        restoreMascotGuidePosition(guide);
+        startMascotAnimation(image);
       } catch (error) {
         console.warn('Optional mascot guide skipped:', error);
       }
@@ -5745,9 +5879,8 @@
         showMascotGuide(`${currentLoggedInUser.name}님, 아직 완료하지 않은 평가가 ${pending.length}건 있습니다. 대상자 카드를 선택해 시작해 주세요.`);
         const firstPendingCard = document.querySelector('[data-mascot-pending="true"]');
         if (firstPendingCard) {
-          firstPendingCard.classList.add('mascot-target-highlight');
+          pointMascotGuideAt(firstPendingCard);
           firstPendingCard.addEventListener('click', hideMascotGuide, { once: true });
-          setTimeout(() => firstPendingCard.classList.remove('mascot-target-highlight'), 4500);
         }
       } catch (error) {
         console.warn('Optional mascot pending guide skipped:', error);
@@ -5762,7 +5895,7 @@
         const sessionKey = `cnhy_mascot_no_active_${currentLoggedInUser.id}`;
         if (sessionStorage.getItem(sessionKey)) return;
         sessionStorage.setItem(sessionKey, '1');
-        showMascotGuide('현재 시작된 평가가 없습니다. 새로운 평가가 시작되면 이 화면에서 평가 대상자를 확인할 수 있습니다.', { duration: 7500 });
+        showMascotGuide('현재 시작된 평가가 없습니다. 새로운 평가가 시작되면 이 화면에서 평가 대상자를 확인할 수 있습니다.');
       } catch (error) {
         console.warn('Optional mascot inactive-cycle guide skipped:', error);
       }
@@ -6335,7 +6468,7 @@
       navigateTo('list');
       showMascotGuide(isCurrentFormEditMode
         ? '수정한 평가 내용이 안전하게 다시 저장되었습니다.'
-        : '수고하셨어요! 평가가 정상적으로 제출되었습니다.', { celebrate: true, duration: 5000 });
+        : '수고하셨어요! 평가가 정상적으로 제출되었습니다.', { celebrate: true });
     }
 
     let currentEditingUserId = null;
