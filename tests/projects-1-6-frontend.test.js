@@ -16,6 +16,10 @@ test('executives can open the read-only progress dashboard', async () => {
 test('mobile UI keeps role-filtered navigation fluid and progress tables readable', async () => {
   const index = await readIndex();
   assert.match(index, /grid-auto-columns: minmax\(0, 1fr\)/);
+  assert.match(index, /id="mobile-nav-toggle"[\s\S]*onclick="toggleMobileNavTray\(\)"/);
+  assert.match(index, /data-mobile-label="대상자"[\s\S]*data-mobile-label="내 결과"[\s\S]*data-mobile-label="평가"[\s\S]*data-mobile-label="집계"[\s\S]*data-mobile-label="관리"/);
+  assert.match(index, /function applyMobileNavTrayPreference\(\)[\s\S]*cnhy_mobile_nav_collapsed/);
+  assert.match(index, /mobile-nav-collapsed > button:not\(#mobile-nav-toggle\)[\s\S]*display: none !important/);
   assert.match(index, /\.mobile-card-table td::before/);
   assert.match(index, /function applyMobileAdminTableLayout\(\)/);
   assert.match(index, /'#admin-subtab-summary table'/);

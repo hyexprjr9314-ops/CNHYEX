@@ -1268,6 +1268,48 @@
         font-size: 11px !important;
         line-height: 1.15;
       }
+      #main-nav-tabs .main-nav-label {
+        font-size: 0 !important;
+      }
+      #main-nav-tabs .main-nav-label::after {
+        content: attr(data-mobile-label);
+        font-size: 11px;
+      }
+      #mobile-nav-toggle {
+        position: absolute;
+        top: -2.35rem;
+        right: max(0.5rem, env(safe-area-inset-right));
+        display: flex !important;
+        width: 2.15rem;
+        height: 2.15rem;
+        min-height: 0 !important;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #94A3B8;
+        border-radius: 9999px;
+        background: rgba(255, 255, 255, 0.98);
+        color: #334155;
+        box-shadow: 0 2px 10px rgba(15, 23, 42, 0.15);
+      }
+      #main-nav-tabs.mobile-nav-collapsed {
+        left: auto;
+        right: max(0.75rem, env(safe-area-inset-right));
+        bottom: max(0.75rem, env(safe-area-inset-bottom));
+        width: auto;
+        padding: 0;
+        border: 0 !important;
+        background: transparent;
+        box-shadow: none;
+      }
+      #main-nav-tabs.mobile-nav-collapsed > button:not(#mobile-nav-toggle) {
+        display: none !important;
+      }
+      #main-nav-tabs.mobile-nav-collapsed #mobile-nav-toggle {
+        position: static;
+      }
+      #main-nav-tabs.mobile-nav-collapsed #mobile-nav-toggle i {
+        transform: rotate(180deg);
+      }
       #view-eval .glass-card {
         padding: 1rem !important;
       }
@@ -1927,25 +1969,28 @@
 
     <!-- Top Navigation Tabs -->
     <nav class="flex items-center gap-2 border-b border-slate-800 pb-3 overflow-x-auto text-sm font-bold hidden" id="main-nav-tabs">
+      <button id="mobile-nav-toggle" type="button" class="hidden" onclick="toggleMobileNavTray()" aria-expanded="true" aria-label="하단 메뉴 접기" title="하단 메뉴 접기">
+        <i class="fa-solid fa-chevron-down transition-transform" aria-hidden="true"></i>
+      </button>
       <button onclick="navigateTo('list')" id="nav-tab-list" class="px-4 py-2 rounded-xl transition bg-brandTeal text-white shadow-lg shadow-teal-900/20 flex items-center gap-2">
         <i class="fa-solid fa-list-check"></i>
-        <span>평가 대상자 목록</span>
+        <span class="main-nav-label" data-mobile-label="대상자">평가 대상자 목록</span>
       </button>
       <button onclick="navigateTo('myresults')" id="nav-tab-myresults" class="px-4 py-2 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-2">
         <i class="fa-solid fa-chart-line"></i>
-        <span>내 평가 결과 보기</span>
+        <span class="main-nav-label" data-mobile-label="내 결과">내 평가 결과 보기</span>
       </button>
       <button onclick="navigateTo('evalmanage')" id="nav-tab-evalmanage" class="px-4 py-2 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-2 border border-brandTeal/30 text-teal-300 bg-teal-500/10">
         <i class="fa-solid fa-gears"></i>
-        <span>평가 관리</span>
+        <span class="main-nav-label" data-mobile-label="평가">평가 관리</span>
       </button>
       <button onclick="navigateTo('closingmanage')" id="nav-tab-closingmanage" class="px-4 py-2 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-2 border border-amber-500/30 text-amber-700 bg-amber-500/10">
         <i class="fa-solid fa-file-signature"></i>
-        <span>집계·마감 관리</span>
+        <span class="main-nav-label" data-mobile-label="집계">집계·마감 관리</span>
       </button>
       <button onclick="navigateTo('admin')" id="nav-tab-admin" class="px-4 py-2 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-2 border border-brandGold/30 text-brandGold bg-brandGold/10">
         <i class="fa-solid fa-user-shield"></i>
-        <span>관리자 대시보드</span>
+        <span class="main-nav-label" data-mobile-label="관리">관리자 대시보드</span>
       </button>
     </nav>
 
@@ -4253,6 +4298,29 @@
         localStorage.setItem('cnhy_mobile_header_hidden', String(hidden));
       } catch (_) {}
       applyMobileHeaderPreference();
+    }
+
+    function applyMobileNavTrayPreference() {
+      let collapsed = false;
+      try {
+        collapsed = localStorage.getItem('cnhy_mobile_nav_collapsed') === 'true';
+      } catch (_) {}
+      const nav = document.getElementById('main-nav-tabs');
+      const button = document.getElementById('mobile-nav-toggle');
+      if (!nav || !button) return;
+      nav.classList.toggle('mobile-nav-collapsed', collapsed);
+      button.setAttribute('aria-expanded', String(!collapsed));
+      button.setAttribute('aria-label', collapsed ? '하단 메뉴 열기' : '하단 메뉴 접기');
+      button.title = collapsed ? '하단 메뉴 열기' : '하단 메뉴 접기';
+    }
+
+    function toggleMobileNavTray() {
+      const nav = document.getElementById('main-nav-tabs');
+      const collapsed = !nav?.classList.contains('mobile-nav-collapsed');
+      try {
+        localStorage.setItem('cnhy_mobile_nav_collapsed', String(collapsed));
+      } catch (_) {}
+      applyMobileNavTrayPreference();
     }
 
     function escapeHtml(value) {
@@ -8706,6 +8774,7 @@
     window.addEventListener('DOMContentLoaded', async () => {
       initializeFontScaleControl();
       applyMobileHeaderPreference();
+      applyMobileNavTrayPreference();
       await loadFromServer();
 
       const lastSubtab = sessionStorage.getItem('cnhy_last_subtab') || 'users';
