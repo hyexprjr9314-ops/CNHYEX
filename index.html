@@ -1835,6 +1835,10 @@
 
             <!-- CSV Import & Download Action Buttons -->
             <div class="w-full md:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <button data-admin-setup-next="questions" type="button" onclick="advanceAdminSetupStep('questions')" class="rounded-xl bg-brandTeal px-5 py-3 text-xs font-black text-white shadow-lg transition hover:bg-teal-700 whitespace-nowrap">
+                다음 스텝으로 진행 <i class="fa-solid fa-arrow-right ml-1"></i>
+                <span class="sr-only">평가 매칭 관리로 이동</span>
+              </button>
               <button onclick="downloadCSVQuestionTemplate()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-4 py-3 rounded-xl text-xs transition border border-slate-700 flex items-center justify-center gap-1.5 shadow whitespace-nowrap">
                 <i class="fa-solid fa-file-csv text-emerald-400"></i>
                 <span>📥 CSV 템플릿 양식 다운로드</span>
@@ -2009,10 +2013,13 @@
               <p class="text-xs text-slate-400 mt-0.5">등록된 인원들의 동료평가 수행 권한 활성화 여부를 체크하고 관리합니다.</p>
             </div>
             <div class="flex items-center gap-2">
-              <label class="text-xs font-bold text-slate-300 whitespace-nowrap"><i class="fa-solid fa-calendar-check text-brandTeal mr-1"></i>평가 주기 선택:</label>
-              <select id="perm-cycle-select" onchange="handlePermissionCycleChange(this)" class="bg-slate-900 border border-slate-700 text-xs font-bold text-white rounded-xl px-3 py-2">
+              <select id="perm-cycle-select" onchange="handlePermissionCycleChange(this)" class="hidden" aria-hidden="true" tabindex="-1">
                 <!-- Dynamically Populated -->
               </select>
+              <button data-admin-setup-next="permissions" type="button" onclick="advanceAdminSetupStep('permissions')" class="rounded-xl bg-brandTeal px-5 py-3 text-xs font-black text-white shadow-lg transition hover:bg-teal-700">
+                다음 스텝으로 진행 <i class="fa-solid fa-arrow-right ml-1"></i>
+                <span class="sr-only">질문·가중치 설정으로 이동</span>
+              </button>
             </div>
           </div>
           <div class="flex flex-wrap items-center gap-2 rounded-xl border border-slate-300 bg-white p-3">
@@ -2063,10 +2070,16 @@
               </h3>
               <p class="text-xs text-slate-300 mt-1">직군별 정원과 평가자 업무량을 기준으로 초안을 만들고, 관리자가 자유롭게 보완합니다.</p>
             </div>
-            <button onclick="generateQuotaMatchingDraft()" id="toggle-matching-mode-btn" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold px-4 py-2.5 rounded-xl text-xs shadow-lg transition flex items-center gap-2 border border-purple-400/40">
-              <i class="fa-solid fa-wand-magic-sparkles text-base"></i>
-              <span>정원 기반 자동 초안 생성</span>
-            </button>
+            <div class="flex flex-wrap items-center justify-end gap-2">
+              <button onclick="generateQuotaMatchingDraft()" id="toggle-matching-mode-btn" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold px-4 py-2.5 rounded-xl text-xs shadow-lg transition flex items-center gap-2 border border-purple-400/40">
+                <i class="fa-solid fa-wand-magic-sparkles text-base"></i>
+                <span>정원 기반 자동 초안 생성</span>
+              </button>
+              <button data-admin-setup-next="matching" type="button" onclick="advanceAdminSetupStep('matching')" class="rounded-xl bg-brandTeal px-5 py-3 text-xs font-black text-white shadow-lg transition hover:bg-teal-700 whitespace-nowrap">
+                다음 스텝으로 진행 <i class="fa-solid fa-arrow-right ml-1"></i>
+                <span class="sr-only">평가 진행 관리로 이동</span>
+              </button>
+            </div>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-slate-300">

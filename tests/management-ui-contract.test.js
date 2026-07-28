@@ -190,6 +190,18 @@ test('cycle lifecycle actions finish evaluation setup before closing management 
 
 test('administrator setup reveals existing evaluation tabs step by step without changing APIs', async () => {
   const index = await readFile(indexUrl, 'utf8');
+  const permissions = index.slice(
+    index.indexOf('id="admin-subtab-permissions"'),
+    index.indexOf('ADMIN SUB-TAB: EVALUATION MATCHING MANAGEMENT')
+  );
+  const questions = index.slice(
+    index.indexOf('id="admin-subtab-questions"'),
+    index.indexOf('ADMIN SUB-TAB: PERMISSION MANAGEMENT')
+  );
+  const matching = index.slice(
+    index.indexOf('id="admin-subtab-matching"'),
+    index.indexOf('ADMIN SUB-TAB: EVALUATION LIFECYCLE MANAGEMENT')
+  );
   const visibility = index.match(/function applyAdminSetupVisibility\(animateStep = null\) \{[\s\S]*?\n    \}/)?.[0] ?? '';
   const advance = index.match(/async function advanceAdminSetupStep\(currentStep\) \{[\s\S]*?\n    \}/)?.[0] ?? '';
 
@@ -198,6 +210,13 @@ test('administrator setup reveals existing evaluation tabs step by step without 
   assert.match(visibility, /button\.classList\.toggle\('hidden', !visible\)/);
   assert.match(index, /prefers-reduced-motion: reduce/);
   assert.match(index, /data-admin-setup-next/);
+  assert.doesNotMatch(permissions, /평가 주기 선택:/);
+  assert.match(permissions, /data-admin-setup-next="permissions"/);
+  assert.match(permissions, /id="perm-cycle-select"[^>]+class="hidden"/);
+  assert.match(questions, /data-admin-setup-next="questions"/);
+  assert.match(questions, /CSV Import & Download Action Buttons[\s\S]*data-admin-setup-next="questions"/);
+  assert.match(matching, /data-admin-setup-next="matching"/);
+  assert.match(matching, /toggle-matching-mode-btn[\s\S]*data-admin-setup-next="matching"/);
   assert.match(advance, /usersDb\.some\(user => user\.can_evaluate !== false\)/);
   assert.match(advance, /customQuestionsDb\.filter/);
   assert.match(advance, /customManualMatchingsDb\.filter/);
