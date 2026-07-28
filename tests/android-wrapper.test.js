@@ -30,7 +30,7 @@ test('Android launcher matches the teal bus used by the web header', async () =>
     read('../android/app/src/main/res/values/ic_launcher_background.xml'),
     read('../android/app/src/main/res/drawable-v24/ic_launcher_foreground.xml')
   ]);
-  assert.match(gradle, /versionCode 2[\s\S]*versionName "1\.1"/);
+  assert.match(gradle, /versionCode 3[\s\S]*versionName "1\.2"/);
   assert.match(background, /#0D9488/);
   assert.match(foreground, /android:fillColor="#FFFFFF"/);
 });

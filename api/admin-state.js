@@ -4,6 +4,7 @@ import { ROLES } from './role-policy.js';
 import { normalizeTrack, relationshipType, targetTrack, TRACK_CATEGORIES } from './evaluation-classification.js';
 import { isMutableDraftCycle } from './questions.js';
 import { planAutoMatchings } from './auto-matching.js';
+import { notifyAndDispatch } from './_push.js';
 
 const PRIVILEGED = new Set([ROLES.admin, ROLES.executive]);
 const SUPER_ADMIN_EMAIL = 'admin@cnhyex.com';
@@ -637,8 +638,37 @@ export default async function handler(req, res) {
     } else if (action === 'cycle_validate') {
       result = await service.rpc('validate_evaluation_cycle', { p_cycle_id: Number(req.body.cycle_id) });
     } else if (action === 'cycle_activate') {
-      result = await service.rpc('activate_evaluation_cycle', { p_cycle_id: Number(req.body.cycle_id) });
+      const cycleId = Number(req.body.cycle_id);
+      result = await service.rpc('activate_evaluation_cycle', { p_cycle_id: cycleId });
       if (result.error) throw Object.assign(new Error(result.error.message), { status: 409 });
+      const [matchingRows, adminRows] = await Promise.all([
+        service.from('matchings').select('evaluator_id').eq('cycle_id', cycleId),
+        service.from('users').select('id').eq('active', true).eq('sys_role', ROLES.admin)
+      ]);
+      if (!matchingRows.error) {
+        await notifyAndDispatch(service, {
+          eventKey: `assignment_created:${cycleId}`,
+          cycleId,
+          type: 'assignment_created',
+          title: '새 평가 배정',
+          message: '새로운 동료평가가 배정되었습니다.',
+          recipientUserIds: (matchingRows.data || []).map(row => row.evaluator_id),
+          targetView: 'list'
+        });
+      }
+      if (!adminRows.error) {
+        const assignmentCount = (matchingRows.data || []).length;
+        await notifyAndDispatch(service, {
+          eventKey: `assignment_summary:${cycleId}`,
+          cycleId,
+          type: 'assignment_created',
+          title: '평가 배정 완료',
+          message: `평가 배정이 완료되었습니다. 총 ${assignmentCount}건입니다.`,
+          recipientUserIds: (adminRows.data || []).map(row => row.id),
+          targetView: 'closingmanage',
+          targetSubtab: 'progress'
+        });
+      }
     } else if (['cycle_pause', 'cycle_resume', 'cycle_force_close', 'cycle_cancel', 'cycle_hard_delete'].includes(action)) {
       if (['cycle_force_close', 'cycle_cancel', 'cycle_hard_delete'].includes(action)) assertSuperAdmin(authUser);
       const rpcNames = {

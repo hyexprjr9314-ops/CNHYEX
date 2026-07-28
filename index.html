@@ -4075,6 +4075,135 @@
     let notificationsDb = [];
     let sentGradeMailKeys = new Set();
     let expandedHistoryCycleId = null;
+    let nativePushInitialized = false;
+    let nativePushToken = localStorage.getItem('cnhy_native_push_token') || '';
+
+    function isNativeAndroidApp() {
+      return window.Capacitor?.getPlatform?.() === 'android';
+    }
+
+    async function callPushApi(body) {
+      if (!supabaseClient) return null;
+      const { data } = await supabaseClient.auth.getSession();
+      if (!data.session) return null;
+      const response = await fetch('/api/push-notifications', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${data.session.access_token}`
+        },
+        body: JSON.stringify(body)
+      });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.error || '푸시 알림 서버 연결에 실패했습니다.');
+      }
+      return response.json().catch(() => ({}));
+    }
+
+    function removeNativePushPermissionNotice() {
+      document.getElementById('native-push-permission-notice')?.remove();
+    }
+
+    function showNativePushPermissionNotice() {
+      if (!isNativeAndroidApp() || document.getElementById('native-push-permission-notice')) return;
+      const notice = document.createElement('div');
+      notice.id = 'native-push-permission-notice';
+      notice.className = 'fixed inset-x-3 bottom-20 z-[120] mx-auto max-w-md rounded-2xl border border-amber-300 bg-white p-4 shadow-2xl';
+      notice.innerHTML = `
+        <div class="flex items-start gap-3">
+          <i class="fa-solid fa-bell-slash mt-1 text-xl text-amber-600"></i>
+          <div class="min-w-0 flex-1">
+            <p class="font-black text-slate-900">앱 알림이 꺼져 있습니다</p>
+            <p class="mt-1 text-xs leading-5 text-slate-600">평가 배정·전자결재·결과 공개 알림을 받으려면 알림을 켜주세요.</p>
+            <div class="mt-3 flex justify-end gap-2">
+              <button type="button" class="rounded-lg px-3 py-2 text-xs font-bold text-slate-500" onclick="this.closest('#native-push-permission-notice').remove()">나중에</button>
+              <button type="button" class="rounded-lg bg-teal-700 px-3 py-2 text-xs font-black text-white" onclick="openNativeNotificationSettings()">알림 켜기</button>
+            </div>
+          </div>
+        </div>`;
+      document.body.appendChild(notice);
+    }
+
+    async function openNativeNotificationSettings() {
+      try {
+        await window.Capacitor?.Plugins?.NotificationSettings?.open();
+      } catch (error) {
+        console.warn('Android 알림 설정 화면을 열지 못했습니다.', error);
+      }
+    }
+
+    async function navigateFromPushData(data = {}) {
+      const cycleId = Number(data.cycle_id);
+      const view = String(data.view || 'list');
+      if (cycleId) setSelectedEvaluationCycleId(cycleId);
+      navigateTo(view);
+      if (view === 'closingmanage' && data.subtab) switchAdminTab(String(data.subtab));
+    }
+
+    async function initializeNativePushNotifications() {
+      if (!isNativeAndroidApp() || nativePushInitialized || !currentLoggedInUser) return;
+      const push = window.Capacitor?.Plugins?.PushNotifications;
+      if (!push) return;
+      nativePushInitialized = true;
+      await push.addListener('registration', async ({ value }) => {
+        nativePushToken = value;
+        localStorage.setItem('cnhy_native_push_token', value);
+        try {
+          await callPushApi({ action: 'register', token: value, platform: 'android', app_version: '1.2' });
+          removeNativePushPermissionNotice();
+        } catch (error) {
+          console.warn('기기 푸시 토큰을 서버에 등록하지 못했습니다.', error);
+        }
+      });
+      await push.addListener('registrationError', error => {
+        console.warn('Android 푸시 등록 실패:', error);
+      });
+      await push.addListener('pushNotificationReceived', () => {
+        loadFromServer().catch(() => {});
+      });
+      await push.addListener('pushNotificationActionPerformed', event => {
+        navigateFromPushData(event?.notification?.data || {});
+      });
+      try {
+        await push.createChannel({
+          id: 'cnhyex_hr_updates',
+          name: '인사평가 알림',
+          description: '평가 배정, 전자결재, 결과 공개 알림',
+          importance: 5,
+          visibility: 1,
+          vibration: true
+        });
+        let permission = await push.checkPermissions();
+        if (permission.receive === 'prompt' || permission.receive === 'prompt-with-rationale') {
+          permission = await push.requestPermissions();
+        }
+        if (permission.receive === 'granted') {
+          removeNativePushPermissionNotice();
+          await push.register();
+        } else {
+          showNativePushPermissionNotice();
+        }
+      } catch (error) {
+        console.warn('Android 알림 권한 확인 실패:', error);
+        showNativePushPermissionNotice();
+      }
+    }
+
+    async function refreshNativePushPermission() {
+      if (!isNativeAndroidApp() || !currentLoggedInUser) return;
+      const push = window.Capacitor?.Plugins?.PushNotifications;
+      if (!push) return;
+      try {
+        const permission = await push.checkPermissions();
+        if (permission.receive === 'granted') {
+          removeNativePushPermissionNotice();
+          await push.register();
+        } else {
+          showNativePushPermissionNotice();
+        }
+      } catch (_) {}
+    }
 
     const QUESTION_TRACKS = Object.freeze({
       all: { key: 'all', label: '전사 공통', categories: ['성과', '협업', '성장', '조화'] },
@@ -6757,6 +6886,7 @@
       setupCentralStateSync();
       navigateTo('list');
       renderEmployeeGrid();
+      initializeNativePushNotifications();
     }
 
     // Modal Password Change Controls
@@ -7690,6 +7820,10 @@
             alert(evaluationSubmitErrorMessage(submitError));
             return;
           }
+          callPushApi({
+            action: 'evaluation_submitted',
+            cycle_id: Number(currentTargetEmp.cycleId)
+          }).catch(error => console.warn('평가 취합 푸시 확인을 건너뜁니다.', error));
           currentTargetEmp.completed = 1;
           currentTargetEmp.total = 1;
         }
@@ -8795,6 +8929,9 @@
 
     async function handleLogout() {
       hideMascotGuide();
+      if (nativePushToken) {
+        await callPushApi({ action: 'unregister', token: nativePushToken }).catch(() => {});
+      }
       if (supabaseClient) await supabaseClient.auth.signOut();
       sessionStorage.removeItem('cnhy_session_user');
       sessionStorage.removeItem('cnhy_session_view');
@@ -8802,6 +8939,8 @@
       localStorage.removeItem('cnhy_current_user');
       localStorage.removeItem('cnhy_last_view');
       currentLoggedInUser = null;
+      nativePushInitialized = false;
+      removeNativePushPermissionNotice();
       evaluationHistoryDb = [];
       cycleScoresDb = {};
       finalResultsByCycle = {};
@@ -8858,6 +8997,7 @@
         if (targetView === 'admin' && !roleInfo.isAdmin) targetView = 'list';
 
         navigateTo(targetView);
+        initializeNativePushNotifications();
 
         if (targetView === 'evalmanage') {
           switchAdminTab(evaluationSetupSubtabs.includes(lastSubtab) ? lastSubtab : 'cycles');
@@ -8868,6 +9008,8 @@
         }
       }
     });
+
+    window.addEventListener('focus', refreshNativePushPermission);
 
     const summaryViewState = {
       query: '', company: '', dept: '', workplace: '', role: '', type: '',

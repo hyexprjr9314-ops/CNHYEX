@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { TRACK_CATEGORIES, targetTrack } from './evaluation-classification.js';
 import { ROLES } from './role-policy.js';
+import { dispatchPushNotifications, notifyAndDispatch } from './_push.js';
 
 const PRIVILEGED_ROLES = new Set([ROLES.admin, ROLES.executive]);
 const send = (res, status, payload) => res.status(status).json(payload);
@@ -241,6 +242,51 @@ async function resolveApproverAuthIds(service, userIds) {
   return authIds;
 }
 
+async function dispatchLatestApprovalNotification(service, cycleId) {
+  const audit = await service.from('evaluation_cycle_approval_audit')
+    .select('id')
+    .eq('cycle_id', cycleId)
+    .order('acted_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (audit.error || !audit.data) return;
+  const notifications = await service.from('evaluation_notifications')
+    .select('id')
+    .eq('source_audit_id', audit.data.id);
+  if (notifications.error) return;
+  await dispatchPushNotifications(service, (notifications.data || []).map(row => Number(row.id)));
+}
+
+async function notifyPublishedResults(service, cycleId) {
+  const cycle = await service.from('evaluation_cycles')
+    .select('result_version')
+    .eq('id', cycleId)
+    .single();
+  if (cycle.error) throw cycle.error;
+  const results = await service.from('evaluation_final_results')
+    .select('target_id')
+    .eq('cycle_id', cycleId)
+    .eq('result_version', cycle.data.result_version);
+  if (results.error) throw results.error;
+  const targetIds = [...new Set((results.data || []).map(row => Number(row.target_id)))];
+  if (!targetIds.length) return;
+  const eligible = await service.from('users')
+    .select('id')
+    .in('id', targetIds)
+    .eq('active', true)
+    .neq('sys_role', ROLES.executive);
+  if (eligible.error) throw eligible.error;
+  await notifyAndDispatch(service, {
+    eventKey: `results_published:${cycleId}:${cycle.data.result_version}`,
+    cycleId,
+    type: 'results_published',
+    title: '나의 평가 결과 도착',
+    message: '나의 평가 결과가 도착했습니다! 어서 확인하세요!',
+    recipientUserIds: (eligible.data || []).map(row => row.id),
+    targetView: 'myresults'
+  });
+}
+
 export default async function handler(req, res) {
   try {
     const service = serviceClient();
@@ -287,6 +333,12 @@ export default async function handler(req, res) {
     const rpc = await authenticatedRpcClient(accessToken)
       .rpc(rpcName, mutationArguments(action, req.body, cycleId, authUser.id, approverAuthIds));
     if (rpc.error) throw Object.assign(new Error(rpc.error.message), { status: 409 });
+    if (['request_internal_approval', 'decide_internal_approval', 'recall_internal_approval'].includes(action)) {
+      await dispatchLatestApprovalNotification(service, cycleId);
+    }
+    if (action === 'publish' && req.body?.published === true) {
+      await notifyPublishedResults(service, cycleId);
+    }
     return send(res, 200, { data: rpc.data });
   } catch (error) {
     console.error('Result state API error:', error);

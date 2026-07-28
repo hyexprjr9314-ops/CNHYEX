@@ -30,6 +30,10 @@ jobs:
           java-version: 21
           cache: gradle
       - run: pnpm install --frozen-lockfile
+      - name: Restore optional Firebase Android configuration
+        if: ${{ secrets.CNHYEX_GOOGLE_SERVICES_JSON_BASE64 != '' }}
+        shell: bash
+        run: echo "${{ secrets.CNHYEX_GOOGLE_SERVICES_JSON_BASE64 }}" | base64 --decode > android/app/google-services.json
       - run: pnpm android:sync
       - name: Restore release signing key
         shell: bash
