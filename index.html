@@ -8495,16 +8495,44 @@
         }));
       }
 
+      function currentApprovalAdjustmentAccess() {
+        const roleInfo = checkUserRole(currentLoggedInUser);
+        const cycle = cyclesDb.find(row => Number(row.id) === Number(currentSelectedSummaryCycleId));
+        const status = cycle?.internal_approval_status || 'not_requested';
+        if (status === 'not_requested') {
+          return { allowed: roleInfo.isAdmin || roleInfo.isExecutive, approvalActive: false, label: '' };
+        }
+        if (status !== 'requested') {
+          return { allowed: false, approvalActive: false, label: status === 'approved' ? '결재 완료 · 조정 마감' : '결재 반려 · 조정 잠금' };
+        }
+        const request = approvalRequestsDb.find(row =>
+          Number(row.cycle_id) === Number(currentSelectedSummaryCycleId)
+          && ['requested', 'pending'].includes(row.request_status)
+        );
+        const isCurrentApprover = roleInfo.isExecutive
+          && Number(request?.current_approver_user_id) === Number(currentLoggedInUser?.id);
+        return {
+          allowed: isCurrentApprover,
+          approvalActive: true,
+          label: isCurrentApprover ? '' : (roleInfo.isAdmin ? '전자결재 진행 중' : '결재 차례 대기')
+        };
+      }
+
       function buildSummaryScoreAction(emp, scoreData, isEvalOnly) {
         const roleInfo = checkUserRole(currentLoggedInUser);
-        const canAdjust = Boolean(scoreData?.complete) && !isEvalOnly;
+        const access = currentApprovalAdjustmentAccess();
+        const canAdjust = Boolean(scoreData?.complete) && !isEvalOnly && access.allowed;
         const scorePath = `cycleScoresDb['${currentSelectedSummaryCycleId}']['${emp.id}']`;
 
-        if (!canAdjust) {
+        if (!scoreData?.complete || isEvalOnly) {
           return '<button type="button" disabled title="모든 배정 평가가 완료된 뒤 점수를 조정할 수 있습니다." class="bg-slate-900 text-xs px-2.5 py-1 rounded text-slate-500 font-bold border border-slate-800 cursor-not-allowed">평가 미완료</button>';
         }
         if (!roleInfo.isAdmin && !roleInfo.isExecutive) return '';
-        if (scoreData.is_adjusted) return `<button onclick="event.stopPropagation(); openScoreAdjustmentModal(usersDb.find(u=>u.id===${emp.id}), ${scorePath})" class="adjust-action-edit h-7 whitespace-nowrap text-xs px-2.5 rounded font-bold border transition-colors">조정 수정</button><button onclick="event.stopPropagation(); openScoreAdjustmentCancelModal(usersDb.find(u=>u.id===${emp.id}), ${scorePath})" class="adjust-action-cancel h-7 whitespace-nowrap text-xs px-2.5 rounded font-bold border transition-colors">조정 취소</button>`;
+        if (!canAdjust) return `<span class="inline-flex h-7 items-center rounded border border-slate-300 bg-slate-100 px-2.5 text-[11px] font-bold text-slate-600">${access.label || '조정 잠금'}</span>`;
+        if (scoreData.is_adjusted) {
+          const cancelButton = access.approvalActive ? '' : `<button onclick="event.stopPropagation(); openScoreAdjustmentCancelModal(usersDb.find(u=>u.id===${emp.id}), ${scorePath})" class="adjust-action-cancel h-7 whitespace-nowrap text-xs px-2.5 rounded font-bold border transition-colors">조정 취소</button>`;
+          return `<button onclick="event.stopPropagation(); openScoreAdjustmentModal(usersDb.find(u=>u.id===${emp.id}), ${scorePath})" class="adjust-action-edit h-7 whitespace-nowrap text-xs px-2.5 rounded font-bold border transition-colors">조정 수정</button>${cancelButton}`;
+        }
         return `<button onclick="event.stopPropagation(); openScoreAdjustmentModal(usersDb.find(u=>u.id===${emp.id}), ${scorePath})" class="summary-action-white bg-indigo-600 hover:bg-indigo-500 h-7 min-w-[6.5rem] whitespace-nowrap text-xs px-2.5 rounded text-white font-bold border border-indigo-400 transition-colors">최종 점수 조정</button>`;
       }
 
