@@ -34,6 +34,17 @@ test('mobile administrator dashboard uses compact cards, short labels, and non-o
   assert.match(index, /#directory-toolbar-users[\s\S]*grid-template-columns: minmax\(0, 1fr\) minmax\(7\.5rem, 0\.48fr\)/);
   assert.match(index, /#view-admin table td:nth-child\(3\),[\s\S]*display: none !important/);
   assert.match(index, /#view-admin #user-table-body td:last-child > div[\s\S]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
+  assert.match(index, /#view-admin th:last-child::after[\s\S]*content: "관리"/);
+  assert.match(index, /<span class="md:hidden">평가 관리<\/span>/);
+  assert.match(index, /<span class="md:hidden">집계·마감<\/span>/);
+  assert.match(index, /mobile-pending-grade-copy::after[\s\S]*공개 완료 후 등급이 표시됩니다/);
+  assert.match(index, /data-mobile-label="평가자 켜기"/);
+  assert.match(index, /data-mobile-label="피평가자 끄기"/);
+  assert.match(index, /permission-table-head-evaluator::after[\s\S]*content: "평가자"/);
+  assert.match(index, /#question-csv-actions > label,[\s\S]*#question-score-guide[\s\S]*display: none !important/);
+  assert.match(index, /question-empty-state::after[\s\S]*등록된 질문이 없습니다\. 새 질문을 추가해 주세요/);
+  assert.match(index, /#matching-engine-guide[\s\S]*display: none !important/);
+  assert.match(index, /#toggle-matching-mode-btn span::after[\s\S]*content: "자동 배정"/);
 });
 
 test('mobile regular-user flow uses swipe decks without changing evaluation actions', async () => {
