@@ -22,6 +22,9 @@ test('web push permission is user initiated and subscription is registered', () 
   assert.match(html, /pushManager\.subscribe/);
   assert.match(html, /platform: 'web'/);
   assert.match(api, /push_web_config/);
+  assert.match(html, /\.push-action-white,[\s\S]*color: #FFFFFF !important/);
+  assert.match(html, /class="push-action-white[^"]*" onclick="enableWebPushNotifications\(\)">알림 켜기/);
+  assert.match(html, /class="push-action-white[^"]*" onclick="openNativeNotificationSettings\(\)">알림 켜기/);
 });
 
 test('server dispatch keeps Android FCM and adds standards web push', () => {

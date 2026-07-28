@@ -103,6 +103,7 @@ test('executives cannot open the target list or its hidden company video', async
   assert.match(index, /list: !roleInfo\.isExecutive/);
   assert.match(index, /if \(targetView === 'list' && roleInfo\.isExecutive\) targetView = 'closingmanage';/);
   assert.match(index, /if \(viewId === 'list' && roleInfo\.isExecutive\) viewId = 'closingmanage';/);
+  assert.match(index, /allTargetEmployees\.length === 0[\s\S]*checkUserRole\(currentLoggedInUser\)\.isPrivileged[\s\S]*empty-evaluation-video/);
 });
 
 test('published results require one dinosaur egg reveal per user and cycle on desktop and mobile', async () => {
