@@ -312,6 +312,9 @@ test('company filters use consistent segmented buttons and archived filters stay
   assert.match(index, /bg-slate-700[\s\S]*?>전체</);
   assert.match(index, /bg-orange-600[\s\S]*?>충남고속</);
   assert.match(index, /bg-\[#0047AB\][\s\S]*?>한양고속</);
+  assert.match(index, /button\[data-company-value\]\s*\{\s*color: #FFFFFF !important;/);
+  assert.match(index, /button\[data-company-value="\(주\)충남고속"\]\s*\{\s*background: #EA580C !important;/);
+  assert.match(index, /button\[data-company-value="\(주\)한양고속"\]\s*\{\s*background: #0047AB !important;/);
   assert.match(historyMarkup, /id="history-global-search"/);
   assert.match(historyMarkup, /id="history-close-sort"/);
   assert.doesNotMatch(historyMarkup, /전체 소속사|전체 부서|전체 등급/);
