@@ -83,12 +83,14 @@ test('mobile regular-user flow uses swipe decks without changing evaluation acti
   assert.doesNotMatch(index, /\$\{myCurrentStageText\}/);
 });
 
-test('empty evaluation assignments show the company video on autoplay loop', async () => {
+test('empty evaluation assignments autoplay the company video once', async () => {
   const index = await readIndex();
   const video = await stat(new URL('../assets/chungnam-hanyang.mp4', import.meta.url));
   assert.ok(video.size > 1_000_000);
   assert.match(index, /if \(allTargetEmployees\.length === 0\)[\s\S]*id="empty-evaluation-video"/);
-  assert.match(index, /<video[^>]*autoplay muted loop playsinline controls preload="metadata"/);
+  assert.match(index, /<video class="block h-auto w-full"[^>]*autoplay muted playsinline controls preload="metadata"/);
+  assert.doesNotMatch(index, /<video[^>]*\bloop\b/);
+  assert.doesNotMatch(index, /empty-evaluation-video[\s\S]{0,800}max-h-\[70vh\]|empty-evaluation-video[\s\S]{0,800}object-contain/);
   assert.match(index, /src="assets\/chungnam-hanyang\.mp4"/);
 });
 
