@@ -37,12 +37,14 @@ test('mobile regular-user flow uses swipe decks without changing evaluation acti
   assert.doesNotMatch(index, /\$\{myCurrentStageText\}/);
 });
 
-test('mobile published results require a dinosaur egg tap before reveal', async () => {
+test('published results require one dinosaur egg reveal per user and cycle on desktop and mobile', async () => {
   const index = await readIndex();
   assert.match(index, /id="mobile-result-hatch"[\s\S]*onclick="hatchMobileResult\(\)"/);
   assert.match(index, /function prepareMobileResultHatch\(grade\)/);
   assert.match(index, /function hatchMobileResult\(\)/);
   assert.match(index, /mobile-results-concealed/);
+  assert.match(index, /const shouldShow = hasGrade && !alreadyHatched/);
+  assert.doesNotMatch(index, /const shouldShow = isMobile && hasGrade/);
   assert.match(index, /sessionStorage\.setItem\(mobileResultHatchKey\(\), '1'\)/);
   assert.match(index, /@keyframes dinosaur-egg-wobble/);
   assert.match(index, /@keyframes dinosaur-egg-crack/);
