@@ -30,7 +30,10 @@ test('mobile regular-user flow uses swipe decks without changing evaluation acti
   assert.match(index, /stableCardHeight[\s\S]*deck\.style\.maxHeight/);
   assert.match(index, /#mobile-target-welcome-hero,[\s\S]*#view-list #directory-toolbar-targets[\s\S]*display: none/);
   assert.match(index, /button\[onclick\^="downloadCSV"\],[\s\S]*#bulk-grade-mail-btn[\s\S]*display: none/);
-  assert.match(index, /#my-report-cycle-select,[\s\S]*#summary-cycle-select[\s\S]*max-width: 15rem/);
+  assert.match(index, /#my-report-cycle-select,[\s\S]*#progress-cycle-select[\s\S]*max-width: 15rem/);
+  assert.match(index, /#summary-cycle-select,[\s\S]*#summary-cycle-select-label[\s\S]*display: none !important/);
+  assert.match(index, /#history-archive-heading[\s\S]*flex-direction: column/);
+  assert.match(index, /\.history-cycle-primary[\s\S]*flex-basis: 100%/);
   assert.match(index, /function initializeMobileTargetDeck\(deck\)/);
   assert.match(index, /card\.addEventListener\('pointerdown'/);
   assert.match(index, /card\.addEventListener\('pointermove'/);
@@ -54,6 +57,8 @@ test('published results require one dinosaur egg reveal per user and cycle on de
   assert.match(index, /function prepareMobileResultHatch\(grade\)/);
   assert.match(index, /function hatchMobileResult\(\)/);
   assert.match(index, /result-hatch-active/);
+  assert.match(index, /\.grade-result-card\.result-hatch-active \{[\s\S]*background: #F8FAFC !important/);
+  assert.match(index, /\.grade-result-card\.result-hatch-active::before,[\s\S]*display: none !important/);
   assert.match(index, /gradeCard\.appendChild\(hatch\)/);
   assert.match(index, /const shouldShow = hasGrade && !alreadyHatched/);
   assert.doesNotMatch(index, /const shouldShow = isMobile && hasGrade/);

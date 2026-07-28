@@ -674,6 +674,17 @@
       overflow: hidden;
     }
     .grade-result-card.result-hatch-active > :not(.mobile-result-hatch) { display: none !important; }
+    .grade-result-card.result-hatch-active {
+      animation: none !important;
+      border-color: #94A3B8 !important;
+      background: #F8FAFC !important;
+      box-shadow: 0 12px 30px rgba(15,23,42,.12) !important;
+    }
+    .grade-result-card.result-hatch-active::before,
+    .grade-result-card.result-hatch-active::after {
+      display: none !important;
+      animation: none !important;
+    }
     .grade-result-card.result-hatch-active .mobile-result-hatch.is-ready {
       width: 100%;
       min-height: 100%;
@@ -983,7 +994,6 @@
       #management-cycle-select,
       #question-cycle-select,
       #matching-cycle-select,
-      #summary-cycle-select,
       #progress-cycle-select {
         width: min(100%, 15rem) !important;
         min-width: 0 !important;
@@ -991,6 +1001,22 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+      }
+      #summary-cycle-select,
+      #summary-cycle-select-label {
+        display: none !important;
+      }
+      #history-archive-heading {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+      }
+      .history-cycle-header {
+        flex-wrap: wrap;
+      }
+      .history-cycle-primary {
+        flex-basis: 100%;
+        width: 100%;
       }
       #management-cycle-toolbar {
         flex-direction: column;
@@ -2426,7 +2452,7 @@
 
           <!-- Category Weight Calculator -->
           <div class="p-4 bg-slate-900/60 rounded-xl border border-slate-800 space-y-3">
-            <div class="flex justify-between items-center">
+            <div id="history-archive-heading" class="flex justify-between items-center">
               <span class="text-xs font-bold text-slate-200">기본 평가 카테고리 가중치 설정</span>
               <span class="text-xs font-bold text-emerald-400" id="weight-total-indicator">카테고리 가중치 합계: 100.0% (적정)</span>
             </div>
@@ -2853,7 +2879,7 @@
               <p class="text-xs text-slate-400 mt-0.5">오른쪽 점수 입력/조정 버튼을 눌러 완료된 평가만 조정할 수 있습니다.</p>
             </div>
             <div class="flex flex-wrap items-center justify-end gap-2">
-              <label class="text-xs font-bold text-slate-300 whitespace-nowrap"><i class="fa-solid fa-calendar-check text-brandGold mr-1"></i>평가 주기 선택:</label>
+              <label id="summary-cycle-select-label" class="text-xs font-bold text-slate-300 whitespace-nowrap"><i class="fa-solid fa-calendar-check text-brandGold mr-1"></i>평가 주기 선택:</label>
               <select id="summary-cycle-select" onchange="handleCycleSelectChange(this); renderAdminSummaryTable()" class="bg-slate-900 border border-slate-700 text-xs font-bold text-white rounded-xl px-3 py-2">
                 <!-- Dynamically Populated -->
               </select>
@@ -4701,8 +4727,8 @@
         }).join('') || `<tr><td colspan="7" class="py-8 px-3 text-center text-slate-500">선택한 조건에 해당하는 평가 이력이 없습니다.</td></tr>`;
 
         div.innerHTML = `
-          <div class="flex items-center gap-2">
-            <button type="button" onclick="toggleArchivedHistory(${Number(archive.cycleId)})" class="min-w-0 flex-1 flex items-center gap-3 text-left">
+          <div class="history-cycle-header flex items-center gap-2">
+            <button type="button" onclick="toggleArchivedHistory(${Number(archive.cycleId)})" class="history-cycle-primary min-w-0 flex-1 flex items-center gap-3 text-left">
               <i class="fa-solid fa-chevron-${expanded ? 'down' : 'right'} text-brandTeal"></i>
               <span class="min-w-0 flex-1">
                 <strong class="block truncate text-sm text-white">${escapeHtml(archive.cycleName)}</strong>
