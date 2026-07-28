@@ -13,6 +13,11 @@ test('administrator progress dashboard uses eligible server assignments and subm
   assert.match(index, /function renderEvaluationProgress\(\)/);
   assert.match(index, /eligibleMatchingIds\.has\(Number\(row\.id\)\)/);
   assert.match(index, /submittedMatchingIds\.has\(Number\(row\.id\)\)/);
+  assert.match(index, /userById\.get\(Number\(row\.evaluatorId\)\)\?\.company === progressCompanyFilter/);
+  assert.match(index, /const completed = companyMatchings\.filter\(isSubmitted\)\.length/);
+  assert.match(index, /companyMatchings\.length - completed/);
+  assert.match(index, /completed \/ companyMatchings\.length \* 100/);
+  assert.match(index, /completedEvaluators}명 \/ \$\{companyEvaluatorRows\.length\}명/);
   assert.match(index, /평가자·피평가자 이름 검색/);
   assert.match(index, /피평가자별 수집 현황/);
 

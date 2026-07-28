@@ -4561,19 +4561,11 @@
         Number(row.cycleId) === cycleId && eligibleMatchingIds.has(Number(row.id))
       );
       const isSubmitted = row => submittedMatchingIds.has(Number(row.id));
-      const completed = matchings.filter(isSubmitted).length;
-      const rate = matchings.length ? completed / matchings.length * 100 : 0;
 
       const setText = (id, value) => {
         const element = document.getElementById(id);
         if (element) element.textContent = value;
       };
-      setText('progress-total', `${matchings.length}건`);
-      setText('progress-completed', `${completed}건`);
-      setText('progress-pending', `${matchings.length - completed}건`);
-      setText('progress-rate', `${rate.toFixed(1)}%`);
-      const rateBar = document.getElementById('progress-rate-bar');
-      if (rateBar) rateBar.style.width = `${rate}%`;
 
       const evaluatorGroups = new Map();
       const targetGroups = new Map();
@@ -4588,8 +4580,23 @@
         completed: rows.filter(isSubmitted).length,
         pending: rows.filter(row => !isSubmitted(row))
       })).filter(row => row.person);
-      const completedEvaluators = evaluatorRows.filter(row => row.completed === row.rows.length).length;
-      setText('progress-evaluator-complete', `${completedEvaluators}명 / ${evaluatorRows.length}명`);
+      const companyMatchings = matchings.filter(row =>
+        !progressCompanyFilter
+        || userById.get(Number(row.evaluatorId))?.company === progressCompanyFilter
+      );
+      const companyEvaluatorRows = evaluatorRows.filter(row =>
+        !progressCompanyFilter || row.person.company === progressCompanyFilter
+      );
+      const completed = companyMatchings.filter(isSubmitted).length;
+      const rate = companyMatchings.length ? completed / companyMatchings.length * 100 : 0;
+      const completedEvaluators = companyEvaluatorRows.filter(row => row.completed === row.rows.length).length;
+      setText('progress-total', `${companyMatchings.length}건`);
+      setText('progress-completed', `${completed}건`);
+      setText('progress-pending', `${companyMatchings.length - completed}건`);
+      setText('progress-rate', `${rate.toFixed(1)}%`);
+      setText('progress-evaluator-complete', `${completedEvaluators}명 / ${companyEvaluatorRows.length}명`);
+      const rateBar = document.getElementById('progress-rate-bar');
+      if (rateBar) rateBar.style.width = `${rate}%`;
 
       const depts = [...new Set(evaluatorRows
         .filter(row => !progressCompanyFilter || row.person.company === progressCompanyFilter)
