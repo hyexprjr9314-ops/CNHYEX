@@ -98,6 +98,15 @@ test('personal final grade card uses reveal and accessible repeating grade motio
   assert.match(html, /@media \(prefers-reduced-motion: reduce\)/);
 });
 
+test('S grade uses an accessible glass-prism effect across cards and badges', async () => {
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  assert.match(html, /\.glitter-diamond\s*\{[\s\S]*backdrop-filter: blur\(8px\) saturate\(145%\)/);
+  assert.match(html, /\.glitter-diamond::before[\s\S]*animation: s-glass-shine 3\.8s ease-in-out infinite/);
+  assert.match(html, /@keyframes s-glass-aura/);
+  assert.match(html, /@keyframes s-glass-prism/);
+  assert.match(html, /prefers-reduced-motion: reduce[\s\S]*\.glitter-diamond::before/);
+});
+
 test('adjusted personal results keep the notice and final grade in the two-column result grid', async () => {
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
   assert.match(html, /id="my-result-cards" class="grid grid-cols-1 md:grid-cols-2/);

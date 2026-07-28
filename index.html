@@ -144,10 +144,54 @@
 
     /* White-theme grade surfaces: preserve grade identity without washing out text. */
     .glitter-diamond {
-      animation: none;
-      background: #ECFEFF;
+      position: relative;
+      overflow: hidden;
+      isolation: isolate;
+      animation: s-glass-aura 3.2s ease-in-out infinite, s-glass-prism 8s linear infinite;
+      background:
+        linear-gradient(135deg, rgba(255,255,255,.92) 0%, rgba(207,250,254,.72) 30%, rgba(186,230,253,.62) 52%, rgba(224,231,255,.72) 76%, rgba(255,255,255,.94) 100%);
+      background-size: 260% 260%;
       border-color: #0891B2 !important;
-      box-shadow: 0 2px 10px rgba(8, 145, 178, 0.16) !important;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.95),
+        inset 0 -1px 0 rgba(14,116,144,.12),
+        0 6px 20px rgba(8,145,178,.22),
+        0 0 18px rgba(34,211,238,.16) !important;
+      backdrop-filter: blur(8px) saturate(145%);
+      -webkit-backdrop-filter: blur(8px) saturate(145%);
+    }
+    .grade-result-card.grade-reveal.glitter-diamond {
+      animation: grade-card-reveal 720ms cubic-bezier(.2,.8,.2,1) both,
+        s-glass-aura 3.2s ease-in-out 720ms infinite,
+        s-glass-prism 8s linear 720ms infinite;
+    }
+    .glitter-diamond > * { position: relative; z-index: 1; }
+    .glitter-diamond::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background: linear-gradient(115deg, transparent 22%, rgba(255,255,255,.78) 42%, rgba(103,232,249,.24) 50%, transparent 68%);
+      transform: translateX(-135%) skewX(-15deg);
+      animation: s-glass-shine 3.8s ease-in-out infinite;
+    }
+    @keyframes s-glass-aura {
+      0%, 100% {
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 6px 20px rgba(8,145,178,.2), 0 0 12px rgba(34,211,238,.12);
+      }
+      50% {
+        box-shadow: inset 0 1px 0 #fff, 0 10px 30px rgba(14,165,233,.3), 0 0 26px rgba(103,232,249,.28);
+      }
+    }
+    @keyframes s-glass-prism {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 260% 50%; }
+    }
+    @keyframes s-glass-shine {
+      0%, 30% { transform: translateX(-135%) skewX(-15deg); opacity: 0; }
+      46% { opacity: 1; }
+      68%, 100% { transform: translateX(155%) skewX(-15deg); opacity: 0; }
     }
 
     .glitter-gold {
@@ -684,7 +728,7 @@
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
       }
-      .glitter-another-level, .glitter-another-level::after, .ex-wing-motion,
+      .glitter-another-level, .glitter-another-level::after, .glitter-diamond, .glitter-diamond::before, .ex-wing-motion,
       .grade-result-card.grade-reveal, .grade-result-icon {
         animation: none !important;
       }
