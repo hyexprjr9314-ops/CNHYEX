@@ -37,8 +37,9 @@ test('mobile regular-user flow uses swipe decks without changing evaluation acti
   assert.match(index, /Math\.abs\(deltaX\) >= deck\.clientWidth \* 0\.24 \|\| velocity >= 0\.55/);
   assert.match(index, /deck\.appendChild\(card\)/);
   assert.match(index, /initializeMobileTargetDeck\(groupGrid\)/);
-  assert.match(index, /#statutory-questions-container[\s\S]*scroll-snap-type: x mandatory/);
-  assert.match(index, /\.mobile-question-card[\s\S]*scroll-snap-stop: always/);
+  assert.match(index, /#statutory-questions-container \{[\s\S]*display: block;[\s\S]*overflow: visible/);
+  assert.match(index, /#statutory-questions-container > \.mobile-question-card \{[\s\S]*width: 100%/);
+  assert.doesNotMatch(index, /#statutory-questions-container[\s\S]{0,300}scroll-snap-type: x mandatory/);
   assert.match(index, /card\.onclick = \(\) => openEvaluationForm\(emp, false\)/);
   assert.match(index, /onclick="openPreviewModal\(\)"/);
   assert.match(index, /\.relationship-target-card \{[\s\S]*min-height: 190px/);
@@ -52,7 +53,8 @@ test('published results require one dinosaur egg reveal per user and cycle on de
   assert.match(index, /id="mobile-result-hatch"[\s\S]*onclick="hatchMobileResult\(\)"/);
   assert.match(index, /function prepareMobileResultHatch\(grade\)/);
   assert.match(index, /function hatchMobileResult\(\)/);
-  assert.match(index, /mobile-results-concealed/);
+  assert.match(index, /result-hatch-active/);
+  assert.match(index, /gradeCard\.appendChild\(hatch\)/);
   assert.match(index, /const shouldShow = hasGrade && !alreadyHatched/);
   assert.doesNotMatch(index, /const shouldShow = isMobile && hasGrade/);
   assert.match(index, /sessionStorage\.setItem\(mobileResultHatchKey\(\), '1'\)/);
