@@ -17,7 +17,7 @@ test('summary adjustment and grade-mail actions keep white labels and icons', as
   assert.match(html, /\.summary-action-white,[\s\S]*?\.summary-action-white \*[\s\S]*?color: #FFFFFF !important/);
   assert.match(html, /id="bulk-grade-mail-btn"[\s\S]*?class="summary-action-white/);
   assert.match(html, /class="summary-action-white bg-indigo-600[\s\S]*?>최종 점수 조정<\/button>/);
-  assert.match(html, /sendGradeNoticeEmail[\s\S]*?class="summary-action-white ml-1/);
+  assert.match(html, /sendGradeNoticeEmail[\s\S]*?class="summary-action-white inline-flex h-7 w-7/);
 });
 
 test('adjustment cancellation warning uses readable dark red text', async () => {

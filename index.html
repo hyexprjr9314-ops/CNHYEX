@@ -2282,7 +2282,11 @@
           <div class="h-3 overflow-hidden rounded-full bg-slate-200"><div id="progress-rate-bar" class="h-full bg-brandTeal transition-all" style="width:0%"></div></div>
           <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-2 rounded-xl border border-slate-800 bg-slate-950/50 p-3">
             <label class="relative xl:col-span-2"><i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i><input id="progress-search" oninput="renderEvaluationProgress()" type="search" placeholder="평가자·피평가자 이름 검색" class="w-full rounded-lg border border-slate-700 bg-slate-900 py-2 pl-8 pr-3 text-xs text-white"></label>
-            <select id="progress-company-filter" onchange="renderEvaluationProgress()" class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-bold text-slate-200"><option value="">전체 소속사</option></select>
+            <div id="progress-company-segments" class="grid grid-cols-3 gap-1" aria-label="소속사 필터">
+              <button type="button" data-company-value="" onclick="setProgressCompanyFilter('')" class="rounded-lg border border-slate-600 bg-slate-700 px-2 py-2 text-xs font-bold text-white">전체</button>
+              <button type="button" data-company-value="(주)충남고속" onclick="setProgressCompanyFilter('(주)충남고속')" class="rounded-lg border border-orange-700 bg-orange-600 px-2 py-2 text-xs font-bold text-white">충남고속</button>
+              <button type="button" data-company-value="(주)한양고속" onclick="setProgressCompanyFilter('(주)한양고속')" class="rounded-lg border border-blue-800 bg-[#0047AB] px-2 py-2 text-xs font-bold text-white">한양고속</button>
+            </div>
             <select id="progress-dept-filter" onchange="renderEvaluationProgress()" class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-bold text-slate-200"><option value="">전체 부서</option></select>
             <select id="progress-status-filter" onchange="renderEvaluationProgress()" class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-bold text-slate-200"><option value="">전체 상태</option><option value="pending">미제출 있음</option><option value="complete">완료</option><option value="not_started">미착수</option></select>
           </div>
@@ -2347,7 +2351,11 @@
 
           <div id="summary-filter-toolbar" class="mb-3 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[minmax(240px,1.5fr)_repeat(4,minmax(140px,1fr))] gap-2 rounded-xl border border-slate-800 bg-slate-950/50 p-3">
             <label class="relative"><i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i><input id="summary-filter-search" type="search" placeholder="이름·이메일 검색" class="w-full rounded-lg border border-slate-700 bg-slate-900 py-2 pl-8 pr-3 text-xs text-white outline-none focus:border-brandTeal"></label>
-            <select id="summary-filter-company" class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-bold text-slate-200"><option value="">전체 소속사</option></select>
+            <div id="summary-company-segments" class="grid grid-cols-3 gap-1" aria-label="소속사 필터">
+              <button type="button" data-company-value="" onclick="setSummaryCompanyFilter('')" class="rounded-lg border border-slate-600 bg-slate-700 px-2 py-2 text-xs font-bold text-white">전체</button>
+              <button type="button" data-company-value="(주)충남고속" onclick="setSummaryCompanyFilter('(주)충남고속')" class="rounded-lg border border-orange-700 bg-orange-600 px-2 py-2 text-xs font-bold text-white">충남고속</button>
+              <button type="button" data-company-value="(주)한양고속" onclick="setSummaryCompanyFilter('(주)한양고속')" class="rounded-lg border border-blue-800 bg-[#0047AB] px-2 py-2 text-xs font-bold text-white">한양고속</button>
+            </div>
             <select id="summary-filter-dept" class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-bold text-slate-200"><option value="">전체 부서</option></select>
             <select id="summary-filter-workplace" class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-bold text-slate-200"><option value="">전체 근무지</option></select>
             <select id="summary-filter-role" class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-bold text-slate-200"><option value="">전체 직급</option></select>
@@ -2369,6 +2377,7 @@
                   <th class="py-3 px-3">최종 환산점수</th>
                   <th class="py-3 px-3">조정 여부</th>
                   <th class="py-3 px-3">평가 등급</th>
+                  <th class="py-3 px-3">등급책정 사유</th>
                   <th class="py-3 px-3 text-right">관리</th>
                 </tr>
               </thead>
@@ -2405,6 +2414,14 @@
                 <span>📜 마감된 과거 평가 이력 목록</span>
               </h4>
               <span class="text-xs text-slate-400">보관된 과거 주기 수: <strong id="archived-cycles-count" class="text-brandTeal font-mono font-bold">0건</strong></span>
+            </div>
+
+            <div id="history-global-toolbar" class="grid grid-cols-1 md:grid-cols-[minmax(260px,1fr)_220px] gap-2 rounded-xl border border-slate-800 bg-slate-950/50 p-3">
+              <label class="relative"><i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i><input id="history-global-search" oninput="setHistoryGlobalFilter('query', this.value)" type="search" placeholder="평가 주기·이름 검색" class="w-full rounded-lg border border-slate-700 bg-slate-900 py-2 pl-8 pr-3 text-xs text-white outline-none focus:border-brandTeal"></label>
+              <select id="history-close-sort" onchange="setHistoryGlobalFilter('sortDirection', this.value)" class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-bold text-slate-200">
+                <option value="desc">최신 마감일</option>
+                <option value="asc">오래된 마감일</option>
+              </select>
             </div>
 
             <div id="archived-history-container" class="space-y-4">
@@ -3946,36 +3963,76 @@
       URL.revokeObjectURL(link.href);
     }
 
+    function syncCompanySegmentButtons(containerId, selectedCompany) {
+      document.querySelectorAll(`#${containerId} [data-company-value]`).forEach(button => {
+        const selected = button.dataset.companyValue === selectedCompany;
+        button.classList.toggle('brightness-75', !selected);
+        button.classList.toggle('ring-2', selected);
+        button.classList.toggle('ring-white', selected);
+        button.classList.toggle('shadow-lg', selected);
+        button.setAttribute('aria-pressed', String(selected));
+      });
+    }
+
+    const historyGlobalViewState = { query: '', sortDirection: 'desc' };
+    const historyCycleViewStates = {};
+
+    function getHistoryCycleViewState(cycleId) {
+      const key = String(Number(cycleId));
+      if (!historyCycleViewStates[key]) historyCycleViewStates[key] = { company: '', dept: '', grade: '' };
+      return historyCycleViewStates[key];
+    }
+
+    function setHistoryGlobalFilter(key, value) {
+      historyGlobalViewState[key] = value;
+      renderHistoryTable();
+    }
+
+    function setHistoryCycleFilter(cycleId, key, value) {
+      const state = getHistoryCycleViewState(cycleId);
+      state[key] = value;
+      if (key === 'company') state.dept = '';
+      renderHistoryTable();
+    }
+
+    function resetHistoryCycleFilters(cycleId) {
+      Object.assign(getHistoryCycleViewState(cycleId), { company: '', dept: '', grade: '' });
+      renderHistoryTable();
+    }
+
     function renderHistoryTable() {
       const container = document.getElementById('archived-history-container');
       const countEl = document.getElementById('archived-cycles-count');
       if (!container) return;
 
+      document.getElementById('directory-toolbar-history')?.remove();
+      const globalSearch = document.getElementById('history-global-search');
+      const closeSort = document.getElementById('history-close-sort');
+      if (globalSearch && globalSearch.value !== historyGlobalViewState.query) globalSearch.value = historyGlobalViewState.query;
+      if (closeSort && closeSort.value !== historyGlobalViewState.sortDirection) closeSort.value = historyGlobalViewState.sortDirection;
+      const query = historyGlobalViewState.query.trim().toLocaleLowerCase('ko');
       const archivedHistoryDb = [...evaluationHistoryDb].sort((left, right) =>
-        String(right.closedAt || '').localeCompare(String(left.closedAt || ''))
-        || Number(right.cycleId) - Number(left.cycleId)
+        historyGlobalViewState.sortDirection === 'asc'
+          ? String(left.closedAt || '').localeCompare(String(right.closedAt || '')) || Number(left.cycleId) - Number(right.cycleId)
+          : String(right.closedAt || '').localeCompare(String(left.closedAt || '')) || Number(right.cycleId) - Number(left.cycleId)
       );
-      const historyRows = archivedHistoryDb.flatMap((archive, archiveIndex) =>
-        (archive.snapshot || []).map((person, rowIndex) => ({
-          ...resolveArchivedHistoryPerson(archive.cycleId, person),
-          archiveIndex, rowIndex, cycleName: archive.cycleName, closedAt: archive.closedAt
-        }))
-      );
-      ensureDirectoryToolbar('history', container, historyRows, {
-        render: renderHistoryTable, placeholder: '평가 주기·이름·소속·부서·직급 검색', sortKey: 'closedAt', sortDirection: 'desc',
-        companyValue: row => row.company, deptValue: row => row.dept,
-        statusLabel: '전체 등급', statusValue: row => row.grade,
-        statusOptions: ['EX', 'S', 'A', 'B', 'C', 'D'].map(value => ({ value, label: `${value} 등급` })),
-        searchValues: row => [row.cycleName, row.name, row.company, row.dept, row.role, row.grade],
-        sortOptions: [{ key: 'closedAt', label: '최신 마감일' }, { key: 'name', label: '이름' }, { key: 'company', label: '소속사' }, { key: 'score', label: '최종점수' }, { key: 'grade', label: '등급' }],
-        sortValues: { closedAt: row => row.closedAt, name: row => row.name, company: row => [row.company, row.dept].join(' '), score: row => Number(row.score || 0), grade: row => ({ EX: 0, S: 1, A: 2, B: 3, C: 4, D: 5 }[row.grade] ?? 99) }
-      });
-      const visibleHistoryRows = filterDirectoryItems('history', historyRows);
-      const visibleHistory = archivedHistoryDb.map((archive, archiveIndex) => ({ ...archive, snapshot: visibleHistoryRows.filter(row => row.archiveIndex === archiveIndex) })).filter(archive => archive.snapshot.length > 0);
+      const visibleHistory = archivedHistoryDb.map(archive => {
+        const resolvedSnapshot = (archive.snapshot || []).map(person => resolveArchivedHistoryPerson(archive.cycleId, person));
+        const cycleMatches = !query || [archive.cycleName, archive.closedAt].join(' ').toLocaleLowerCase('ko').includes(query);
+        const searchedSnapshot = cycleMatches ? resolvedSnapshot : resolvedSnapshot.filter(person =>
+          [person.name, person.company, person.dept, person.role, person.grade].join(' ').toLocaleLowerCase('ko').includes(query)
+        );
+        return { ...archive, fullSnapshot: resolvedSnapshot, snapshot: searchedSnapshot };
+      }).filter(archive => archive.snapshot.length > 0 || (!query && archive.fullSnapshot.length === 0));
       const archivedCycleIds = new Set(evaluationHistoryDb.map(archive => Number(archive.cycleId)));
       const closedWithoutArchive = cyclesDb.filter(cycle =>
-        isClosedEvaluationCycle(cycle) && !archivedCycleIds.has(Number(cycle.id))
-      );
+        isClosedEvaluationCycle(cycle)
+        && !archivedCycleIds.has(Number(cycle.id))
+        && (!query || [cycle.name, cycle.desc, cycle.status].join(' ').toLocaleLowerCase('ko').includes(query))
+      ).sort((left, right) => {
+        const comparison = String(left.evaluation_end_date || left.endDate || '').localeCompare(String(right.evaluation_end_date || right.endDate || ''));
+        return historyGlobalViewState.sortDirection === 'asc' ? comparison : -comparison;
+      });
       if (countEl) countEl.innerText = `${visibleHistory.length + closedWithoutArchive.length}건`;
       container.innerHTML = '';
       if (visibleHistory.length === 0 && closedWithoutArchive.length === 0) {
@@ -4007,9 +4064,19 @@
       visibleHistory.forEach(archive => {
         const div = document.createElement('div');
         const expanded = Number(expandedHistoryCycleId) === Number(archive.cycleId);
+        const cycleState = getHistoryCycleViewState(archive.cycleId);
+        const departments = [...new Set(archive.fullSnapshot
+          .filter(person => !cycleState.company || person.company === cycleState.company)
+          .map(person => String(person.dept || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ko'));
+        if (cycleState.dept && !departments.includes(cycleState.dept)) cycleState.dept = '';
+        const filteredSnapshot = archive.snapshot.filter(person =>
+          (!cycleState.company || person.company === cycleState.company)
+          && (!cycleState.dept || person.dept === cycleState.dept)
+          && (!cycleState.grade || person.grade === cycleState.grade)
+        );
         div.className = 'bg-slate-900/90 p-3 rounded-xl border border-slate-800 shadow-sm';
 
-        let rowsHtml = archive.snapshot.map(s => {
+        let rowsHtml = filteredSnapshot.map(s => {
           let badge = `<span class="bg-slate-800 text-slate-300 font-bold px-2 py-0.5 rounded text-[10px]">${s.grade} Grade</span>`;
           if (s.grade === 'EX') badge = `<span class="glitter-another-level grade-label-ex border px-2 py-0.5 rounded text-[10px] font-bold">🪽 EX (ANOTHER LEVEL)</span>`;
           else if (s.grade === 'S') badge = `<span class="glitter-diamond grade-label-s border px-2 py-0.5 rounded text-[10px] font-bold">💎 S Grade</span>`;
@@ -4024,7 +4091,7 @@
               <td class="py-2.5 px-3">${badge}</td>
             </tr>
           `;
-        }).join('');
+        }).join('') || `<tr><td colspan="5" class="py-8 px-3 text-center text-slate-500">선택한 조건에 해당하는 평가 이력이 없습니다.</td></tr>`;
 
         div.innerHTML = `
           <div class="flex items-center gap-2">
@@ -4032,7 +4099,7 @@
               <i class="fa-solid fa-chevron-${expanded ? 'down' : 'right'} text-brandTeal"></i>
               <span class="min-w-0 flex-1">
                 <strong class="block truncate text-sm text-white">${escapeHtml(archive.cycleName)}</strong>
-                <span class="text-xs text-slate-400">마감 ${escapeHtml(archive.closedAt)} · ${archive.snapshot.length}명</span>
+                <span class="text-xs text-slate-400">마감 ${escapeHtml(archive.closedAt)} · ${archive.fullSnapshot.length}명</span>
               </span>
             </button>
             <button type="button" onclick="event.stopPropagation(); downloadArchivedCycleCSV(${Number(archive.cycleId)})" class="bg-brandBlue hover:bg-blue-600 text-white font-bold px-3 py-2 rounded-lg text-xs whitespace-nowrap">
@@ -4045,6 +4112,23 @@
             ` : ''}
           </div>
           <div class="${expanded ? '' : 'hidden'} overflow-x-auto mt-3 pt-3 border-t border-slate-800">
+            <div class="mb-3 grid grid-cols-1 md:grid-cols-[minmax(280px,1fr)_minmax(150px,0.6fr)_minmax(130px,0.5fr)_auto] gap-2 rounded-xl border border-slate-800 bg-slate-950/50 p-3">
+              <div id="history-company-segments-${Number(archive.cycleId)}" class="grid grid-cols-3 gap-1" aria-label="${escapeHtml(archive.cycleName)} 소속사 필터">
+                <button type="button" data-company-value="" onclick="setHistoryCycleFilter(${Number(archive.cycleId)}, 'company', '')" class="rounded-lg border border-slate-600 bg-slate-700 px-2 py-2 text-xs font-bold text-white">전체</button>
+                <button type="button" data-company-value="(주)충남고속" onclick="setHistoryCycleFilter(${Number(archive.cycleId)}, 'company', '(주)충남고속')" class="rounded-lg border border-orange-700 bg-orange-600 px-2 py-2 text-xs font-bold text-white">충남고속</button>
+                <button type="button" data-company-value="(주)한양고속" onclick="setHistoryCycleFilter(${Number(archive.cycleId)}, 'company', '(주)한양고속')" class="rounded-lg border border-blue-800 bg-[#0047AB] px-2 py-2 text-xs font-bold text-white">한양고속</button>
+              </div>
+              <select onchange="setHistoryCycleFilter(${Number(archive.cycleId)}, 'dept', this.value)" class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-bold text-slate-200">
+                <option value="">전체 부서</option>
+                ${departments.map(value => `<option value="${escapeHtml(value)}" ${cycleState.dept === value ? 'selected' : ''}>${escapeHtml(value)}</option>`).join('')}
+              </select>
+              <select onchange="setHistoryCycleFilter(${Number(archive.cycleId)}, 'grade', this.value)" class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-bold text-slate-200">
+                <option value="">전체 등급</option>
+                ${['EX', 'S', 'A', 'B', 'C', 'D'].map(value => `<option value="${value}" ${cycleState.grade === value ? 'selected' : ''}>${value} 등급</option>`).join('')}
+              </select>
+              <button type="button" onclick="resetHistoryCycleFilters(${Number(archive.cycleId)})" class="rounded-lg border border-slate-700 px-3 py-2 text-xs font-bold text-slate-300 hover:border-slate-500 hover:text-white"><i class="fa-solid fa-rotate-left mr-1"></i>초기화</button>
+              <span class="md:col-span-4 text-[11px] text-slate-400">${filteredSnapshot.length}명 표시</span>
+            </div>
             <table class="w-full text-left border-collapse text-xs">
               <thead>
                 <tr class="border-b border-slate-800 text-slate-400">
@@ -4061,8 +4145,8 @@
             </table>
           </div>
         `;
-        bindDirectoryTableSort('history', div.querySelector('table'), ['name', 'company', 'role', 'score', 'grade']);
         container.appendChild(div);
+        syncCompanySegmentButtons(`history-company-segments-${Number(archive.cycleId)}`, cycleState.company);
       });
     }
 
@@ -4391,6 +4475,15 @@
       requestAnimationFrame(applyMobileAdminTableLayout);
     }
 
+    let progressCompanyFilter = '';
+
+    function setProgressCompanyFilter(company) {
+      progressCompanyFilter = company;
+      const departmentFilter = document.getElementById('progress-dept-filter');
+      if (departmentFilter) departmentFilter.value = '';
+      renderEvaluationProgress();
+    }
+
     function renderEvaluationProgress() {
       const roleInfo = checkUserRole(currentLoggedInUser);
       if (!roleInfo.isAdmin && !roleInfo.isExecutive) return;
@@ -4430,8 +4523,9 @@
       const completedEvaluators = evaluatorRows.filter(row => row.completed === row.rows.length).length;
       setText('progress-evaluator-complete', `${completedEvaluators}명 / ${evaluatorRows.length}명`);
 
-      const companies = [...new Set(evaluatorRows.map(row => row.person.company).filter(Boolean))].sort();
-      const depts = [...new Set(evaluatorRows.map(row => row.person.dept).filter(Boolean))].sort();
+      const depts = [...new Set(evaluatorRows
+        .filter(row => !progressCompanyFilter || row.person.company === progressCompanyFilter)
+        .map(row => row.person.dept).filter(Boolean))].sort();
       const syncOptions = (id, label, values) => {
         const select = document.getElementById(id);
         if (!select) return;
@@ -4439,11 +4533,11 @@
         select.innerHTML = `<option value="">${label}</option>${values.map(value => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join('')}`;
         if (values.includes(selected)) select.value = selected;
       };
-      syncOptions('progress-company-filter', '전체 소속사', companies);
       syncOptions('progress-dept-filter', '전체 부서', depts);
+      syncCompanySegmentButtons('progress-company-segments', progressCompanyFilter);
 
       const query = String(document.getElementById('progress-search')?.value || '').trim().toLowerCase();
-      const company = document.getElementById('progress-company-filter')?.value || '';
+      const company = progressCompanyFilter;
       const dept = document.getElementById('progress-dept-filter')?.value || '';
       const status = document.getElementById('progress-status-filter')?.value || '';
       const visibleEvaluators = evaluatorRows.filter(row => {
@@ -4477,7 +4571,12 @@
 
       const visibleTargets = [...targetGroups].map(([id, rows]) => ({
         person: userById.get(Number(id)), rows, completed: rows.filter(isSubmitted).length
-      })).filter(row => row.person && (!query || String(row.person.name).toLowerCase().includes(query)))
+      })).filter(row =>
+        row.person
+        && (!query || String(row.person.name).toLowerCase().includes(query))
+        && (!company || row.person.company === company)
+        && (!dept || row.person.dept === dept)
+      )
         .sort((a, b) => (a.completed / a.rows.length) - (b.completed / b.rows.length) || String(a.person.name).localeCompare(String(b.person.name), 'ko'));
       const targetBody = document.getElementById('progress-target-body');
       if (targetBody) targetBody.innerHTML = visibleTargets.length ? visibleTargets.map(row => {
@@ -6948,6 +7047,7 @@
         await loadFromServer();
         populateCycleSelects();
         renderCyclesList();
+        if (hardDelete) alert(`평가주기 [${confirmation}]와 연결된 평가 자료가 완전히 삭제되었습니다.`);
       } catch (error) {
         alert(`${phrase} 실패: ${error.message}`);
       }
@@ -7670,15 +7770,13 @@
 
     function syncSummaryFilterControls() {
       const search = document.getElementById('summary-filter-search');
-      const company = document.getElementById('summary-filter-company');
       const dept = document.getElementById('summary-filter-dept');
       const workplace = document.getElementById('summary-filter-workplace');
       const role = document.getElementById('summary-filter-role');
       const type = document.getElementById('summary-filter-type');
-      if (!search || !company || !dept || !workplace || !role || !type) return;
+      if (!search || !dept || !workplace || !role || !type) return;
       search.value = summaryViewState.query;
-      const companies = [...new Set(usersDb.map(user => String(user.company || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ko'));
-      populateSummaryFilterSelect(company, '전체 소속사', companies, summaryViewState.company);
+      syncCompanySegmentButtons('summary-company-segments', summaryViewState.company);
       const departments = [...new Set(usersDb.filter(user => !summaryViewState.company || user.company === summaryViewState.company).map(user => String(user.dept || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ko'));
       populateSummaryFilterSelect(dept, '전체 부서', departments, summaryViewState.dept);
       populateSummaryFilterSelect(workplace, '전체 근무지', [...new Set(usersDb.map(user => String(user.workplace || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ko')), summaryViewState.workplace);
@@ -7689,6 +7787,12 @@
       document.getElementById('summary-filter-adjusted').value = summaryViewState.adjusted;
     }
 
+    function setSummaryCompanyFilter(company) {
+      summaryViewState.company = company;
+      summaryViewState.dept = '';
+      renderAdminSummaryTable();
+    }
+
     function initializeSummaryFiltersAndSorting() {
       syncSummaryFilterControls();
       const toolbar = document.getElementById('summary-filter-toolbar');
@@ -7696,11 +7800,6 @@
       toolbar.dataset.initialized = 'true';
       document.getElementById('summary-filter-search').addEventListener('input', event => {
         summaryViewState.query = event.target.value;
-        renderAdminSummaryTable();
-      });
-      document.getElementById('summary-filter-company').addEventListener('change', event => {
-        summaryViewState.company = event.target.value;
-        summaryViewState.dept = '';
         renderAdminSummaryTable();
       });
       document.getElementById('summary-filter-dept').addEventListener('change', event => {
@@ -7776,6 +7875,45 @@
       if (count) count.textContent = `전체 ${employees.length}명 중 ${visible.length}명 표시`;
       return visible;
     }
+      function buildSummaryGradeBasisMap(cycleScores = {}) {
+        const cohortInfo = employee => {
+          const dept = String(employee?.dept || '');
+          const workplace = String(employee?.workplace || '');
+          if (dept.includes('정비')) return { key: 'mechanic', label: '정비사' };
+          if (dept.includes('영업소') || workplace.includes('영업소')) return { key: 'branch', label: '영업소' };
+          return { key: 'headquarters', label: '본사' };
+        };
+        const rows = Object.entries(cycleScores)
+          .map(([targetId, score]) => ({
+            targetId: Number(targetId),
+            score,
+            employee: usersDb.find(user => Number(user.id) === Number(targetId))
+          }))
+          .filter(row => row.employee && row.score?.complete);
+        const percentByTarget = new Map();
+        for (const cohortKey of ['headquarters', 'branch', 'mechanic']) {
+          const ranked = rows
+            .filter(row => cohortInfo(row.employee).key === cohortKey && row.score.calculated_grade !== 'EX')
+            .sort((a, b) => Number(b.score.final) - Number(a.score.final)
+              || Number(b.score.raw) - Number(a.score.raw)
+              || a.targetId - b.targetId);
+          ranked.forEach((row, index) => {
+            percentByTarget.set(row.targetId, Math.max(1, Math.ceil(((index + 1) / ranked.length) * 100)));
+          });
+        }
+        return new Map(rows.map(({ targetId, score, employee }) => {
+          const { label } = cohortInfo(employee);
+          if (!score.grade) return [targetId, '산정 전'];
+          const calculatedGrade = score.calculated_grade || score.grade;
+          const base = calculatedGrade === 'EX'
+            ? `${label} 100점 · EX`
+            : `${label} 상위 ${percentByTarget.get(targetId) || '-'}%`;
+          return [targetId, score.grade_override
+            ? `${base} · 승인 ${calculatedGrade}→${score.grade_override}`
+            : base];
+        }));
+      }
+
       function buildSummaryScoreAction(emp, scoreData, isEvalOnly) {
         const roleInfo = checkUserRole(currentLoggedInUser);
         const canAdjust = Boolean(scoreData?.complete) && !isEvalOnly;
@@ -7785,8 +7923,8 @@
           return '<button type="button" disabled title="모든 배정 평가가 완료된 뒤 점수를 조정할 수 있습니다." class="bg-slate-900 text-xs px-2.5 py-1 rounded text-slate-500 font-bold border border-slate-800 cursor-not-allowed">평가 미완료</button>';
         }
         if (!roleInfo.isAdmin && !roleInfo.isExecutive) return '';
-        if (scoreData.is_adjusted) return `<button onclick="event.stopPropagation(); openScoreAdjustmentModal(usersDb.find(u=>u.id===${emp.id}), ${scorePath})" class="adjust-action-edit text-xs px-2.5 py-1 rounded font-bold border transition-colors">조정 수정</button><button onclick="event.stopPropagation(); openScoreAdjustmentCancelModal(usersDb.find(u=>u.id===${emp.id}), ${scorePath})" class="adjust-action-cancel text-xs px-2.5 py-1 rounded font-bold border transition-colors">조정 취소</button>`;
-        return `<button onclick="event.stopPropagation(); openScoreAdjustmentModal(usersDb.find(u=>u.id===${emp.id}), ${scorePath})" class="summary-action-white bg-indigo-600 hover:bg-indigo-500 text-xs px-2.5 py-1 rounded text-white font-bold border border-indigo-400 transition-colors">최종 점수 조정</button>`;
+        if (scoreData.is_adjusted) return `<button onclick="event.stopPropagation(); openScoreAdjustmentModal(usersDb.find(u=>u.id===${emp.id}), ${scorePath})" class="adjust-action-edit h-7 whitespace-nowrap text-xs px-2.5 rounded font-bold border transition-colors">조정 수정</button><button onclick="event.stopPropagation(); openScoreAdjustmentCancelModal(usersDb.find(u=>u.id===${emp.id}), ${scorePath})" class="adjust-action-cancel h-7 whitespace-nowrap text-xs px-2.5 rounded font-bold border transition-colors">조정 취소</button>`;
+        return `<button onclick="event.stopPropagation(); openScoreAdjustmentModal(usersDb.find(u=>u.id===${emp.id}), ${scorePath})" class="summary-action-white bg-indigo-600 hover:bg-indigo-500 h-7 min-w-[6.5rem] whitespace-nowrap text-xs px-2.5 rounded text-white font-bold border border-indigo-400 transition-colors">최종 점수 조정</button>`;
       }
 
       function renderAdminSummaryTable() {
@@ -7820,6 +7958,7 @@
       tbody.innerHTML = '';
 
       const cycleScores = cycleScoresDb[currentSelectedSummaryCycleId] || {};
+      const gradeBasisByTarget = buildSummaryGradeBasisMap(cycleScores);
       initializeSummaryFiltersAndSorting();
 
       // 점수 집계·최종 조정은 선택 주기의 실제 피평가자만 대상으로 한다.
@@ -7902,8 +8041,8 @@
         );
         const gradeMailActionHtml = checkUserRole(currentLoggedInUser).isAdmin && empScoreData?.grade
           ? gradeMailSent
-            ? `<button type="button" disabled class="summary-action-white ml-1 rounded border border-emerald-500 bg-emerald-600 px-2.5 py-1 text-xs font-bold" title="${emp.name}에게 최종 평가등급 메일 발송 완료"><i class="fa-solid fa-check"></i><span class="ml-1">발송 완료</span></button>`
-            : `<button type="button" ${canSendGradeMail ? '' : 'disabled'} onclick="event.stopPropagation(); sendGradeNoticeEmail(${emp.id}, event.currentTarget)" class="summary-action-white ml-1 rounded border border-violet-400 bg-violet-600 px-2.5 py-1 text-xs font-bold text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-40" title="${canSendGradeMail ? `${emp.name}에게 최종 평가등급 메일 발송` : '전자승인과 최종 결과 공개 완료 후 발송할 수 있습니다.'}"><i class="fa-solid fa-envelope"></i><span class="sr-only">평가 결과 메일 발송</span></button>`
+            ? `<button type="button" disabled class="summary-action-white inline-flex h-7 w-7 shrink-0 items-center justify-center rounded border border-emerald-500 bg-emerald-600 text-xs font-bold" title="${emp.name}에게 최종 평가등급 메일 발송 완료"><i class="fa-solid fa-check"></i><span class="sr-only">발송 완료</span></button>`
+            : `<button type="button" ${canSendGradeMail ? '' : 'disabled'} onclick="event.stopPropagation(); sendGradeNoticeEmail(${emp.id}, event.currentTarget)" class="summary-action-white inline-flex h-7 w-7 shrink-0 items-center justify-center rounded border border-violet-400 bg-violet-600 text-xs font-bold text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-40" title="${canSendGradeMail ? `${emp.name}에게 최종 평가등급 메일 발송` : '전자승인과 최종 결과 공개 완료 후 발송할 수 있습니다.'}"><i class="fa-solid fa-envelope"></i><span class="sr-only">평가 결과 메일 발송</span></button>`
           : '';
 
         
@@ -7922,8 +8061,13 @@
           <td class="py-3 px-3 font-mono font-bold text-brandTeal">${finalScoreStr}</td>
           <td class="py-3 px-3">${isAdjustedStr}</td>
           <td class="py-3 px-3">${gradeBadgeHtml}</td>
-          <td class="py-3 px-3 text-right">
+          <td class="min-w-[9.5rem] max-w-[13rem] py-3 px-3">
+            <span class="block truncate text-[11px] font-bold text-slate-300" title="${escapeHtml(gradeBasisByTarget.get(Number(emp.id)) || '최종 등급 산정 전')}">${escapeHtml(gradeBasisByTarget.get(Number(emp.id)) || '최종 등급 산정 전')}</span>
+          </td>
+          <td class="min-w-[10rem] py-3 px-3 text-right">
+            <div class="inline-flex items-center justify-end gap-1.5 whitespace-nowrap">
             ${scoreActionHtml}${gradeMailActionHtml}
+            </div>
           </td>
         `;
         tbody.appendChild(tr);

@@ -50,6 +50,20 @@ test('closing management owns progress, summary, and history without duplicating
   assert.match(index, /id="bulk-grade-mail-btn"[^>]+class="hidden /);
 });
 
+test('score summary shows compact cohort percentile reasons and stable mail actions', async () => {
+  const index = await readFile(indexUrl, 'utf8');
+  const basisBuilder = index.match(/function buildSummaryGradeBasisMap\(cycleScores = \{\}\) \{[\s\S]*?\n      \}/)?.[0] ?? '';
+
+  assert.match(index, />등급책정 사유<\/th>/);
+  assert.match(basisBuilder, /본사/);
+  assert.match(basisBuilder, /영업소/);
+  assert.match(basisBuilder, /정비사/);
+  assert.match(basisBuilder, /상위 \$\{percentByTarget\.get\(targetId\) \|\| '-'\}%/);
+  assert.match(basisBuilder, /승인 \$\{calculatedGrade\}→\$\{score\.grade_override\}/);
+  assert.match(index, /inline-flex h-7 w-7 shrink-0 items-center justify-center/);
+  assert.match(index, /<span class="sr-only">발송 완료<\/span>/);
+});
+
 test('archived history uses the same immutable final score and approved grade as summary', async () => {
   const index = await readFile(indexUrl, 'utf8');
   const resolver = index.match(/function resolveArchivedHistoryPerson\(cycleId, person = \{\}\) \{[\s\S]*?\n    \}/)?.[0] ?? '';
@@ -278,4 +292,32 @@ test('question management loads and renders only cycle-scoped questions', async 
   assert.match(index, /\.eq\('cycle_id', cycleId\)\.order\('id'\)/);
   assert.doesNotMatch(index, /!question\.cycleId \|\| Number\(question\.cycleId\) === cycleId/);
   assert.doesNotMatch(index, /!q\.cycleId \|\| String\(q\.cycleId\) === String\(selectedCycleId\)/);
+});
+
+test('company filters use consistent segmented buttons and archived filters stay cycle-scoped', async () => {
+  const index = await readFile(indexUrl, 'utf8');
+  const historyMarkup = index.slice(
+    index.indexOf('id="history-global-toolbar"'),
+    index.indexOf('id="archived-history-container"')
+  );
+  const historyRenderer = index.slice(
+    index.indexOf('function renderHistoryTable()'),
+    index.indexOf('function renderMyResults()')
+  );
+
+  assert.match(index, /id="progress-company-segments"/);
+  assert.match(index, /id="summary-company-segments"/);
+  assert.doesNotMatch(index, /id="progress-company-filter"/);
+  assert.doesNotMatch(index, /id="summary-filter-company"/);
+  assert.match(index, /bg-slate-700[\s\S]*?>전체</);
+  assert.match(index, /bg-orange-600[\s\S]*?>충남고속</);
+  assert.match(index, /bg-\[#0047AB\][\s\S]*?>한양고속</);
+  assert.match(historyMarkup, /id="history-global-search"/);
+  assert.match(historyMarkup, /id="history-close-sort"/);
+  assert.doesNotMatch(historyMarkup, /전체 소속사|전체 부서|전체 등급/);
+  assert.match(historyRenderer, /history-company-segments-\$\{Number\(archive\.cycleId\)\}/);
+  assert.match(historyRenderer, /전체 부서/);
+  assert.match(historyRenderer, /전체 등급/);
+  assert.match(historyRenderer, /getHistoryCycleViewState\(archive\.cycleId\)/);
+  assert.doesNotMatch(historyRenderer, /ensureDirectoryToolbar\('history'/);
 });
