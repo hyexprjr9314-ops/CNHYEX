@@ -926,21 +926,22 @@
         align-items: center !important;
       }
       .relationship-card-deck {
-        display: flex !important;
-        gap: 0.75rem !important;
-        overflow-x: auto;
-        scroll-snap-type: x mandatory;
-        overscroll-behavior-inline: contain;
-        scrollbar-width: none;
-        padding: 0.1rem 8vw 0.6rem 0.1rem;
+        position: relative;
+        display: block !important;
+        min-height: 215px;
+        overflow: hidden;
+        padding: 0.1rem 0 1rem;
       }
-      .relationship-card-deck::-webkit-scrollbar { display: none; }
       .relationship-target-card {
-        flex: 0 0 84vw;
+        position: absolute;
+        inset: 0;
+        width: 100%;
         min-height: 190px;
-        scroll-snap-align: center;
-        scroll-snap-stop: always;
         padding: 1rem !important;
+        touch-action: pan-y;
+        user-select: none;
+        transform-origin: 50% 100%;
+        will-change: transform, opacity;
       }
       .relationship-target-card h4 {
         font-size: 1.25rem !important;
@@ -6604,6 +6605,94 @@
     }
 
     // Employee Grid Handler (Relationship Groups + Track Subtabs + Privacy Protection)
+    function initializeMobileTargetDeck(deck) {
+      if (!deck || !window.matchMedia?.('(max-width: 640px)').matches) return;
+      const cards = () => Array.from(deck.querySelectorAll('.relationship-target-card'));
+      const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+      const arrange = () => {
+        const items = cards();
+        items.forEach((card, index) => {
+          card.style.zIndex = String(items.length - index);
+          card.style.opacity = index < 3 ? String(1 - (index * 0.12)) : '0';
+          card.style.pointerEvents = index === 0 ? 'auto' : 'none';
+          card.style.transition = reducedMotion ? 'none' : 'transform 280ms cubic-bezier(.2,.8,.2,1), opacity 220ms ease';
+          card.style.transform = index === 0
+            ? 'translate3d(0,0,0) rotate(0deg) scale(1)'
+            : `translate3d(0,${Math.min(index, 2) * 10}px,0) rotate(0deg) scale(${1 - (Math.min(index, 2) * 0.035)})`;
+        });
+        const tallest = Math.max(190, ...items.map(card => card.scrollHeight));
+        deck.style.height = `${tallest + 22}px`;
+      };
+
+      cards().forEach(card => {
+        let startX = 0;
+        let startY = 0;
+        let startTime = 0;
+        let deltaX = 0;
+        let dragging = false;
+
+        card.addEventListener('pointerdown', event => {
+          if (event.pointerType === 'mouse' && event.button !== 0) return;
+          if (card !== cards()[0] || cards().length < 2) return;
+          startX = event.clientX;
+          startY = event.clientY;
+          startTime = performance.now();
+          deltaX = 0;
+          dragging = false;
+          card.style.transition = 'none';
+          card.setPointerCapture?.(event.pointerId);
+        });
+
+        card.addEventListener('pointermove', event => {
+          if (!card.hasPointerCapture?.(event.pointerId)) return;
+          const moveX = event.clientX - startX;
+          const moveY = event.clientY - startY;
+          if (!dragging && Math.abs(moveY) > Math.abs(moveX)) return;
+          if (Math.abs(moveX) < 4) return;
+          dragging = true;
+          deltaX = moveX;
+          event.preventDefault();
+          const rotation = Math.max(-10, Math.min(10, moveX / 22));
+          card.style.transform = `translate3d(${moveX}px,0,0) rotate(${rotation}deg) scale(1)`;
+          card.style.opacity = String(Math.max(0.55, 1 - Math.abs(moveX) / (deck.clientWidth * 1.4)));
+        });
+
+        const finishDrag = event => {
+          if (!card.hasPointerCapture?.(event.pointerId)) return;
+          card.releasePointerCapture?.(event.pointerId);
+          const elapsed = Math.max(1, performance.now() - startTime);
+          const velocity = Math.abs(deltaX) / elapsed;
+          const shouldAdvance = dragging && (Math.abs(deltaX) >= deck.clientWidth * 0.24 || velocity >= 0.55);
+          card.style.transition = reducedMotion ? 'none' : 'transform 260ms ease-in, opacity 220ms ease';
+
+          if (shouldAdvance) {
+            deck.dataset.swipedAt = String(Date.now());
+            const direction = deltaX < 0 ? -1 : 1;
+            card.style.transform = `translate3d(${direction * (window.innerWidth + card.offsetWidth)}px,0,0) rotate(${direction * 14}deg)`;
+            card.style.opacity = '0';
+            window.setTimeout(() => {
+              deck.appendChild(card);
+              arrange();
+            }, reducedMotion ? 0 : 270);
+          } else {
+            arrange();
+          }
+        };
+
+        card.addEventListener('pointerup', finishDrag);
+        card.addEventListener('pointercancel', finishDrag);
+        card.addEventListener('click', event => {
+          if (Date.now() - Number(deck.dataset.swipedAt || 0) < 450) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+          }
+        }, true);
+      });
+
+      requestAnimationFrame(arrange);
+    }
+
     function renderEmployeeGrid() {
       const container = document.getElementById('employee-card-grid');
       if (!container) return;
@@ -6811,6 +6900,7 @@
         groupGrid.appendChild(card);
         });
         container.appendChild(section);
+        initializeMobileTargetDeck(groupGrid);
       });
 
       showPendingEvaluationGuide(allTargetEmployees);

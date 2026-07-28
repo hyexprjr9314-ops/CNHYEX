@@ -25,8 +25,14 @@ test('mobile UI keeps role-filtered navigation fluid and progress tables readabl
 
 test('mobile regular-user flow uses swipe decks without changing evaluation actions', async () => {
   const index = await readIndex();
-  assert.match(index, /\.relationship-card-deck[\s\S]*scroll-snap-type: x mandatory/);
-  assert.match(index, /\.relationship-target-card[\s\S]*scroll-snap-align: center/);
+  assert.match(index, /\.relationship-card-deck[\s\S]*position: relative/);
+  assert.match(index, /\.relationship-target-card[\s\S]*touch-action: pan-y/);
+  assert.match(index, /function initializeMobileTargetDeck\(deck\)/);
+  assert.match(index, /card\.addEventListener\('pointerdown'/);
+  assert.match(index, /card\.addEventListener\('pointermove'/);
+  assert.match(index, /Math\.abs\(deltaX\) >= deck\.clientWidth \* 0\.24 \|\| velocity >= 0\.55/);
+  assert.match(index, /deck\.appendChild\(card\)/);
+  assert.match(index, /initializeMobileTargetDeck\(groupGrid\)/);
   assert.match(index, /#statutory-questions-container[\s\S]*scroll-snap-type: x mandatory/);
   assert.match(index, /\.mobile-question-card[\s\S]*scroll-snap-stop: always/);
   assert.match(index, /card\.onclick = \(\) => openEvaluationForm\(emp, false\)/);
