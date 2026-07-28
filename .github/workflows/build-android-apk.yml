@@ -41,7 +41,10 @@ jobs:
           CNHYEX_KEYSTORE_PASSWORD: ${{ secrets.CNHYEX_KEYSTORE_PASSWORD }}
           CNHYEX_KEY_ALIAS: cnhyex
           CNHYEX_KEY_PASSWORD: ${{ secrets.CNHYEX_KEY_PASSWORD }}
-        run: ./gradlew assembleRelease
+        run: |
+          sed -i 's/\r$//' gradlew
+          chmod +x gradlew
+          ./gradlew assembleRelease
       - name: Name APK
         run: cp android/app/build/outputs/apk/release/app-release.apk CNHYEX-Android.apk
       - uses: actions/upload-artifact@v4
