@@ -3991,7 +3991,7 @@
 
     function getHistoryCycleViewState(cycleId) {
       const key = String(Number(cycleId));
-      if (!historyCycleViewStates[key]) historyCycleViewStates[key] = { company: '', dept: '', grade: '' };
+      if (!historyCycleViewStates[key]) historyCycleViewStates[key] = { company: '', dept: '', grade: '', sortKey: 'name' };
       return historyCycleViewStates[key];
     }
 
@@ -4008,7 +4008,7 @@
     }
 
     function resetHistoryCycleFilters(cycleId) {
-      Object.assign(getHistoryCycleViewState(cycleId), { company: '', dept: '', grade: '' });
+      Object.assign(getHistoryCycleViewState(cycleId), { company: '', dept: '', grade: '', sortKey: 'name' });
       renderHistoryTable();
     }
 
@@ -4085,7 +4085,15 @@
           (!cycleState.company || person.company === cycleState.company)
           && (!cycleState.dept || person.dept === cycleState.dept)
           && (!cycleState.grade || person.grade === cycleState.grade)
-        );
+        ).sort((left, right) => {
+          const leftValue = cycleState.sortKey === 'company'
+            ? [left.company, left.dept, left.name].join(' ')
+            : left.name;
+          const rightValue = cycleState.sortKey === 'company'
+            ? [right.company, right.dept, right.name].join(' ')
+            : right.name;
+          return String(leftValue || '').localeCompare(String(rightValue || ''), 'ko', { numeric: true });
+        });
         div.className = 'bg-slate-900/90 p-3 rounded-xl border border-slate-800 shadow-sm';
 
         let rowsHtml = filteredSnapshot.map(s => {
@@ -4124,7 +4132,7 @@
             ` : ''}
           </div>
           <div class="${expanded ? '' : 'hidden'} overflow-x-auto mt-3 pt-3 border-t border-slate-800">
-            <div class="mb-3 grid grid-cols-1 md:grid-cols-[minmax(280px,1fr)_minmax(150px,0.6fr)_minmax(130px,0.5fr)_auto] gap-2 rounded-xl border border-slate-800 bg-slate-950/50 p-3">
+            <div class="mb-3 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[minmax(280px,1fr)_minmax(150px,0.6fr)_minmax(130px,0.5fr)_minmax(150px,0.55fr)_auto] gap-2 rounded-xl border border-slate-800 bg-slate-950/50 p-3">
               <div id="history-company-segments-${Number(archive.cycleId)}" class="grid grid-cols-3 gap-1" aria-label="${escapeHtml(archive.cycleName)} 소속사 필터">
                 <button type="button" data-company-value="" onclick="setHistoryCycleFilter(${Number(archive.cycleId)}, 'company', '')" class="rounded-lg border border-slate-600 bg-slate-700 px-2 py-2 text-xs font-bold text-white">전체</button>
                 <button type="button" data-company-value="(주)충남고속" onclick="setHistoryCycleFilter(${Number(archive.cycleId)}, 'company', '(주)충남고속')" class="rounded-lg border border-orange-700 bg-orange-600 px-2 py-2 text-xs font-bold text-white">충남고속</button>
@@ -4138,8 +4146,12 @@
                 <option value="">전체 등급</option>
                 ${['EX', 'S', 'A', 'B', 'C', 'D'].map(value => `<option value="${value}" ${cycleState.grade === value ? 'selected' : ''}>${value} 등급</option>`).join('')}
               </select>
+              <select onchange="setHistoryCycleFilter(${Number(archive.cycleId)}, 'sortKey', this.value)" class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-bold text-slate-200" aria-label="목록 정렬 기준">
+                <option value="name" ${cycleState.sortKey === 'name' ? 'selected' : ''}>이름순</option>
+                <option value="company" ${cycleState.sortKey === 'company' ? 'selected' : ''}>소속·부서순</option>
+              </select>
               <button type="button" onclick="resetHistoryCycleFilters(${Number(archive.cycleId)})" class="rounded-lg border border-slate-700 px-3 py-2 text-xs font-bold text-slate-300 hover:border-slate-500 hover:text-white"><i class="fa-solid fa-rotate-left mr-1"></i>초기화</button>
-              <span class="md:col-span-4 text-[11px] text-slate-400">${filteredSnapshot.length}명 표시</span>
+              <span class="md:col-span-2 xl:col-span-5 text-[11px] text-slate-400">${filteredSnapshot.length}명 표시</span>
             </div>
             <table class="w-full text-left border-collapse text-xs">
               <thead>

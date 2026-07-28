@@ -321,6 +321,10 @@ test('company filters use consistent segmented buttons and archived filters stay
   assert.match(historyRenderer, /history-company-segments-\$\{Number\(archive\.cycleId\)\}/);
   assert.match(historyRenderer, /전체 부서/);
   assert.match(historyRenderer, /전체 등급/);
+  assert.match(historyRenderer, />이름순</);
+  assert.match(historyRenderer, />소속·부서순</);
+  assert.match(historyRenderer, /cycleState\.sortKey === 'company'/);
+  assert.match(historyRenderer, /localeCompare\(String\(rightValue \|\| ''\), 'ko', \{ numeric: true \}\)/);
   assert.match(historyRenderer, /getHistoryCycleViewState\(archive\.cycleId\)/);
   assert.doesNotMatch(historyRenderer, /ensureDirectoryToolbar\('history'/);
 });
