@@ -32,7 +32,9 @@ test('mobile regular-user flow uses swipe decks without changing evaluation acti
   assert.match(index, /card\.onclick = \(\) => openEvaluationForm\(emp, false\)/);
   assert.match(index, /onclick="openPreviewModal\(\)"/);
   assert.match(index, /\.relationship-target-card \{[\s\S]*min-height: 190px/);
-  assert.match(index, /class="mobile-stage-short hidden">평가 시작<\/span>/);
+  assert.match(index, /<span>평가 시작<\/span>/);
+  assert.doesNotMatch(index, /평가권한 활성화/);
+  assert.doesNotMatch(index, /\$\{myCurrentStageText\}/);
 });
 
 test('mobile published results require a dinosaur egg tap before reveal', async () => {

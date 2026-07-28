@@ -874,9 +874,6 @@
       .relationship-target-card h4 {
         font-size: 1.25rem !important;
       }
-      .mobile-stage-short {
-        display: inline !important;
-      }
       #view-eval > div:first-child {
         position: sticky;
         top: 0.5rem;
@@ -6683,7 +6680,6 @@
         const stageInfo = resolveEvaluationStage(loggedInUserObj, emp);
         let trackTitle = `${stageInfo.track} (${stageInfo.total}단계)`;
         let totalStages = stageInfo.total;
-        let myCurrentStageText = `${stageInfo.stage}차 · ${stageInfo.label}`;
         let isStageUnlocked = true;
 
         const card = document.createElement('div');
@@ -6722,7 +6718,6 @@
           </div>
 
           <div class="border-t border-slate-800/80 pt-3 flex justify-between items-center text-xs">
-            <span class="mobile-tmi text-slate-400 text-[11px]">${emp.active ? '평가권한 활성화' : '권한 비활성화'}</span>
             ${isDone ? (
               isCycleClosed ? `
                 <span class="text-slate-400 font-bold"><i class="fa-solid fa-lock text-amber-400 mr-1"></i>🔒 마감됨 (수정불가)</span>
@@ -6734,8 +6729,7 @@
             ) : (
               isStageUnlocked ? `
                 <span class="text-brandTeal font-bold flex items-center gap-1">
-                  <span class="mobile-tmi">📝 ${myCurrentStageText}</span>
-                  <span class="mobile-stage-short hidden">평가 시작</span>
+                  <span>평가 시작</span>
                   <i class="fa-solid fa-arrow-right text-[10px]"></i>
                 </span>
               ` : `
