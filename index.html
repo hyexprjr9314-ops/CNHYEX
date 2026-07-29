@@ -7426,13 +7426,31 @@
         let startTime = 0;
         let deltaX = 0;
         let dragging = false;
+        let activePointerId = null;
+        let deckWidth = 1;
+        let frameId = 0;
+
+        const cancelFrame = () => {
+          if (frameId) cancelAnimationFrame(frameId);
+          frameId = 0;
+        };
+
+        const resetDrag = () => {
+          cancelFrame();
+          activePointerId = null;
+          dragging = false;
+          deltaX = 0;
+          arrange();
+        };
 
         card.addEventListener('pointerdown', event => {
           if (event.pointerType === 'mouse' && event.button !== 0) return;
           if (card !== cards()[0] || cards().length < 2) return;
+          activePointerId = event.pointerId;
           startX = event.clientX;
           startY = event.clientY;
           startTime = performance.now();
+          deckWidth = Math.max(1, deck.clientWidth);
           deltaX = 0;
           dragging = false;
           card.style.transition = 'none';
@@ -7440,25 +7458,39 @@
         });
 
         card.addEventListener('pointermove', event => {
-          if (!card.hasPointerCapture?.(event.pointerId)) return;
+          if (event.pointerId !== activePointerId) return;
           const moveX = event.clientX - startX;
           const moveY = event.clientY - startY;
-          if (!dragging && Math.abs(moveY) > Math.abs(moveX)) return;
+          if (!dragging && Math.abs(moveY) > Math.abs(moveX) && Math.abs(moveY) >= 6) {
+            card.releasePointerCapture?.(event.pointerId);
+            resetDrag();
+            return;
+          }
           if (Math.abs(moveX) < 4) return;
           dragging = true;
           deltaX = moveX;
           event.preventDefault();
-          const rotation = Math.max(-10, Math.min(10, moveX / 22));
-          card.style.transform = `translate3d(${moveX}px,0,0) rotate(${rotation}deg) scale(1)`;
-          card.style.opacity = String(Math.max(0.55, 1 - Math.abs(moveX) / (deck.clientWidth * 1.4)));
+          if (frameId) return;
+          frameId = requestAnimationFrame(() => {
+            frameId = 0;
+            const rotation = Math.max(-10, Math.min(10, deltaX / 22));
+            card.style.transform = `translate3d(${deltaX}px,0,0) rotate(${rotation}deg) scale(1)`;
+            card.style.opacity = String(Math.max(0.55, 1 - Math.abs(deltaX) / (deckWidth * 1.4)));
+          });
         });
 
         const finishDrag = event => {
-          if (!card.hasPointerCapture?.(event.pointerId)) return;
-          card.releasePointerCapture?.(event.pointerId);
+          if (event.pointerId !== activePointerId) return;
+          cancelFrame();
+          activePointerId = null;
+          if (card.hasPointerCapture?.(event.pointerId)) card.releasePointerCapture(event.pointerId);
+          if (event.type === 'pointercancel') {
+            resetDrag();
+            return;
+          }
           const elapsed = Math.max(1, performance.now() - startTime);
           const velocity = Math.abs(deltaX) / elapsed;
-          const shouldAdvance = dragging && (Math.abs(deltaX) >= deck.clientWidth * 0.24 || velocity >= 0.55);
+          const shouldAdvance = dragging && (Math.abs(deltaX) >= deckWidth * 0.24 || velocity >= 0.55);
           card.style.transition = reducedMotion ? 'none' : 'transform 260ms ease-in, opacity 220ms ease';
 
           if (shouldAdvance) {
@@ -7477,6 +7509,9 @@
 
         card.addEventListener('pointerup', finishDrag);
         card.addEventListener('pointercancel', finishDrag);
+        card.addEventListener('lostpointercapture', () => {
+          if (activePointerId !== null) resetDrag();
+        });
         card.addEventListener('click', event => {
           if (Date.now() - Number(deck.dataset.swipedAt || 0) < 450) {
             event.preventDefault();

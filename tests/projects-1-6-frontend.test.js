@@ -72,7 +72,12 @@ test('mobile regular-user flow uses swipe decks without changing evaluation acti
   assert.match(index, /function initializeMobileTargetDeck\(deck\)/);
   assert.match(index, /card\.addEventListener\('pointerdown'/);
   assert.match(index, /card\.addEventListener\('pointermove'/);
-  assert.match(index, /Math\.abs\(deltaX\) >= deck\.clientWidth \* 0\.24 \|\| velocity >= 0\.55/);
+  assert.match(index, /card\.addEventListener\('pointercancel', finishDrag\)/);
+  assert.match(index, /card\.addEventListener\('lostpointercapture'/);
+  assert.match(index, /frameId = requestAnimationFrame/);
+  assert.match(index, /deckWidth = Math\.max\(1, deck\.clientWidth\)/);
+  assert.doesNotMatch(index, /Math\.abs\(deltaX\) >= deck\.clientWidth/);
+  assert.match(index, /Math\.abs\(deltaX\) >= deckWidth \* 0\.24 \|\| velocity >= 0\.55/);
   assert.match(index, /deck\.appendChild\(card\)/);
   assert.match(index, /initializeMobileTargetDeck\(groupGrid\)/);
   assert.match(index, /#statutory-questions-container \{[\s\S]*display: block;[\s\S]*overflow: visible/);
