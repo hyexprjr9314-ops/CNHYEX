@@ -72,6 +72,9 @@ test('mobile UI supports email or name and an accessible one-screen temporary-nu
   assert.match(index, /id="view-pin-enrollment"/);
   assert.match(index, /id="pin-enrollment-code"[^>]+pattern="\[0-9\]\{8\}"/);
   assert.match(index, /id="pin-enrollment-value"[^>]+pattern="\[0-9\]\{6\}"/);
-  assert.match(index, /처음 PIN 만들기/);
+  assert.match(index, /처음 PIN 설정하기/);
+  assert.match(index, /이메일이 없고, 관리자에게 이름과 8자리 임시번호를 안내받은 직원만 이용해 주세요/);
+  assert.ok(index.indexOf('비밀번호 설정 메일 받기') < index.indexOf('id="pin-enrollment-guide"'));
+  assert.match(index, /PIN 설정 계속하기/);
   assert.match(index, /action: 'generate_pin_activation'/);
 });
