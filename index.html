@@ -1865,6 +1865,9 @@
     .push-action-white * {
       color: #FFFFFF !important;
     }
+    .pin-action-white {
+      color: #FFFFFF !important;
+    }
     #employee-card-grid .glass-card:hover {
       border-color: var(--brand) !important;
     }
@@ -2094,7 +2097,7 @@
           <div class="space-y-3 border-t border-slate-200 px-4 py-4">
             <p class="text-[11px] font-bold leading-relaxed text-slate-700">이메일이 없고, 관리자에게 이름과 8자리 임시번호를 안내받은 직원만 이용해 주세요.</p>
             <p class="text-[11px] leading-relaxed text-slate-500">이메일이 있다면 위의 ‘비밀번호 설정 메일 받기’를 이용해 주세요.</p>
-            <button type="button" onclick="navigateTo('pin-enrollment')" class="w-full rounded-xl border border-teal-700 bg-teal-700 px-4 py-2.5 text-xs font-black text-white hover:bg-teal-800">PIN 설정 계속하기</button>
+            <button type="button" onclick="navigateTo('pin-enrollment')" class="pin-action-white w-full rounded-xl border border-teal-700 bg-teal-700 px-4 py-2.5 text-xs font-black text-white hover:bg-teal-800">PIN 설정 계속하기</button>
           </div>
         </details>
 
@@ -2326,7 +2329,7 @@
           <input id="pin-enrollment-value" type="password" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="new-password" required class="w-full rounded-2xl border-2 border-slate-400 px-4 py-4 text-center text-3xl font-black tracking-[0.45em]">
           <label class="block text-lg font-black">PIN을 한 번 더 입력하세요</label>
           <input id="pin-enrollment-confirm" type="password" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="new-password" required class="w-full rounded-2xl border-2 border-slate-400 px-4 py-4 text-center text-3xl font-black tracking-[0.45em]">
-          <button class="w-full min-h-16 rounded-2xl bg-teal-700 text-xl font-black text-white">PIN 저장하기</button>
+          <button class="pin-action-white w-full min-h-16 rounded-2xl bg-teal-700 text-xl font-black text-white">PIN 저장하기</button>
         </form>
         <p id="pin-enrollment-message" class="text-center text-sm font-bold text-rose-700" aria-live="assertive"></p>
         <button type="button" onclick="navigateTo('login')" class="w-full min-h-12 rounded-xl bg-slate-200 text-base font-black text-slate-800">로그인으로 돌아가기</button>

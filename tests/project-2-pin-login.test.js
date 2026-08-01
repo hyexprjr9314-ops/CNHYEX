@@ -76,5 +76,8 @@ test('mobile UI supports email or name and an accessible one-screen temporary-nu
   assert.match(index, /이메일이 없고, 관리자에게 이름과 8자리 임시번호를 안내받은 직원만 이용해 주세요/);
   assert.ok(index.indexOf('비밀번호 설정 메일 받기') < index.indexOf('id="pin-enrollment-guide"'));
   assert.match(index, /PIN 설정 계속하기/);
+  assert.match(index, /\.pin-action-white\s*\{\s*color:\s*#FFFFFF\s*!important;/);
+  assert.match(index, /class="pin-action-white[^"]*"[^>]*>PIN 설정 계속하기/);
+  assert.match(index, /class="pin-action-white[^"]*"[^>]*>PIN 저장하기/);
   assert.match(index, /action: 'generate_pin_activation'/);
 });
