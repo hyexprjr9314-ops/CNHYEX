@@ -174,7 +174,8 @@ export default async function handler(req, res) {
     if (!action.endsWith('_bulk') && requestedIds.length !== 1) return send(res, 400, { error: 'Exactly one target is required.' });
 
     if (action.startsWith('password_reset')) {
-      let query = service.from('users').select('id,name,email,auth_user_id,active').eq('active', true).not('auth_user_id', 'is', null);
+      let query = service.from('users').select('id,name,email,auth_user_id,active,login_method')
+        .eq('active', true).eq('login_method', 'email').not('auth_user_id', 'is', null);
       if (requestedIds.length) query = query.in('id', requestedIds);
       const targets = await query;
       if (targets.error) throw targets.error;

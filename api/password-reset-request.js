@@ -38,7 +38,7 @@ export default async function handler(req, res) {
     if (throttled) return send(res, 200, { message: GENERIC_MESSAGE });
 
     const profile = await service.from('users')
-      .select('id,email,auth_user_id,active').eq('email', email).maybeSingle();
+      .select('id,email,auth_user_id,active,login_method').eq('email', email).eq('login_method', 'email').maybeSingle();
     const eligible = !profile.error && profile.data?.active === true && Boolean(profile.data.auth_user_id);
     let status = 'ignored';
     let errorMessage = null;
@@ -49,13 +49,14 @@ export default async function handler(req, res) {
       status = reset.error ? 'failed' : 'sent';
       errorMessage = reset.error ? String(reset.error.message || reset.error).slice(0, 1000) : null;
     }
-    await service.from('password_reset_request_audit').insert({
+    const audit = await service.from('password_reset_request_audit').insert({
       target_id: profile.data?.id || null,
       email_hash: emailHash,
       ip_hash: ipHash,
       status,
       error_message: errorMessage
     });
+    if (audit.error) throw audit.error;
     return send(res, 200, { message: GENERIC_MESSAGE });
   } catch (error) {
     console.error('Public password reset request failed:', error);

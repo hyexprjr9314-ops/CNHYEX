@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "test": "node --test tests/*.test.js",
     "android:sync": "cap sync android",
     "android:open": "cap open android",
     "ios:sync": "cap sync ios",
@@ -14,7 +15,8 @@
     "@capacitor/ios": "8.4.2",
     "@capacitor/push-notifications": "8.0.0",
     "@supabase/supabase-js": "^2.57.4",
-    "nodemailer": "^6.9.16",
+    "nodemailer": "^9.0.1",
+    "qrcode": "1.5.4",
     "web-push": "3.6.7"
   },
   "devDependencies": {

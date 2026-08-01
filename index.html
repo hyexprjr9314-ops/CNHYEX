@@ -2037,27 +2037,27 @@
 
         <div>
           <h2 class="text-2xl font-black text-white">충남한양 인사평가 시스템</h2>
-          <p class="text-xs text-slate-400 mt-1">발급받은 이메일 계정으로 로그인해주세요</p>
+          <p class="text-sm text-slate-300 mt-1">이메일 또는 사번으로 로그인하세요</p>
         </div>
 
         <form onsubmit="handleLoginSubmit(event)" class="space-y-4 text-left">
           <div>
-            <label class="block text-xs font-bold text-slate-300 mb-1">아이디 (이메일 주소)</label>
+            <label class="block text-sm font-bold text-slate-200 mb-1">이메일 또는 사번</label>
             <div class="relative">
               <i class="fa-solid fa-envelope absolute left-3.5 top-3.5 text-slate-500 text-sm"></i>
-              <input type="email" id="login-emp-id" placeholder="회사 이메일 주소" autocomplete="username" required class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-brandTeal focus:ring-1 focus:ring-brandTeal">
+              <input type="text" id="login-emp-id" placeholder="이메일 또는 사번" autocomplete="username" autocapitalize="characters" required class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl py-4 pl-10 pr-4 text-lg font-bold text-white focus:outline-none focus:border-brandTeal focus:ring-2 focus:ring-brandTeal">
             </div>
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-300 mb-1">비밀번호 (Password)</label>
+            <label class="block text-sm font-bold text-slate-200 mb-1">비밀번호 또는 숫자 PIN 6자리</label>
             <div class="relative">
               <i class="fa-solid fa-key absolute left-3.5 top-3.5 text-slate-500 text-sm"></i>
-              <input type="password" id="login-password" placeholder="비밀번호" autocomplete="current-password" required class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-brandTeal focus:ring-1 focus:ring-brandTeal">
+              <input type="password" id="login-password" placeholder="비밀번호 또는 PIN" autocomplete="current-password" inputmode="numeric" required class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl py-4 pl-10 pr-4 text-lg tracking-widest text-white focus:outline-none focus:border-brandTeal focus:ring-2 focus:ring-brandTeal">
             </div>
           </div>
 
-          <button type="submit" class="w-full bg-gradient-to-r from-brandTeal to-teal-500 hover:from-teal-600 hover:to-teal-400 text-white font-bold py-3 rounded-xl shadow-lg shadow-teal-900/30 transition text-sm flex items-center justify-center gap-2">
+          <button type="submit" class="w-full min-h-14 bg-gradient-to-r from-brandTeal to-teal-500 hover:from-teal-600 hover:to-teal-400 text-white font-black py-4 rounded-xl shadow-lg shadow-teal-900/30 transition text-lg flex items-center justify-center gap-2">
             <span>로그인하기</span>
             <i class="fa-solid fa-arrow-right"></i>
           </button>
@@ -2290,6 +2290,21 @@
       </div>
     </section>
 
+    <section id="view-pin-enrollment" class="hidden my-auto py-8 flex items-center justify-center">
+      <div class="w-full max-w-md rounded-3xl border-2 border-teal-600 bg-white p-6 text-slate-900 shadow-2xl space-y-5">
+        <h2 class="text-2xl font-black text-center">간편 로그인 PIN 설정</h2>
+        <div id="pin-enrollment-profile" class="rounded-2xl bg-teal-50 p-4 text-center text-lg font-bold" aria-live="polite">직원 정보를 확인하고 있습니다.</div>
+        <form onsubmit="submitPinEnrollment(event)" class="space-y-4">
+          <label class="block text-lg font-black">사용할 숫자 6자리를 입력하세요</label>
+          <input id="pin-enrollment-value" type="password" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="new-password" required class="w-full rounded-2xl border-2 border-slate-400 px-4 py-4 text-center text-3xl font-black tracking-[0.45em]">
+          <label class="block text-lg font-black">한 번 더 입력하세요</label>
+          <input id="pin-enrollment-confirm" type="password" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="new-password" required class="w-full rounded-2xl border-2 border-slate-400 px-4 py-4 text-center text-3xl font-black tracking-[0.45em]">
+          <button class="w-full min-h-16 rounded-2xl bg-teal-700 text-xl font-black text-white">PIN 저장하기</button>
+        </form>
+        <p id="pin-enrollment-message" class="text-center text-sm font-bold text-rose-700" aria-live="assertive"></p>
+      </div>
+    </section>
+
     <!-- VIEW 5: MY RESULTS -->
     <section id="view-myresults" class="hidden space-y-6">
       <!-- Official PDF Print Header Banner (Shown ONLY on print/PDF) -->
@@ -2480,6 +2495,13 @@
             </h3>
 
             <form id="admin-direct-user-form" onsubmit="handleAddUserSubmit(event)" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              <div>
+                <label class="block text-[11px] font-bold text-slate-400 mb-1">로그인 방식</label>
+                <select id="user-login-method-in" onchange="toggleDirectUserLoginMethod()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white font-bold">
+                  <option value="email">이메일 로그인</option>
+                  <option value="pin">사번 + PIN 간편 로그인</option>
+                </select>
+              </div>
               <div>
                 <label class="block text-[11px] font-bold text-slate-400 mb-1">성명</label>
                 <input type="text" id="user-name-in" placeholder="홍길동" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white">
@@ -2747,7 +2769,7 @@
             </select>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-              <div>
+              <div id="user-email-field">
                 <label id="weight-label-1" class="block text-[11px] font-bold text-slate-400 mb-1">1. 성과 가중치 (%)</label>
                 <input type="number" id="weight-perf-in" value="40.0" step="0.1" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white" oninput="recalculateWeights()">
               </div>
@@ -2795,6 +2817,10 @@
                   <option value="branch_employee">🚌 영업소 직원</option>
                   <option value="mechanic">🔧 정비사</option>
                 </select>
+              </div>
+              <div id="user-login-id-field" class="hidden">
+                <label class="block text-[11px] font-bold text-slate-400 mb-1">사번</label>
+                <input type="text" id="user-login-id-in" placeholder="예: HY1027" maxlength="30" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs font-bold uppercase text-white">
               </div>
 
               <div>
@@ -4879,7 +4905,7 @@
     function setCycleSelectOptions(select, cycles, preferredCycleId = null) {
       if (!select) return null;
       select.innerHTML = cycles
-        .map(cycle => `<option value="${cycle.id}">[${cycle.status}] ${cycle.name} (${cycle.start} ~ ${cycle.end})</option>`)
+        .map(cycle => `<option value="${Number(cycle.id)}">[${escapeHtml(cycle.status)}] ${escapeHtml(cycle.name)} (${escapeHtml(cycle.start)} ~ ${escapeHtml(cycle.end)})</option>`)
         .join('');
       const preferred = String(preferredCycleId || '');
       const selected = cycles.some(cycle => String(cycle.id) === preferred)
@@ -4944,7 +4970,7 @@
       }
 
       let myReportOptionsHtml = publishedCycles
-        .map(cycle => `<option value="${cycle.id}">[${cycle.status}] ${cycle.name} (${cycle.start} ~ ${cycle.end})</option>`)
+        .map(cycle => `<option value="${Number(cycle.id)}">[${escapeHtml(cycle.status)}] ${escapeHtml(cycle.name)} (${escapeHtml(cycle.start)} ~ ${escapeHtml(cycle.end)})</option>`)
         .join('');
       if (evaluationHistoryDb && evaluationHistoryDb.length > 0) {
         const visibleCycleIds = new Set(publishedCycles.map(cycle => Number(cycle.id)));
@@ -6163,12 +6189,12 @@
             <i class="fa-solid fa-grip-vertical text-slate-400" aria-hidden="true"></i>
             <strong class="text-[11px] font-black text-slate-800 truncate">${escapeHtml(target.name)} ${escapeHtml(target.role)}</strong>
           </div>
-          <p class="text-[9px] text-slate-600 mt-0.5 truncate">${target.company} · ${target.dept}</p>
+          <p class="text-[9px] text-slate-600 mt-0.5 truncate">${escapeHtml(target.company)} · ${escapeHtml(target.dept)}</p>
           ${isStaged ? `<span class="absolute right-1 top-0.5 text-[8px] font-bold ${isAssigned ? 'text-teal-700' : 'text-rose-700'}">${isAssigned ? '배정 예정' : '해제 예정'}</span>` : ''}
         </div>
         <button type="button" class="flex-shrink-0 w-7 h-7 rounded-md border text-[10px] font-bold ${
           isAssigned ? 'border-rose-300 bg-rose-50 text-rose-800' : 'border-teal-300 bg-teal-50 text-teal-800'
-        }" title="${isAssigned ? '배정 해제' : '배정'}" aria-label="${target.name} ${isAssigned ? '배정 해제' : '배정'}">${isAssigned ? '←' : '→'}</button>`;
+        }" title="${isAssigned ? '배정 해제' : '배정'}" aria-label="${escapeHtml(target.name)} ${isAssigned ? '배정 해제' : '배정'}">${isAssigned ? '←' : '→'}</button>`;
       card.querySelector('button').addEventListener('click', () => moveMatchingTarget(target.id, !isAssigned));
       return card;
     }
@@ -6412,6 +6438,10 @@
       return { isAdmin, isExecutive, isSuperAdmin, isPrivileged };
     }
 
+    function userLoginLabel(user) {
+      return user?.login_method === 'pin' ? `사번 ${user.login_id || '-'}` : (user?.email || '-');
+    }
+
     function canCurrentUserViewResults() {
       const roleInfo = checkUserRole(currentLoggedInUser);
       if (roleInfo.isExecutive) return false;
@@ -6447,7 +6477,7 @@
     // Strict Password Authentication Login Handler
     async function handleLoginSubmit(e) {
       e.preventDefault();
-      const email = document.getElementById('login-emp-id').value.trim().toLowerCase();
+      const loginId = document.getElementById('login-emp-id').value.trim();
       const pass = document.getElementById('login-password').value.trim();
 
       if (!supabaseClient) {
@@ -6455,13 +6485,30 @@
         return;
       }
 
-      const { error: loginError } = await supabaseClient.auth.signInWithPassword({
-        email,
-        password: pass
-      });
+      let loginError = null;
+      if (loginId.includes('@')) {
+        ({ error: loginError } = await supabaseClient.auth.signInWithPassword({
+          email: loginId.toLowerCase(), password: pass
+        }));
+      } else {
+        try {
+          const response = await fetch('/api/pin-login', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ login_id: loginId, pin: pass })
+          });
+          const payload = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error(payload.error || '사번 또는 PIN을 확인해 주세요.');
+          const session = await supabaseClient.auth.setSession({
+            access_token: payload.access_token, refresh_token: payload.refresh_token
+          });
+          loginError = session.error;
+        } catch (error) {
+          loginError = error;
+        }
+      }
       if (loginError) {
         console.error('Supabase login failed:', loginError);
-        alert('이메일 또는 비밀번호를 확인해 주세요.');
+        alert(loginError.message || '이메일·사번 또는 비밀번호·PIN을 확인해 주세요.');
         return;
       }
 
@@ -7044,7 +7091,7 @@
       if (mainNavTabs) mainNavTabs.classList.remove('hidden');
 
       const badge = document.getElementById('current-user-badge');
-      if (badge) badge.innerText = `${currentLoggedInUser.name} (${currentLoggedInUser.email})`;
+      if (badge) badge.innerText = `${currentLoggedInUser.name} (${userLoginLabel(currentLoggedInUser)})`;
 
       applyRoleBasedNavigationVisibility();
 
@@ -7743,8 +7790,8 @@
                 ${isDone ? '✅ 평가 완료' : (isStageUnlocked ? '🟢 평가 진행 가능' : '🔒 전단계 대기 중')}
               </span>
             </div>
-            <h4 class="text-base font-bold text-white">${emp.name} ${emp.role}</h4>
-            <p class="text-xs text-slate-400 mt-1">${emp.dept} • ${emp.assigned_task || emp.workplace}</p>
+            <h4 class="text-base font-bold text-white">${escapeHtml(emp.name)} ${escapeHtml(emp.role)}</h4>
+            <p class="text-xs text-slate-400 mt-1">${escapeHtml(emp.dept)} • ${escapeHtml(emp.assigned_task || emp.workplace)}</p>
             
             <div class="mobile-tmi mt-2.5 space-y-1">
               <span class="text-[9px] font-bold px-2 py-0.5 rounded block w-fit bg-purple-500/20 text-purple-300 border border-purple-500/30">
@@ -7906,7 +7953,7 @@
           item.innerHTML = `
             <div class="flex justify-between items-center">
               <div class="flex items-center gap-2">
-                <span class="text-[10px] font-bold px-2 py-0.5 rounded ${categoryBadge}">${q.category}</span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded ${categoryBadge}">${escapeHtml(q.category)}</span>
                 <span class="text-[10px] bg-purple-500/20 text-purple-300 font-bold px-2 py-0.5 rounded border border-purple-500/30">서술형 코멘트</span>
               </div>
               <span class="text-[10px] text-slate-400">정성 참고용 문항</span>
@@ -7918,7 +7965,7 @@
           item.innerHTML = `
             <div class="flex justify-between items-center">
               <div class="flex items-center gap-2">
-                <span class="text-[10px] font-bold px-2 py-0.5 rounded ${categoryBadge}">${q.category}</span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded ${categoryBadge}">${escapeHtml(q.category)}</span>
                 <span class="text-[10px] bg-teal-500/20 text-brandTeal font-bold px-2 py-0.5 rounded border border-brandTeal/30">5지선다형</span>
               </div>
               <span class="text-[10px] text-slate-400">동일 비중</span>
@@ -8105,14 +8152,14 @@
 
         tr.innerHTML = `
           <td class="py-2.5 px-3 font-bold text-white">${escapeHtml(u.name)}</td>
-          <td class="py-2.5 px-3"><span class="text-[10px] font-bold px-2 py-0.5 rounded ${u.company.includes('한양') ? 'bg-blue-500/20 text-blue-300' : 'bg-orange-500/20 text-orange-300'}">${u.company}</span></td>
-          <td class="py-2.5 px-3 font-mono text-teal-300">${escapeHtml(u.email)}</td>
-          <td class="py-2.5 px-3">${u.dept} • ${u.workplace}</td>
-          <td class="py-2.5 px-3 text-slate-400">${u.role}</td>
-          <td class="py-2.5 px-3"><span class="bg-slate-800 text-slate-300 px-2 py-0.5 rounded font-bold">${u.type}</span></td>
+          <td class="py-2.5 px-3"><span class="text-[10px] font-bold px-2 py-0.5 rounded ${String(u.company || '').includes('한양') ? 'bg-blue-500/20 text-blue-300' : 'bg-orange-500/20 text-orange-300'}">${escapeHtml(u.company)}</span></td>
+          <td class="py-2.5 px-3 font-mono text-teal-300">${escapeHtml(userLoginLabel(u))}</td>
+          <td class="py-2.5 px-3">${escapeHtml(u.dept)} • ${escapeHtml(u.workplace)}</td>
+          <td class="py-2.5 px-3 text-slate-400">${escapeHtml(u.role)}</td>
+          <td class="py-2.5 px-3"><span class="bg-slate-800 text-slate-300 px-2 py-0.5 rounded font-bold">${escapeHtml(u.type)}</span></td>
           <td class="py-2.5 px-3">${roleBadge}</td>
-          <td class="py-2.5 px-3 text-slate-400">${u.joindate}</td>
-          <td class="py-2.5 px-3 font-mono text-slate-400">${u.phone}</td>
+          <td class="py-2.5 px-3 text-slate-400">${escapeHtml(u.joindate)}</td>
+          <td class="py-2.5 px-3 font-mono text-slate-400">${escapeHtml(u.phone)}</td>
           <td class="py-2.5 px-3 text-xs ${u.auth_user_id ? 'text-emerald-400' : 'text-amber-400'} font-bold">${accountStatus}</td>
           <td class="py-2.5 px-3 text-center">
             <div class="flex items-center justify-center gap-1.5">
@@ -8120,8 +8167,12 @@
                 <i class="fa-solid fa-pen-to-square"></i> 수정
               </button>
               ${activeButton}
-              ${u.auth_user_id && u.active ? `
-                <button onclick="sendPasswordResetEmail(${u.id})" class="bg-teal-600/20 hover:bg-teal-600 text-teal-300 hover:text-white px-2 py-1 rounded text-[11px] font-bold transition flex items-center gap-1 border border-teal-500/30" title="${u.email}로 비밀번호 설정 링크 발송">
+              ${u.auth_user_id && u.active && u.login_method === 'pin' ? `
+                <button onclick="openPinEnrollment(${u.id})" class="bg-amber-600/20 hover:bg-amber-600 text-amber-300 hover:text-white px-2 py-1 rounded text-[11px] font-bold transition flex items-center gap-1 border border-amber-500/30" title="PIN 등록 QR 재발급">
+                  <i class="fa-solid fa-qrcode"></i> PIN QR
+                </button>
+              ` : u.auth_user_id && u.active ? `
+                <button onclick="sendPasswordResetEmail(${u.id})" class="bg-teal-600/20 hover:bg-teal-600 text-teal-300 hover:text-white px-2 py-1 rounded text-[11px] font-bold transition flex items-center gap-1 border border-teal-500/30" title="${escapeHtml(u.email)}로 비밀번호 설정 링크 발송">
                   <i class="fa-solid fa-envelope-circle-check"></i> 비밀번호 메일
                 </button>
               ` : ''}
@@ -8222,8 +8273,11 @@
       if (!user) return;
       if (!confirm(`[${user.name}] 님의 이메일 ${user.email}로 비밀번호 설정 링크를 발송하시겠습니까?`)) return;
       try {
-        const result = await callUsersApi('POST', { action: 'send_password_reset', id: Number(id) });
-        alert(`${result.email} 주소로 비밀번호 설정 링크를 발송했습니다.\n메일함과 스팸함을 확인해 주세요.`);
+        const result = await callMailApi({ action: 'password_reset', target_id: Number(id) });
+        const status = result.results?.[0]?.status;
+        alert(status === 'duplicate'
+          ? '최근 한 시간 안에 이미 발송했습니다. 기존 메일을 확인해 주세요.'
+          : `${user.email} 주소로 비밀번호 설정 링크를 발송했습니다.\n메일함과 스팸함을 확인해 주세요.`);
       } catch (error) {
         alert(`비밀번호 설정 메일 발송 실패: ${error.message}`);
       }
@@ -8251,9 +8305,11 @@
 
     async function handleAddUserSubmit(e) {
       e.preventDefault();
+      const loginMethod = document.getElementById('user-login-method-in').value;
       const company = document.getElementById('user-company-in').value;
       const name = document.getElementById('user-name-in').value.trim();
       const email = document.getElementById('user-email-in').value.trim().toLowerCase();
+      const loginId = document.getElementById('user-login-id-in').value.trim().toUpperCase();
       const dept = document.getElementById('user-dept-in').value.trim();
       const workplace = document.getElementById('user-workplace-in').value.trim();
       const role = document.getElementById('user-role-in').value.trim();
@@ -8265,7 +8321,9 @@
 
       const newUserObj = {
         name,
-        email,
+        email: loginMethod === 'email' ? email : '',
+        login_method: loginMethod,
+        login_id: loginMethod === 'pin' ? loginId : email,
         dept,
         workplace,
         role,
@@ -8280,7 +8338,12 @@
         const payload = await callUsersApi('POST', { users: [{ ...newUserObj, sys_role: sysRole }] });
         if (payload.failed) throw new Error(payload.results?.[0]?.message || '등록 실패');
         await refreshAdminUsers();
-        alert(`사용자 [${name} (${company})] 님을 Auth와 직원 DB에 등록했습니다.`);
+        if (loginMethod === 'pin') {
+          const created = usersDb.find(user => user.login_method === 'pin' && user.login_id === loginId);
+          if (created) await openPinEnrollment(created.id);
+        } else {
+          alert(`사용자 [${name} (${company})] 님을 Auth와 직원 DB에 등록했습니다.`);
+        }
       } catch (error) {
         alert(`등록 실패: ${error.message}`);
       }
@@ -8320,6 +8383,89 @@
       row.push(field.trim());
       if (row.some(Boolean)) rows.push(row);
       return rows;
+    }
+
+    function toggleDirectUserLoginMethod() {
+      const pinMode = document.getElementById('user-login-method-in')?.value === 'pin';
+      document.getElementById('user-email-field')?.classList.toggle('hidden', pinMode);
+      document.getElementById('user-login-id-field')?.classList.toggle('hidden', !pinMode);
+      const email = document.getElementById('user-email-in');
+      const loginId = document.getElementById('user-login-id-in');
+      if (email) email.required = !pinMode;
+      if (loginId) loginId.required = pinMode;
+    }
+
+    async function openPinEnrollment(id) {
+      try {
+        const payload = await callUsersApi('POST', { action: 'generate_pin_enrollment', id: Number(id) });
+        const overlay = document.createElement('div');
+        overlay.className = 'fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 p-4';
+        const card = document.createElement('div');
+        card.className = 'w-full max-w-sm rounded-3xl bg-white p-6 text-center text-slate-900 shadow-2xl';
+        const title = document.createElement('h3');
+        title.className = 'text-xl font-black';
+        title.textContent = `${payload.login_id} 간편 로그인 등록`;
+        const help = document.createElement('p');
+        help.className = 'mt-2 text-sm text-slate-600';
+        help.textContent = '직원 휴대폰 카메라로 QR을 촬영해 10분 안에 PIN을 설정하세요.';
+        const image = document.createElement('img');
+        image.src = payload.qr_data_url;
+        image.alt = `${payload.login_id} 일회용 PIN 등록 QR`;
+        image.className = 'mx-auto my-4 h-72 w-72';
+        const close = document.createElement('button');
+        close.type = 'button';
+        close.className = 'min-h-12 w-full rounded-xl bg-slate-800 text-base font-black text-white';
+        close.textContent = '닫기';
+        close.addEventListener('click', () => overlay.remove());
+        card.append(title, help, image, close);
+        overlay.append(card);
+        document.body.append(overlay);
+      } catch (error) {
+        alert(`PIN 등록 QR 발급 실패: ${error.message}`);
+      }
+    }
+
+    let activePinEnrollmentToken = null;
+    async function initializePinEnrollment() {
+      const match = location.hash.match(/^#enroll=([A-Za-z0-9_-]{40,100})$/);
+      if (!match) return false;
+      activePinEnrollmentToken = match[1];
+      document.getElementById('header-user-info')?.classList.add('hidden');
+      document.getElementById('main-nav-tabs')?.classList.add('hidden');
+      navigateTo('pin-enrollment');
+      try {
+        const response = await fetch(`/api/pin-enrollment?token=${encodeURIComponent(activePinEnrollmentToken)}`);
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(payload.error || '등록 링크를 확인해 주세요.');
+        document.getElementById('pin-enrollment-profile').textContent = `${payload.name} · ${payload.company} · 사번 ${payload.login_id}`;
+      } catch (error) {
+        document.getElementById('pin-enrollment-profile').textContent = error.message;
+        document.querySelector('#view-pin-enrollment form')?.classList.add('hidden');
+      }
+      return true;
+    }
+
+    async function submitPinEnrollment(event) {
+      event.preventDefault();
+      const pin = document.getElementById('pin-enrollment-value').value;
+      const confirmation = document.getElementById('pin-enrollment-confirm').value;
+      const message = document.getElementById('pin-enrollment-message');
+      if (pin !== confirmation) {
+        message.textContent = '두 PIN이 다릅니다. 다시 입력해 주세요.';
+        return;
+      }
+      const response = await fetch('/api/pin-enrollment', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: activePinEnrollmentToken, pin })
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        message.textContent = payload.error || 'PIN을 저장하지 못했습니다.';
+        return;
+      }
+      history.replaceState(null, '', `${location.pathname}${location.search}`);
+      alert(`PIN 설정이 완료되었습니다. 사번 ${payload.login_id}로 로그인하세요.`);
+      window.location.reload();
     }
 
     function downloadImportResults(results) {
@@ -8809,10 +8955,10 @@
         div.innerHTML = `
           <div class="space-y-1">
             <div class="flex flex-wrap items-center gap-1.5">
-              <span class="bg-brandTeal/20 text-brandTeal text-[10px] font-bold px-2 py-0.5 rounded border border-brandTeal/30">${q.category}</span>
+              <span class="bg-brandTeal/20 text-brandTeal text-[10px] font-bold px-2 py-0.5 rounded border border-brandTeal/30">${escapeHtml(q.category)}</span>
               <span class="text-[10px] font-bold px-2 py-0.5 rounded ${trackBadgeStyle}">🎯 ${escapeHtml(targetTrackLabel)}</span>
               <span class="bg-cyan-500/20 text-cyan-300 text-[10px] font-bold px-2 py-0.5 rounded border border-cyan-500/30">🏢 ${escapeHtml(targetDept === '전체' ? '전체 부서 공통' : targetDept)}</span>
-              <span class="bg-slate-800 text-slate-300 text-[10px] font-bold px-2 py-0.5 rounded">${q.type}</span>
+              <span class="bg-slate-800 text-slate-300 text-[10px] font-bold px-2 py-0.5 rounded">${escapeHtml(q.type)}</span>
               ${q.required ? '<span class="bg-rose-500/20 text-rose-300 text-[10px] font-bold px-1.5 py-0.5 rounded">필수</span>' : ''}
               ${q.is_default ? '<span class="bg-amber-500/20 text-amber-300 text-[10px] font-bold px-1.5 py-0.5 rounded">기본질문</span>' : ''}
             </div>
@@ -9060,10 +9206,10 @@
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-800/40 transition';
         tr.innerHTML = `
-          <td class="py-3 px-3 font-bold text-white">${u.name}</td>
-          <td class="py-3 px-3 text-teal-300 font-mono">${u.email}</td>
-          <td class="py-3 px-3">${u.company} • ${u.dept}</td>
-          <td class="py-3 px-3 text-slate-400">${u.role} (${u.type})</td>
+          <td class="py-3 px-3 font-bold text-white">${escapeHtml(u.name)}</td>
+          <td class="py-3 px-3 text-teal-300 font-mono">${escapeHtml(userLoginLabel(u))}</td>
+          <td class="py-3 px-3">${escapeHtml(u.company)} • ${escapeHtml(u.dept)}</td>
+          <td class="py-3 px-3 text-slate-400">${escapeHtml(u.role)} (${escapeHtml(u.type)})</td>
           <td class="py-3 px-3">${statusBadge}</td>
           <td class="py-3 px-3 text-center">
             <label class="inline-flex items-center justify-center gap-2 cursor-pointer" title="평가 작성 권한 ${canEvaluate ? '활성화됨' : '비활성화됨'}">
@@ -9146,6 +9292,13 @@
 
     async function handleLogout() {
       hideMascotGuide();
+      clearTimeout(centralReloadTimer);
+      centralReloadTimer = null;
+      centralReloadDeferred = false;
+      if (centralRealtimeChannel && supabaseClient) await supabaseClient.removeChannel(centralRealtimeChannel);
+      centralRealtimeChannel = null;
+      if (centralBroadcastChannel) centralBroadcastChannel.close();
+      centralBroadcastChannel = null;
       if (supabaseClient) await supabaseClient.auth.signOut();
       sessionStorage.removeItem('cnhy_session_user');
       sessionStorage.removeItem('cnhy_session_view');
@@ -9173,6 +9326,7 @@
       initializeFontScaleControl();
       applyMobileHeaderPreference();
       applyMobileNavTrayPreference();
+      if (await initializePinEnrollment()) return;
       await loadFromServer();
 
       const lastSubtab = sessionStorage.getItem('cnhy_last_subtab') || 'users';
@@ -9193,7 +9347,7 @@
         if (mainNavTabs) mainNavTabs.classList.remove('hidden');
 
         const badge = document.getElementById('current-user-badge');
-        if (badge) badge.innerText = `${currentLoggedInUser.name} (${currentLoggedInUser.email})`;
+        if (badge) badge.innerText = `${currentLoggedInUser.name} (${userLoginLabel(currentLoggedInUser)})`;
 
         const roleInfo = checkUserRole(currentLoggedInUser);
         applyRoleBasedNavigationVisibility();
@@ -9546,8 +9700,8 @@
         );
         const gradeMailActionHtml = checkUserRole(currentLoggedInUser).isAdmin && empScoreData?.grade
           ? gradeMailSent
-            ? `<button type="button" disabled class="summary-action-white inline-flex h-7 w-7 shrink-0 items-center justify-center rounded border border-emerald-500 bg-emerald-600 text-xs font-bold" title="${emp.name}에게 최종 평가등급 메일 발송 완료"><i class="fa-solid fa-check"></i><span class="sr-only">발송 완료</span></button>`
-            : `<button type="button" ${canSendGradeMail ? '' : 'disabled'} onclick="event.stopPropagation(); sendGradeNoticeEmail(${emp.id}, event.currentTarget)" class="summary-action-white inline-flex h-7 w-7 shrink-0 items-center justify-center rounded border border-violet-400 bg-violet-600 text-xs font-bold text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-40" title="${canSendGradeMail ? `${emp.name}에게 최종 평가등급 메일 발송` : '전자승인과 최종 결과 공개 완료 후 발송할 수 있습니다.'}"><i class="fa-solid fa-envelope"></i><span class="sr-only">평가 결과 메일 발송</span></button>`
+            ? `<button type="button" disabled class="summary-action-white inline-flex h-7 w-7 shrink-0 items-center justify-center rounded border border-emerald-500 bg-emerald-600 text-xs font-bold" title="${escapeHtml(emp.name)}에게 최종 평가등급 메일 발송 완료"><i class="fa-solid fa-check"></i><span class="sr-only">발송 완료</span></button>`
+            : `<button type="button" ${canSendGradeMail ? '' : 'disabled'} onclick="event.stopPropagation(); sendGradeNoticeEmail(${emp.id}, event.currentTarget)" class="summary-action-white inline-flex h-7 w-7 shrink-0 items-center justify-center rounded border border-violet-400 bg-violet-600 text-xs font-bold text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-40" title="${canSendGradeMail ? `${escapeHtml(emp.name)}에게 최종 평가등급 메일 발송` : '전자승인과 최종 결과 공개 완료 후 발송할 수 있습니다.'}"><i class="fa-solid fa-envelope"></i><span class="sr-only">평가 결과 메일 발송</span></button>`
           : '';
 
         
@@ -9555,13 +9709,13 @@
           <td class="py-3 px-3 font-bold text-white">
             ${canViewDetails ? `
               <button onclick="event.stopPropagation(); openDetailEvalModal(${emp.id})" class="text-brandTeal hover:underline flex items-center gap-1 font-extrabold text-left group">
-                <span>${emp.name}</span>
+              <span>${escapeHtml(emp.name)}</span>
                 <i class="fa-solid fa-magnifying-glass-chart text-[10px] text-teal-400 opacity-70 group-hover:opacity-100 group-hover:scale-110 transition"></i>
               </button>
-            ` : `<span>${emp.name}</span>`}
+            ` : `<span>${escapeHtml(emp.name)}</span>`}
           </td>
-          <td class="py-3 px-3">${emp.company} • ${emp.dept}</td>
-          <td class="py-3 px-3 text-slate-400">${emp.role}</td>
+          <td class="py-3 px-3">${escapeHtml(emp.company)} • ${escapeHtml(emp.dept)}</td>
+          <td class="py-3 px-3 text-slate-400">${escapeHtml(emp.role)}</td>
           <td class="py-3 px-3 font-mono">${rawScoreStr}</td>
           <td class="py-3 px-3 font-mono font-bold text-brandTeal">${finalScoreStr}</td>
           <td class="py-3 px-3">${isAdjustedStr}</td>
@@ -10289,7 +10443,7 @@
       if (viewId !== 'eval') setTimeout(flushDeferredCentralReload, 0);
 
       // Hide all main section views
-      const views = ['login', 'list', 'eval', 'myresults', 'evalmanage', 'closingmanage', 'admin'];
+      const views = ['login', 'pin-enrollment', 'list', 'eval', 'myresults', 'evalmanage', 'closingmanage', 'admin'];
       views.forEach(v => {
         const el = document.getElementById(`view-${v}`);
         if (el) el.classList.add('hidden');

@@ -11,6 +11,10 @@ test('database-backed management, history, and question text is HTML-escaped', a
     '${escapeHtml(u.name)}', '${escapeHtml(u.email)}', '${escapeHtml(q.text)}',
     '${escapeHtml(targetTrackLabel)}', 'escapeHtml(targetDept === \'전체\' ? \'전체 부서 공통\' : targetDept)', '${escapeHtml(error.message)}'
   ]) assert.ok(index.includes(token), `missing escape contract: ${token}`);
+  for (const unsafe of [
+    '>${q.category}</span>', '>${u.company}</span>', '${u.dept} • ${u.workplace}',
+    '${u.company} • ${u.dept}'
+  ]) assert.equal(index.includes(unsafe), false, `unsafe HTML interpolation remains: ${unsafe}`);
 });
 
 test('CSV report prefers immutable finalized results and emits actual category labels', async () => {

@@ -130,7 +130,22 @@ async function aggregateTarget(service, cycleId, targetId) {
         final_result_version: Number(finalResult.data.result_version)
       };
     }
-    throw Object.assign(new Error('Current final result is missing for this evaluation cycle.'), { status: 409 });
+    return {
+      cycle: cycle.data,
+      complete: false,
+      assigned_count: 0,
+      submitted_count: 0,
+      adjustment: null,
+      adjusted: false,
+      relative_grade: null,
+      calculated_grade: null,
+      grade_basis: null,
+      scores: null,
+      weights: null,
+      category_labels: [],
+      final_result_version: Number(cycle.data.result_version),
+      unavailable_reason: 'not_in_final_results'
+    };
   }
 
   const [matchings, evaluations, adjustment, settings, users] = await Promise.all([
