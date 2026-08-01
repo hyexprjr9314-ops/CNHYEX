@@ -25,7 +25,8 @@ test('public password reset fails closed when audit persistence fails', async ()
 
 test('baseline response hardening headers are configured without blocking current inline UI', async () => {
   const config = JSON.parse(await read('vercel.json'));
-  const headers = new Map(config.headers[0].headers.map(item => [item.key, item.value]));
+  const headerRoute = config.routes.find(route => route.continue === true && route.headers);
+  const headers = new Map(Object.entries(headerRoute.headers));
   assert.equal(headers.get('X-Content-Type-Options'), 'nosniff');
   assert.equal(headers.get('Referrer-Policy'), 'strict-origin-when-cross-origin');
   assert.ok(headers.has('Permissions-Policy'));
