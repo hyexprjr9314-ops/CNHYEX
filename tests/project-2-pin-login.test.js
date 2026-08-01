@@ -1,65 +1,77 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
-import { isAllowedPin, normalizeLoginId, pinAuthPassword } from '../api/pin-login.js';
+import {
+  activationCodeHash,
+  isAllowedPin,
+  isValidLoginName,
+  normalizeLoginName,
+  pinAuthPassword
+} from '../lib/pin-auth.js';
 
 const read = path => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 
-test('employee login ids normalize without accepting ambiguous or oversized input', () => {
-  assert.equal(normalizeLoginId('  ｈｙ-1027 '), 'HY-1027');
-  assert.equal(normalizeLoginId(null), '');
+test('employee names normalize Unicode and whitespace without accepting hostile or oversized input', () => {
+  assert.equal(normalizeLoginName('  홍  길동\u200B '), '홍 길동');
+  assert.equal(isValidLoginName('홍길동'), true);
+  assert.equal(isValidLoginName('<script>alert(1)</script>'), false);
+  assert.equal(isValidLoginName('가'.repeat(41)), false);
 });
 
-test('the six digit PIN is transformed into a strong Auth password with a server secret', () => {
-  const first = pinAuthPassword('481593', 'HY-1027', 'secret-a');
-  assert.equal(first, pinAuthPassword('481593', 'hy-1027', 'secret-a'));
-  assert.notEqual(first, pinAuthPassword('481593', 'HY-1027', 'secret-b'));
-  assert.ok(first.length > 40);
-  assert.equal(first.includes('481593'), false);
+test('PIN and temporary numbers are transformed with the service secret and never embedded in Auth passwords', () => {
+  const password = pinAuthPassword('481593', 'PIN-A1B2', 'secret-a');
+  assert.equal(password, pinAuthPassword('481593', 'pin-a1b2', 'secret-a'));
+  assert.notEqual(password, pinAuthPassword('481593', 'PIN-A1B2', 'secret-b'));
+  assert.equal(password.includes('481593'), false);
+  assert.equal(activationCodeHash('48317259', 'secret-a').includes('48317259'), false);
 });
 
-test('six digit PIN policy rejects repeated, sequential, nonnumeric, and employee-id PINs', () => {
+test('six digit PIN policy rejects repeated, sequential, nonnumeric, and name-related numeric values', () => {
   for (const pin of ['000000', '111111', '123456', '654321', '12A456', '12345', '1234567']) {
-    assert.equal(isAllowedPin(pin, 'HY-8899'), false, pin);
+    assert.equal(isAllowedPin(pin, '홍길동'), false, pin);
   }
-  assert.equal(isAllowedPin('481593', 'HY-481593'), false);
-  assert.equal(isAllowedPin('481593', 'HY-1027'), true);
+  assert.equal(isAllowedPin('481593', '홍길동'), true);
 });
 
-test('PIN login is rate limited, generic on credential failure, and stores only hashed identifiers', async () => {
+test('name PIN login handles duplicate companies and rate limits generic credential failures', async () => {
   const source = await read('api/pin-login.js');
-  assert.match(source, /pin_login_attempt_audit/);
+  assert.match(source, /pin_login_name/);
+  assert.match(source, /requires_company: true/);
+  assert.match(source, /requires_phone_suffix: true/);
+  assert.match(source, /endsWith\(phoneSuffix\)/);
+  assert.match(source, /companies/);
   assert.match(source, />= 5/);
   assert.match(source, />= 20/);
-  assert.match(source, /사번 또는 PIN을 다시 확인해 주세요/);
-  assert.match(source, /createHmac\('sha256'/);
-  assert.doesNotMatch(source, /insert\(\{[^}]*loginId/s);
+  assert.match(source, /이름 또는 PIN을 다시 확인해 주세요/);
+  assert.doesNotMatch(source, /login_id:\s*name/);
 });
 
-test('PIN enrollment uses a one-time hashed token with expiry and invalidates PIN on profile-write failure', async () => {
+test('temporary activation is eight digits, ten minutes, one-time, hashed, and compensated on failure', async () => {
   const [users, enrollment] = await Promise.all([read('api/users.js'), read('api/pin-enrollment.js')]);
-  assert.match(users, /crypto\.randomBytes\(32\)/);
+  assert.match(users, /randomInt\(0, 100_000_000\)/);
+  assert.match(users, /padStart\(8, '0'\)/);
   assert.match(users, /Date\.now\(\) \+ 10 \* 60 \* 1000/);
-  assert.match(users, /#enroll=\$\{token\}/);
-  assert.match(enrollment, /pin_enrollment_token_hash/);
-  assert.match(enrollment, /pin_enrollment_expires_at/);
+  assert.match(users, /activationCodeHash\(temporaryCode, serviceKey\)/);
+  assert.match(enrollment, /\^\\d\{8\}\$/);
   assert.match(enrollment, /pin_enrollment_token_hash: null/);
+  assert.match(enrollment, /activation_failed/);
   assert.match(enrollment, /crypto\.randomBytes\(24\)/);
 });
 
-test('database contract keeps PIN secrets out of public tables and enforces unique login ids', async () => {
-  const migration = await read('supabase/migrations/202608010001_pin_mobile_login.sql');
-  assert.match(migration, /users_login_id_unique/);
-  assert.match(migration, /revoke all privileges on table public\.pin_login_attempt_audit from anon, authenticated/);
+test('database migration adds normalized name lookup and invalidates old QR enrollment tokens', async () => {
+  const migration = await read('supabase/migrations/202608010002_name_temporary_pin_login.sql');
+  assert.match(migration, /add column if not exists pin_login_name text/);
+  assert.match(migration, /users_pin_login_name_idx/);
+  assert.match(migration, /set pin_enrollment_token_hash = null/);
   assert.doesNotMatch(migration, /\bpin\s+text\b/i);
 });
 
-test('mobile-friendly UI supports email or employee id and a large one-screen PIN enrollment flow', async () => {
+test('mobile UI supports email or name and an accessible one-screen temporary-number PIN flow', async () => {
   const index = await read('index.html');
-  assert.match(index, /이메일 또는 사번/);
+  assert.match(index, /이메일 또는 등록된 이름/);
   assert.match(index, /id="view-pin-enrollment"/);
-  assert.match(index, /inputmode="numeric" pattern="\[0-9\]\{6\}"/);
-  assert.match(index, /min-h-16/);
-  assert.match(index, /initializePinEnrollment\(\)/);
-  assert.match(index, /callUsersApi\('POST', \{ action: 'generate_pin_enrollment'/);
+  assert.match(index, /id="pin-enrollment-code"[^>]+pattern="\[0-9\]\{8\}"/);
+  assert.match(index, /id="pin-enrollment-value"[^>]+pattern="\[0-9\]\{6\}"/);
+  assert.match(index, /처음 PIN 만들기/);
+  assert.match(index, /action: 'generate_pin_activation'/);
 });

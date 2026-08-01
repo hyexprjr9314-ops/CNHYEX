@@ -16,7 +16,6 @@
     "@capacitor/push-notifications": "8.0.0",
     "@supabase/supabase-js": "^2.57.4",
     "nodemailer": "^9.0.1",
-    "qrcode": "1.5.4",
     "web-push": "3.6.7"
   },
   "devDependencies": {

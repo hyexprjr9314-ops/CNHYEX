@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
-import QRCode from 'qrcode';
+import { activationCodeHash, normalizeLoginId, normalizeLoginName } from '../lib/pin-auth.js';
 import { ROLES } from './role-policy.js';
 import { isMutableDraftCycle } from './questions.js';
 
@@ -44,16 +44,15 @@ function send(res, status, payload) {
   res.status(status).json(payload);
 }
 
-function normalizeLoginId(value) {
-  return String(value || '').normalize('NFKC').trim().toUpperCase();
-}
-
 function normalize(row) {
   const loginMethod = ['email', 'pin', 'none'].includes(row.login_method) ? row.login_method : 'email';
-  const loginId = loginMethod === 'pin' ? normalizeLoginId(row.login_id) : String(row.email || '').trim().toLowerCase();
+  const loginId = loginMethod === 'pin'
+    ? normalizeLoginId(row.login_id || `PIN-${crypto.randomBytes(8).toString('hex')}`)
+    : String(row.email || '').trim().toLowerCase();
   const email = loginMethod === 'pin' ? `${loginId.toLowerCase()}@noemail.cnhyex.invalid` : String(row.email || '').trim().toLowerCase();
   return {
-    name: String(row.name || '').trim(),
+    name: normalizeLoginName(row.name),
+    pin_login_name: loginMethod === 'pin' ? normalizeLoginName(row.name) : null,
     email,
     auth_email: loginMethod === 'none' ? null : email,
     login_method: loginMethod,
@@ -73,7 +72,7 @@ function validate(row) {
   const missing = REQUIRED.filter(key => !row[key]);
   if (missing.length) return `필수값 누락: ${missing.join(', ')}`;
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.email)) return '이메일 형식 오류';
-  if (row.login_method === 'pin' && !/^[A-Z0-9-]{3,30}$/.test(row.login_id)) return '사번은 영문·숫자·하이픈 3~30자로 입력해 주세요.';
+  if (row.login_method === 'pin' && !/^[A-Z0-9-]{3,30}$/.test(row.login_id)) return 'PIN 로그인 내부 식별자가 올바르지 않습니다.';
   if (!ALLOWED_TYPES.has(row.type)) return `허용되지 않은 사원구분: ${row.type}`;
   if (!ALLOWED_ROLES.has(row.sys_role)) return `허용되지 않은 시스템권한: ${row.sys_role}`;
   if (!ALLOWED_COMPANIES.has(row.company)) return `허용되지 않은 소속사: ${row.company}`;
@@ -123,7 +122,7 @@ export default async function handler(req, res) {
     const actor = await authorize(req, service);
     if (req.method === 'GET') {
       const { data, error } = await service.from('users').select(
-        'id,name,email,company,dept,workplace,role,joindate,type,phone,sys_role,active,auth_user_id,can_evaluate,is_evaluatee,login_method,login_id,pin_enrolled,pin_enrollment_expires_at'
+        'id,name,email,company,dept,workplace,role,joindate,type,phone,sys_role,active,auth_user_id,can_evaluate,is_evaluatee,login_method,login_id,pin_login_name,pin_enrolled,pin_enrollment_expires_at'
       ).order('id');
       if (error) throw error;
       return send(res, 200, { users: data });
@@ -142,6 +141,7 @@ export default async function handler(req, res) {
         profile.auth_email = existing.auth_email;
         profile.login_id = existing.login_id;
         profile.login_method = 'pin';
+        profile.pin_login_name = normalizeLoginName(profile.name);
       }
       applyEmployeeTypePermissions(profile, existing.type);
       await assertPersonnelClassificationMutable(service, existing, profile);
@@ -192,23 +192,28 @@ export default async function handler(req, res) {
     if (req.body?.action === 'send_password_reset') {
       return send(res, 410, { error: '비밀번호 메일 발송은 중복 방지 기능이 있는 /api/mail을 사용해 주세요.' });
     }
-    if (req.body?.action === 'generate_pin_enrollment') {
+    if (req.body?.action === 'generate_pin_activation') {
       const id = Number(req.body?.id);
       const target = await service.from('users')
-        .select('id,name,login_id,login_method,auth_user_id,active,pin_enrolled').eq('id', id).single();
+        .select('id,name,company,login_id,login_method,auth_user_id,active,pin_enrolled').eq('id', id).single();
       if (target.error) throw target.error;
       if (target.data.active !== true || target.data.login_method !== 'pin' || !target.data.auth_user_id) {
-        return send(res, 409, { error: '활성화된 사번·PIN 사용자만 등록 링크를 발급할 수 있습니다.' });
+        return send(res, 409, { error: '활성화된 이름·PIN 사용자만 임시번호를 발급할 수 있습니다.' });
       }
-      const token = crypto.randomBytes(32).toString('base64url');
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
-      const saved = await service.from('users').update({
-        pin_enrolled: false,
-        pin_enrollment_token_hash: crypto.createHash('sha256').update(token).digest('hex'),
-        pin_enrollment_expires_at: expiresAt,
-        updated_at: new Date().toISOString()
-      }).eq('id', id);
-      if (saved.error) throw saved.error;
+      let temporaryCode;
+      let saved;
+      for (let attempt = 0; attempt < 5; attempt += 1) {
+        temporaryCode = crypto.randomInt(0, 100_000_000).toString().padStart(8, '0');
+        saved = await service.from('users').update({
+          pin_enrolled: false,
+          pin_enrollment_token_hash: activationCodeHash(temporaryCode, serviceKey),
+          pin_enrollment_expires_at: expiresAt,
+          updated_at: new Date().toISOString()
+        }).eq('id', id);
+        if (!saved.error || saved.error.code !== '23505') break;
+      }
+      if (saved?.error) throw saved.error;
       const invalidated = await service.auth.admin.updateUserById(target.data.auth_user_id, {
         password: `${crypto.randomBytes(24).toString('base64url')}Aa1!`
       });
@@ -220,13 +225,11 @@ export default async function handler(req, res) {
         }).eq('id', id);
         throw invalidated.error;
       }
-      const origin = String(process.env.APP_ORIGIN || 'https://cnhyex.vercel.app').replace(/\/$/, '');
-      const enrollmentUrl = `${origin}/#enroll=${token}`;
       return send(res, 200, {
-        login_id: target.data.login_id,
-        expires_at: expiresAt,
-        enrollment_url: enrollmentUrl,
-        qr_data_url: await QRCode.toDataURL(enrollmentUrl, { width: 320, margin: 2, errorCorrectionLevel: 'M' })
+        name: target.data.name,
+        company: target.data.company,
+        temporary_code: temporaryCode,
+        expires_at: expiresAt
       });
     }
 
@@ -234,18 +237,16 @@ export default async function handler(req, res) {
     if (!rows.length || rows.length > 500) return send(res, 400, { error: '사용자 1~500명을 전달해 주세요.' });
     const duplicateEmails = new Set();
     const seen = new Set();
-    rows.forEach(raw => {
-      const key = raw.login_method === 'pin'
-        ? `pin:${normalizeLoginId(raw.login_id)}`
-        : `email:${String(raw.email || '').trim().toLowerCase()}`;
+    rows.filter(raw => raw.login_method !== 'pin').forEach(raw => {
+      const key = `email:${String(raw.email || '').trim().toLowerCase()}`;
       if (seen.has(key)) duplicateEmails.add(key);
       seen.add(key);
     });
     const results = [];
     for (const raw of rows) {
       const row = normalize(raw);
-      const duplicateKey = row.login_method === 'pin' ? `pin:${row.login_id}` : `email:${row.email}`;
-      const invalid = validate(row) || (duplicateEmails.has(duplicateKey) ? 'CSV 내 로그인 ID 중복' : null);
+      const duplicateKey = `email:${row.email}`;
+      const invalid = validate(row) || (row.login_method !== 'pin' && duplicateEmails.has(duplicateKey) ? 'CSV 내 이메일 중복' : null);
       if (invalid) { results.push({ email: row.email, status: 'failed', message: invalid }); continue; }
       let createdAuthUserId = null;
       try {

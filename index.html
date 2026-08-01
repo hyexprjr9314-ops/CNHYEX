@@ -57,7 +57,6 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <!-- Supabase Cloud Realtime DB Client CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="/assets/vendor/html5-qrcode.min.js"></script>
 
   <style>
     body {
@@ -2038,16 +2037,28 @@
 
         <div>
           <h2 class="text-2xl font-black text-white">충남한양 인사평가 시스템</h2>
-          <p class="text-sm text-slate-300 mt-1">이메일 또는 사번으로 로그인하세요</p>
+          <p class="text-sm text-slate-300 mt-1">이메일 또는 등록된 이름으로 로그인하세요</p>
         </div>
 
         <form onsubmit="handleLoginSubmit(event)" class="space-y-4 text-left">
           <div>
-            <label class="block text-sm font-bold text-slate-200 mb-1">이메일 또는 사번</label>
+            <label class="block text-sm font-bold text-slate-200 mb-1">이메일 또는 이름</label>
             <div class="relative">
               <i class="fa-solid fa-envelope absolute left-3.5 top-3.5 text-slate-500 text-sm"></i>
-              <input type="text" id="login-emp-id" placeholder="이메일 또는 사번" autocomplete="username" autocapitalize="characters" required class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl py-4 pl-10 pr-4 text-lg font-bold text-white focus:outline-none focus:border-brandTeal focus:ring-2 focus:ring-brandTeal">
+              <input type="text" id="login-emp-id" placeholder="이메일 또는 이름" autocomplete="username" oninput="resetLoginCompanyChoice()" required class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl py-4 pl-10 pr-4 text-lg font-bold text-white focus:outline-none focus:border-brandTeal focus:ring-2 focus:ring-brandTeal">
             </div>
+          </div>
+
+          <div id="login-company-wrap" class="hidden">
+            <label class="block text-sm font-bold text-slate-200 mb-1">동명이인 회사 선택</label>
+            <select id="login-company" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-4 py-4 text-lg font-bold text-white">
+              <option value="">회사를 선택하세요</option>
+            </select>
+          </div>
+
+          <div id="login-phone-wrap" class="hidden">
+            <label class="block text-sm font-bold text-slate-200 mb-1">동명이인 휴대폰 뒤 4자리</label>
+            <input id="login-phone-suffix" type="text" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-4 py-4 text-center text-2xl font-black tracking-[0.35em] text-white" placeholder="0000">
           </div>
 
           <div>
@@ -2064,10 +2075,10 @@
           </button>
         </form>
 
-        <button type="button" onclick="openPinQrScanner()" class="w-full min-h-14 rounded-xl border-2 border-teal-600 bg-white px-4 py-3 text-base font-black text-teal-800 shadow-sm transition hover:bg-teal-50">
-          <i class="fa-solid fa-qrcode mr-2" aria-hidden="true"></i>QR코드로 처음 PIN 설정
+        <button type="button" onclick="navigateTo('pin-enrollment')" class="w-full min-h-14 rounded-xl border-2 border-teal-600 bg-white px-4 py-3 text-base font-black text-teal-800 shadow-sm transition hover:bg-teal-50">
+          <i class="fa-solid fa-user-lock mr-2" aria-hidden="true"></i>처음 PIN 만들기
         </button>
-        <p class="text-xs font-bold leading-relaxed text-slate-300">관리자가 보여주는 QR코드를 휴대폰 카메라로 비춰 주세요.</p>
+        <p class="text-xs font-bold leading-relaxed text-slate-300">관리자에게 이름과 8자리 임시번호를 안내받은 직원용입니다.</p>
 
         <details class="rounded-2xl border border-slate-300 bg-white text-left shadow-sm">
           <summary class="cursor-pointer list-none px-4 py-3 text-xs font-black text-teal-700">
@@ -2296,34 +2307,23 @@
       </div>
     </section>
 
-    <div id="pin-qr-scanner-modal" class="hidden fixed inset-0 z-[100] items-center justify-center bg-slate-950/90 p-4" role="dialog" aria-modal="true" aria-labelledby="pin-qr-scanner-title">
-      <div class="w-full max-w-md rounded-3xl bg-white p-5 text-slate-900 shadow-2xl">
-        <div class="mb-4 flex items-center justify-between gap-3">
-          <h2 id="pin-qr-scanner-title" class="text-xl font-black">PIN 등록 QR 스캔</h2>
-          <button type="button" onclick="closePinQrScanner()" class="min-h-12 min-w-12 rounded-xl bg-slate-200 text-xl text-slate-800" aria-label="QR 스캐너 닫기"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-        <div id="pin-qr-reader" class="min-h-64 overflow-hidden rounded-2xl border-2 border-slate-300 bg-slate-100"></div>
-        <p id="pin-qr-scanner-message" class="mt-3 text-center text-sm font-bold text-slate-700" aria-live="polite">카메라 사용을 허용해 주세요.</p>
-        <label class="mt-4 flex min-h-12 cursor-pointer items-center justify-center rounded-xl border-2 border-teal-700 bg-teal-50 px-4 text-sm font-black text-teal-800">
-          <i class="fa-solid fa-camera mr-2" aria-hidden="true"></i>카메라로 QR 사진 찍기
-          <input id="pin-qr-image-input" type="file" accept="image/*" capture="environment" class="sr-only" onchange="scanPinQrImage(event)">
-        </label>
-        <p class="mt-3 text-xs leading-relaxed text-slate-600">카메라가 열리지 않으면 위 버튼으로 QR 사진을 찍어 주세요. CNHYEX에서 발급한 일회용 QR만 인식합니다.</p>
-      </div>
-    </div>
-
     <section id="view-pin-enrollment" class="hidden my-auto py-8 flex items-center justify-center">
       <div class="w-full max-w-md rounded-3xl border-2 border-teal-600 bg-white p-6 text-slate-900 shadow-2xl space-y-5">
-        <h2 class="text-2xl font-black text-center">간편 로그인 PIN 설정</h2>
-        <div id="pin-enrollment-profile" class="rounded-2xl bg-teal-50 p-4 text-center text-lg font-bold" aria-live="polite">직원 정보를 확인하고 있습니다.</div>
+        <h2 class="text-2xl font-black text-center">처음 PIN 만들기</h2>
+        <div class="rounded-2xl bg-teal-50 p-4 text-center text-sm font-bold">관리자에게 안내받은 이름과 8자리 임시번호를 입력하세요.</div>
         <form onsubmit="submitPinEnrollment(event)" class="space-y-4">
-          <label class="block text-lg font-black">사용할 숫자 6자리를 입력하세요</label>
+          <label class="block text-base font-black">등록된 이름</label>
+          <input id="pin-enrollment-name" type="text" maxlength="40" autocomplete="name" required class="w-full rounded-2xl border-2 border-slate-400 px-4 py-4 text-xl font-black" placeholder="예: 홍길동">
+          <label class="block text-base font-black">관리자에게 받은 임시번호 8자리</label>
+          <input id="pin-enrollment-code" type="text" inputmode="numeric" pattern="[0-9]{8}" maxlength="8" autocomplete="one-time-code" required class="w-full rounded-2xl border-2 border-slate-400 px-4 py-4 text-center text-3xl font-black tracking-[0.25em]" placeholder="00000000">
+          <label class="block text-lg font-black">앞으로 사용할 숫자 PIN 6자리</label>
           <input id="pin-enrollment-value" type="password" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="new-password" required class="w-full rounded-2xl border-2 border-slate-400 px-4 py-4 text-center text-3xl font-black tracking-[0.45em]">
-          <label class="block text-lg font-black">한 번 더 입력하세요</label>
+          <label class="block text-lg font-black">PIN을 한 번 더 입력하세요</label>
           <input id="pin-enrollment-confirm" type="password" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="new-password" required class="w-full rounded-2xl border-2 border-slate-400 px-4 py-4 text-center text-3xl font-black tracking-[0.45em]">
           <button class="w-full min-h-16 rounded-2xl bg-teal-700 text-xl font-black text-white">PIN 저장하기</button>
         </form>
         <p id="pin-enrollment-message" class="text-center text-sm font-bold text-rose-700" aria-live="assertive"></p>
+        <button type="button" onclick="navigateTo('login')" class="w-full min-h-12 rounded-xl bg-slate-200 text-base font-black text-slate-800">로그인으로 돌아가기</button>
       </div>
     </section>
 
@@ -2521,14 +2521,14 @@
                 <label class="block text-[11px] font-bold text-slate-400 mb-1">로그인 방식</label>
                 <select id="user-login-method-in" onchange="toggleDirectUserLoginMethod()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white font-bold">
                   <option value="email">이메일 로그인</option>
-                  <option value="pin">사번 + PIN 간편 로그인</option>
+                  <option value="pin">이름 + PIN 간편 로그인</option>
                 </select>
               </div>
               <div>
                 <label class="block text-[11px] font-bold text-slate-400 mb-1">성명</label>
                 <input type="text" id="user-name-in" placeholder="홍길동" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white">
               </div>
-              <div>
+              <div id="user-email-field">
                 <label class="block text-[11px] font-bold text-slate-400 mb-1">이메일 (로그인 ID)</label>
                 <input type="email" id="user-email-in" placeholder="hong@hanyang.com" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white">
               </div>
@@ -2791,7 +2791,7 @@
             </select>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-              <div id="user-email-field">
+              <div>
                 <label id="weight-label-1" class="block text-[11px] font-bold text-slate-400 mb-1">1. 성과 가중치 (%)</label>
                 <input type="number" id="weight-perf-in" value="40.0" step="0.1" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white" oninput="recalculateWeights()">
               </div>
@@ -2840,11 +2840,6 @@
                   <option value="mechanic">🔧 정비사</option>
                 </select>
               </div>
-              <div id="user-login-id-field" class="hidden">
-                <label class="block text-[11px] font-bold text-slate-400 mb-1">사번</label>
-                <input type="text" id="user-login-id-in" placeholder="예: HY1027" maxlength="30" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs font-bold uppercase text-white">
-              </div>
-
               <div>
                 <label class="block text-xs font-bold text-slate-300 mb-1">질문 유형</label>
                 <select id="q-type-in" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-white">
@@ -6461,7 +6456,7 @@
     }
 
     function userLoginLabel(user) {
-      return user?.login_method === 'pin' ? `사번 ${user.login_id || '-'}` : (user?.email || '-');
+      return user?.login_method === 'pin' ? '이름 + PIN' : (user?.email || '-');
     }
 
     function canCurrentUserViewResults() {
@@ -6496,11 +6491,24 @@
 
     let currentLoggedInUser = null;
 
+    function resetLoginCompanyChoice() {
+      const wrap = document.getElementById('login-company-wrap');
+      const select = document.getElementById('login-company');
+      const phoneWrap = document.getElementById('login-phone-wrap');
+      const phoneSuffix = document.getElementById('login-phone-suffix');
+      wrap?.classList.add('hidden');
+      phoneWrap?.classList.add('hidden');
+      if (select) select.innerHTML = '<option value="">회사를 선택하세요</option>';
+      if (phoneSuffix) phoneSuffix.value = '';
+    }
+
     // Strict Password Authentication Login Handler
     async function handleLoginSubmit(e) {
       e.preventDefault();
       const loginId = document.getElementById('login-emp-id').value.trim();
       const pass = document.getElementById('login-password').value.trim();
+      const company = document.getElementById('login-company')?.value || '';
+      const phoneSuffix = document.getElementById('login-phone-suffix')?.value || '';
 
       if (!supabaseClient) {
         alert('인증 서버에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.');
@@ -6516,10 +6524,24 @@
         try {
           const response = await fetch('/api/pin-login', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ login_id: loginId, pin: pass })
+            body: JSON.stringify({ name: loginId, pin: pass, company, phone_suffix: phoneSuffix })
           });
           const payload = await response.json().catch(() => ({}));
-          if (!response.ok) throw new Error(payload.error || '사번 또는 PIN을 확인해 주세요.');
+          if (response.status === 409 && payload.requires_company) {
+            const wrap = document.getElementById('login-company-wrap');
+            const select = document.getElementById('login-company');
+            select.innerHTML = '<option value="">회사를 선택하세요</option>' + payload.companies
+              .map(value => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join('');
+            wrap.classList.remove('hidden');
+            select.focus();
+            return;
+          }
+          if (response.status === 409 && payload.requires_phone_suffix) {
+            document.getElementById('login-phone-wrap').classList.remove('hidden');
+            document.getElementById('login-phone-suffix').focus();
+            return;
+          }
+          if (!response.ok) throw new Error(payload.error || '이름 또는 PIN을 확인해 주세요.');
           const session = await supabaseClient.auth.setSession({
             access_token: payload.access_token, refresh_token: payload.refresh_token
           });
@@ -6530,7 +6552,7 @@
       }
       if (loginError) {
         console.error('Supabase login failed:', loginError);
-        alert(loginError.message || '이메일·사번 또는 비밀번호·PIN을 확인해 주세요.');
+        alert(loginError.message || '이메일·이름 또는 비밀번호·PIN을 확인해 주세요.');
         return;
       }
 
@@ -8190,8 +8212,8 @@
               </button>
               ${activeButton}
               ${u.auth_user_id && u.active && u.login_method === 'pin' ? `
-                <button onclick="openPinEnrollment(${u.id})" class="bg-amber-600/20 hover:bg-amber-600 text-amber-300 hover:text-white px-2 py-1 rounded text-[11px] font-bold transition flex items-center gap-1 border border-amber-500/30" title="PIN 등록 QR 재발급">
-                  <i class="fa-solid fa-qrcode"></i> PIN QR
+                <button onclick="openPinActivation(${u.id})" class="bg-amber-600/20 hover:bg-amber-600 text-amber-300 hover:text-white px-2 py-1 rounded text-[11px] font-bold transition flex items-center gap-1 border border-amber-500/30" title="PIN 임시번호 발급">
+                  <i class="fa-solid fa-key"></i> 임시번호
                 </button>
               ` : u.auth_user_id && u.active ? `
                 <button onclick="sendPasswordResetEmail(${u.id})" class="bg-teal-600/20 hover:bg-teal-600 text-teal-300 hover:text-white px-2 py-1 rounded text-[11px] font-bold transition flex items-center gap-1 border border-teal-500/30" title="${escapeHtml(u.email)}로 비밀번호 설정 링크 발송">
@@ -8331,7 +8353,6 @@
       const company = document.getElementById('user-company-in').value;
       const name = document.getElementById('user-name-in').value.trim();
       const email = document.getElementById('user-email-in').value.trim().toLowerCase();
-      const loginId = document.getElementById('user-login-id-in').value.trim().toUpperCase();
       const dept = document.getElementById('user-dept-in').value.trim();
       const workplace = document.getElementById('user-workplace-in').value.trim();
       const role = document.getElementById('user-role-in').value.trim();
@@ -8345,7 +8366,7 @@
         name,
         email: loginMethod === 'email' ? email : '',
         login_method: loginMethod,
-        login_id: loginMethod === 'pin' ? loginId : email,
+        login_id: loginMethod === 'pin' ? '' : email,
         dept,
         workplace,
         role,
@@ -8361,8 +8382,8 @@
         if (payload.failed) throw new Error(payload.results?.[0]?.message || '등록 실패');
         await refreshAdminUsers();
         if (loginMethod === 'pin') {
-          const created = usersDb.find(user => user.login_method === 'pin' && user.login_id === loginId);
-          if (created) await openPinEnrollment(created.id);
+          const created = [...usersDb].reverse().find(user => user.login_method === 'pin' && user.name === name && user.company === company);
+          if (created) await openPinActivation(created.id);
         } else {
           alert(`사용자 [${name} (${company})] 님을 Auth와 직원 DB에 등록했습니다.`);
         }
@@ -8410,157 +8431,43 @@
     function toggleDirectUserLoginMethod() {
       const pinMode = document.getElementById('user-login-method-in')?.value === 'pin';
       document.getElementById('user-email-field')?.classList.toggle('hidden', pinMode);
-      document.getElementById('user-login-id-field')?.classList.toggle('hidden', !pinMode);
       const email = document.getElementById('user-email-in');
-      const loginId = document.getElementById('user-login-id-in');
       if (email) email.required = !pinMode;
-      if (loginId) loginId.required = pinMode;
     }
 
-    async function openPinEnrollment(id) {
+    async function openPinActivation(id) {
       try {
-        const payload = await callUsersApi('POST', { action: 'generate_pin_enrollment', id: Number(id) });
+        const payload = await callUsersApi('POST', { action: 'generate_pin_activation', id: Number(id) });
         const overlay = document.createElement('div');
         overlay.className = 'fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 p-4';
         const card = document.createElement('div');
         card.className = 'w-full max-w-sm rounded-3xl bg-white p-6 text-center text-slate-900 shadow-2xl';
         const title = document.createElement('h3');
         title.className = 'text-xl font-black';
-        title.textContent = `${payload.login_id} 간편 로그인 등록`;
+        title.textContent = `${payload.name} · ${payload.company}`;
         const help = document.createElement('p');
-        help.className = 'mt-2 text-sm text-slate-600';
-        help.textContent = '직원 휴대폰 카메라로 QR을 촬영해 10분 안에 PIN을 설정하세요.';
-        const image = document.createElement('img');
-        image.src = payload.qr_data_url;
-        image.alt = `${payload.login_id} 일회용 PIN 등록 QR`;
-        image.className = 'mx-auto my-4 h-72 w-72';
+        help.className = 'mt-3 text-sm font-bold text-slate-600';
+        help.textContent = '아래 임시번호를 직원에게 전화로 읽어 주세요. 10분 동안 한 번만 사용할 수 있습니다.';
+        const code = document.createElement('div');
+        code.className = 'my-5 rounded-2xl border-2 border-teal-600 bg-teal-50 px-3 py-5 font-mono text-4xl font-black tracking-[0.18em] text-teal-900';
+        code.textContent = payload.temporary_code.replace(/(\d{4})(\d{4})/, '$1 $2');
         const close = document.createElement('button');
         close.type = 'button';
         close.className = 'min-h-12 w-full rounded-xl bg-slate-800 text-base font-black text-white';
-        close.textContent = '닫기';
+        close.textContent = '확인 후 닫기';
         close.addEventListener('click', () => overlay.remove());
-        card.append(title, help, image, close);
+        card.append(title, help, code, close);
         overlay.append(card);
         document.body.append(overlay);
       } catch (error) {
-        alert(`PIN 등록 QR 발급 실패: ${error.message}`);
+        alert(`PIN 임시번호 발급 실패: ${error.message}`);
       }
-    }
-
-    let pinQrScanner = null;
-    let pinQrCameraActive = false;
-
-    function pinEnrollmentUrlFromQr(value) {
-      try {
-        const url = new URL(String(value || '').trim());
-        const valid = url.origin === 'https://cnhyex.vercel.app'
-          && url.pathname === '/'
-          && !url.search
-          && /^#enroll=[A-Za-z0-9_-]{40,100}$/.test(url.hash);
-        return valid ? url : null;
-      } catch {
-        return null;
-      }
-    }
-
-    async function stopPinQrScanner() {
-      if (!pinQrScanner) return;
-      if (pinQrCameraActive) {
-        try { await pinQrScanner.stop(); } catch (_) {}
-      }
-      pinQrCameraActive = false;
-      try { await pinQrScanner.clear(); } catch (_) {}
-      pinQrScanner = null;
-    }
-
-    async function acceptPinEnrollmentQr(decodedText) {
-      const url = pinEnrollmentUrlFromQr(decodedText);
-      const message = document.getElementById('pin-qr-scanner-message');
-      if (!url) {
-        if (message) message.textContent = 'CNHYEX에서 발급한 PIN 등록 QR코드가 아닙니다.';
-        return false;
-      }
-      if (message) message.textContent = 'QR 확인 완료. PIN 설정 화면으로 이동합니다.';
-      await stopPinQrScanner();
-      history.replaceState(null, '', `${url.pathname}${url.hash}`);
-      window.location.reload();
-      return true;
-    }
-
-    async function openPinQrScanner() {
-      const modal = document.getElementById('pin-qr-scanner-modal');
-      const message = document.getElementById('pin-qr-scanner-message');
-      modal?.classList.remove('hidden');
-      modal?.classList.add('flex');
-      if (typeof Html5Qrcode !== 'function') {
-        if (message) message.textContent = '스캐너를 불러오지 못했습니다. 아래 촬영 버튼을 이용해 주세요.';
-        return;
-      }
-      await stopPinQrScanner();
-      pinQrScanner = new Html5Qrcode('pin-qr-reader');
-      try {
-        await pinQrScanner.start(
-          { facingMode: 'environment' },
-          { fps: 10, qrbox: { width: 230, height: 230 } },
-          decodedText => acceptPinEnrollmentQr(decodedText),
-          () => {}
-        );
-        pinQrCameraActive = true;
-        if (message) message.textContent = '관리자가 보여주는 QR코드를 네모 안에 맞춰 주세요.';
-      } catch (_) {
-        if (message) message.textContent = '카메라를 열 수 없습니다. 아래 촬영 버튼을 이용해 주세요.';
-      }
-    }
-
-    async function scanPinQrImage(event) {
-      const file = event.target.files?.[0];
-      const message = document.getElementById('pin-qr-scanner-message');
-      if (!file || typeof Html5Qrcode !== 'function') return;
-      if (pinQrCameraActive) {
-        try { await pinQrScanner.stop(); } catch (_) {}
-        pinQrCameraActive = false;
-      }
-      if (!pinQrScanner) pinQrScanner = new Html5Qrcode('pin-qr-reader');
-      try {
-        const decodedText = await pinQrScanner.scanFile(file, true);
-        await acceptPinEnrollmentQr(decodedText);
-      } catch (_) {
-        if (message) message.textContent = '사진에서 PIN 등록 QR을 찾지 못했습니다. 다시 촬영해 주세요.';
-      } finally {
-        event.target.value = '';
-      }
-    }
-
-    async function closePinQrScanner() {
-      await stopPinQrScanner();
-      const modal = document.getElementById('pin-qr-scanner-modal');
-      modal?.classList.add('hidden');
-      modal?.classList.remove('flex');
-      document.querySelector('[onclick="openPinQrScanner()"]')?.focus();
-    }
-
-    let activePinEnrollmentToken = null;
-    async function initializePinEnrollment() {
-      const match = location.hash.match(/^#enroll=([A-Za-z0-9_-]{40,100})$/);
-      if (!match) return false;
-      activePinEnrollmentToken = match[1];
-      document.getElementById('header-user-info')?.classList.add('hidden');
-      document.getElementById('main-nav-tabs')?.classList.add('hidden');
-      navigateTo('pin-enrollment');
-      try {
-        const response = await fetch(`/api/pin-enrollment?token=${encodeURIComponent(activePinEnrollmentToken)}`);
-        const payload = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(payload.error || '등록 링크를 확인해 주세요.');
-        document.getElementById('pin-enrollment-profile').textContent = `${payload.name} · ${payload.company} · 사번 ${payload.login_id}`;
-      } catch (error) {
-        document.getElementById('pin-enrollment-profile').textContent = error.message;
-        document.querySelector('#view-pin-enrollment form')?.classList.add('hidden');
-      }
-      return true;
     }
 
     async function submitPinEnrollment(event) {
       event.preventDefault();
+      const name = document.getElementById('pin-enrollment-name').value.trim();
+      const temporaryCode = document.getElementById('pin-enrollment-code').value.replace(/\s/g, '');
       const pin = document.getElementById('pin-enrollment-value').value;
       const confirmation = document.getElementById('pin-enrollment-confirm').value;
       const message = document.getElementById('pin-enrollment-message');
@@ -8570,16 +8477,17 @@
       }
       const response = await fetch('/api/pin-enrollment', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: activePinEnrollmentToken, pin })
+        body: JSON.stringify({ name, temporary_code: temporaryCode, pin })
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
         message.textContent = payload.error || 'PIN을 저장하지 못했습니다.';
         return;
       }
-      history.replaceState(null, '', `${location.pathname}${location.search}`);
-      alert(`PIN 설정이 완료되었습니다. 사번 ${payload.login_id}로 로그인하세요.`);
-      window.location.reload();
+      alert(`PIN 설정이 완료되었습니다. 이름 ${payload.name}으로 로그인하세요.`);
+      document.getElementById('login-emp-id').value = payload.name;
+      document.getElementById('login-password').value = '';
+      navigateTo('login');
     }
 
     function downloadImportResults(results) {
@@ -9440,7 +9348,6 @@
       initializeFontScaleControl();
       applyMobileHeaderPreference();
       applyMobileNavTrayPreference();
-      if (await initializePinEnrollment()) return;
       await loadFromServer();
 
       const lastSubtab = sessionStorage.getItem('cnhy_last_subtab') || 'users';
