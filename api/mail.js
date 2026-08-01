@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
 import { ROLES } from './role-policy.js';
 import {
@@ -6,10 +7,11 @@ import {
   mailIdempotencyKey,
   passwordResetIdempotencyBucket,
   summarizeDispatch
-} from './mail-delivery.js';
+} from '../lib/mail-delivery.js';
 
 const send = (res, status, payload) => res.status(status).json(payload);
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const GENERIC_MESSAGE = '등록된 활성 계정이면 비밀번호 설정 메일을 발송했습니다. 메일함과 스팸함을 확인해 주세요.';
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
 })[character]);
@@ -21,6 +23,57 @@ const gradeMailStyles = {
   C: { icon: '🛡️', label: 'C Grade', color: '#1e40af', background: '#eff6ff', border: '#93c5fd' },
   D: { icon: '◼️', label: 'D Grade', color: '#44403c', background: '#f5f5f4', border: '#a8a29e' }
 };
+
+export function normalizeResetEmail(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function requestFingerprint(req, email, secret) {
+  const ip = String(req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '').split(',')[0].trim();
+  const hash = value => crypto.createHmac('sha256', secret).update(value).digest('hex');
+  return { emailHash: hash(email), ipHash: hash(ip || 'unknown') };
+}
+
+async function handlePublicPasswordReset(req, res, service, key) {
+  const email = normalizeResetEmail(req.body?.email);
+  if (!emailPattern.test(email)) return send(res, 200, { message: GENERIC_MESSAGE });
+
+  const { emailHash, ipHash } = requestFingerprint(req, email, key);
+  const since = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  try {
+    const recent = await service.from('password_reset_request_audit')
+      .select('email_hash,ip_hash').gte('requested_at', since).or(`email_hash.eq.${emailHash},ip_hash.eq.${ipHash}`);
+    if (recent.error) throw recent.error;
+    const rows = recent.data || [];
+    const throttled = rows.filter(row => row.email_hash === emailHash).length >= 3
+      || rows.filter(row => row.ip_hash === ipHash).length >= 10;
+    if (throttled) return send(res, 200, { message: GENERIC_MESSAGE });
+
+    const profile = await service.from('users')
+      .select('id,email,auth_user_id,active,login_method').eq('email', email).eq('login_method', 'email').maybeSingle();
+    const eligible = !profile.error && profile.data?.active === true && Boolean(profile.data.auth_user_id);
+    let status = 'ignored';
+    let errorMessage = null;
+    if (eligible) {
+      const reset = await service.auth.resetPasswordForEmail(email, {
+        redirectTo: canonicalPasswordResetRedirect(process.env.PASSWORD_RESET_REDIRECT_URL)
+      });
+      status = reset.error ? 'failed' : 'sent';
+      errorMessage = reset.error ? String(reset.error.message || reset.error).slice(0, 1000) : null;
+    }
+    const audit = await service.from('password_reset_request_audit').insert({
+      target_id: profile.data?.id || null,
+      email_hash: emailHash,
+      ip_hash: ipHash,
+      status,
+      error_message: errorMessage
+    });
+    if (audit.error) throw audit.error;
+  } catch (error) {
+    console.error('Public password reset request failed:', error);
+  }
+  return send(res, 200, { message: GENERIC_MESSAGE });
+}
 
 export function buildGradeNoticeEmail({ name, cycleName, grade }) {
   const normalized = String(grade || '').trim().toUpperCase();
@@ -166,6 +219,9 @@ export default async function handler(req, res) {
   const service = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
   try {
     if (req.method !== 'POST') return send(res, 405, { error: 'Only POST is supported.' });
+    if (req.body?.action === 'public_password_reset') {
+      return await handlePublicPasswordReset(req, res, service, key);
+    }
     const actor = await authorize(req, service);
     const action = String(req.body?.action || '');
     const retry = req.body?.retry === true;

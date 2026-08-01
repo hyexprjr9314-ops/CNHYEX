@@ -19,7 +19,7 @@ test('a finalized cycle without a target row is a normal unavailable result, not
 });
 
 test('public password reset fails closed when audit persistence fails', async () => {
-  const source = await read('api/password-reset-request.js');
+  const source = await read('api/mail.js');
   assert.match(source, /if \(audit\.error\) throw audit\.error/);
 });
 

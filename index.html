@@ -6540,10 +6540,10 @@
       button.disabled = true;
       button.textContent = '요청 중…';
       try {
-        const response = await fetch('/api/password-reset-request', {
+        const response = await fetch('/api/mail', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email })
+          body: JSON.stringify({ action: 'public_password_reset', email })
         });
         const payload = await response.json().catch(() => ({}));
         message.textContent = payload.message || '등록된 활성 계정이면 비밀번호 설정 메일을 발송했습니다.';

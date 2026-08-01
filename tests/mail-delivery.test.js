@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { canSendGradeNotice, mailIdempotencyKey, passwordResetIdempotencyBucket, summarizeDispatch } from '../api/mail-delivery.js';
+import { canSendGradeNotice, mailIdempotencyKey, passwordResetIdempotencyBucket, summarizeDispatch } from '../lib/mail-delivery.js';
 import { buildGradeNoticeEmail } from '../api/mail.js';
 
 const read = path => readFile(new URL(path, import.meta.url), 'utf8');

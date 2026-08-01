@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { normalizeResetEmail } from '../api/password-reset-request.js';
+import { normalizeResetEmail } from '../api/mail.js';
 
 const index = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
-const resetApi = fs.readFileSync(new URL('../api/password-reset-request.js', import.meta.url), 'utf8');
+const resetApi = fs.readFileSync(new URL('../api/mail.js', import.meta.url), 'utf8');
 
 test('public password setup request is generic, throttled, and account-safe', () => {
   assert.equal(normalizeResetEmail('  USER@Example.COM '), 'user@example.com');
