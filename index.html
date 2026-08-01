@@ -4089,6 +4089,7 @@
     let nativePushToken = localStorage.getItem('cnhy_native_push_token') || '';
     let webPushInitialized = false;
     let webPushToken = localStorage.getItem('cnhy_web_push_token') || '';
+    const PUSH_PERMISSION_NOTICE_SNOOZE_MS = 7 * 24 * 60 * 60 * 1000;
 
     function isNativeAndroidApp() {
       return window.Capacitor?.getPlatform?.() === 'android';
@@ -4163,8 +4164,26 @@
       document.getElementById('web-push-permission-notice')?.remove();
     }
 
+    function pushPermissionNoticeSnoozeKey(platform) {
+      return `cnhy_push_notice_snooze_${platform}_${Number(currentLoggedInUser?.id) || 'guest'}`;
+    }
+
+    function isPushPermissionNoticeSnoozed(platform) {
+      return Number(localStorage.getItem(pushPermissionNoticeSnoozeKey(platform)) || 0) > Date.now();
+    }
+
+    function snoozePushPermissionNotice(platform) {
+      localStorage.setItem(pushPermissionNoticeSnoozeKey(platform), String(Date.now() + PUSH_PERMISSION_NOTICE_SNOOZE_MS));
+      if (platform === 'android') removeNativePushPermissionNotice();
+      else removeWebPushPermissionNotice();
+    }
+
+    function clearPushPermissionNoticeSnooze(platform) {
+      localStorage.removeItem(pushPermissionNoticeSnoozeKey(platform));
+    }
+
     function showWebPushPermissionNotice() {
-      if ((!supportsWebPush() && !isIosBrowser()) || document.getElementById('web-push-permission-notice')) return;
+      if ((!supportsWebPush() && !isIosBrowser()) || isPushPermissionNoticeSnoozed('web') || document.getElementById('web-push-permission-notice')) return;
       const iosNeedsInstall = isIosBrowser() && !isStandaloneWebApp();
       const notice = document.createElement('div');
       notice.id = 'web-push-permission-notice';
@@ -4176,7 +4195,7 @@
             <p class="font-black text-slate-900">아이폰 앱 알림을 사용해 보세요</p>
             <p class="mt-1 text-xs leading-5 text-slate-600">Safari 공유 → 홈 화면에 추가 후, 생성된 앱에서 알림을 켤 수 있습니다.</p>
             <div class="mt-3 flex justify-end">
-              <button type="button" class="rounded-lg bg-teal-700 px-3 py-2 text-xs font-black text-white" onclick="removeWebPushPermissionNotice()">확인</button>
+              <button type="button" class="rounded-lg bg-teal-700 px-3 py-2 text-xs font-black text-white" onclick="snoozePushPermissionNotice('web')">확인</button>
             </div>
           </div>
         </div>` : `
@@ -4186,7 +4205,7 @@
             <p class="font-black text-slate-900">인사평가 알림을 받아보세요</p>
             <p class="mt-1 text-xs leading-5 text-slate-600">평가 배정·전자결재·결과 공개 소식을 바로 알려드립니다.</p>
             <div class="mt-3 flex justify-end gap-2">
-              <button type="button" class="rounded-lg px-3 py-2 text-xs font-bold text-slate-500" onclick="removeWebPushPermissionNotice()">나중에</button>
+              <button type="button" class="rounded-lg px-3 py-2 text-xs font-bold text-slate-500" onclick="snoozePushPermissionNotice('web')">나중에</button>
               <button type="button" class="push-action-white rounded-lg bg-teal-700 px-3 py-2 text-xs font-black text-white" onclick="enableWebPushNotifications()">알림 켜기</button>
             </div>
           </div>
@@ -4216,13 +4235,14 @@
         app_version: 'web-1.0'
       });
       webPushInitialized = true;
+      clearPushPermissionNoticeSnooze('web');
       removeWebPushPermissionNotice();
     }
 
     async function enableWebPushNotifications() {
       try {
         const permission = await Notification.requestPermission();
-        if (permission !== 'granted') return;
+        if (permission !== 'granted') return snoozePushPermissionNotice('web');
         await registerWebPushSubscription();
       } catch (error) {
         console.warn('웹 푸시 알림을 활성화하지 못했습니다.', error);
@@ -4235,6 +4255,7 @@
       if (webPushInitialized || !currentLoggedInUser) return;
       if (isIosBrowser() && !isStandaloneWebApp()) return showWebPushPermissionNotice();
       if (!supportsWebPush()) return;
+      if (Notification.permission === 'denied') return removeWebPushPermissionNotice();
       if (Notification.permission !== 'granted') return showWebPushPermissionNotice();
       try {
         await registerWebPushSubscription();
@@ -4244,7 +4265,7 @@
     }
 
     function showNativePushPermissionNotice() {
-      if (!isNativeAndroidApp() || document.getElementById('native-push-permission-notice')) return;
+      if (!isNativeAndroidApp() || isPushPermissionNoticeSnoozed('android') || document.getElementById('native-push-permission-notice')) return;
       const notice = document.createElement('div');
       notice.id = 'native-push-permission-notice';
       notice.className = 'fixed inset-x-3 bottom-20 z-[120] mx-auto max-w-md rounded-2xl border border-amber-300 bg-white p-4 shadow-2xl';
@@ -4255,7 +4276,7 @@
             <p class="font-black text-slate-900">앱 알림이 꺼져 있습니다</p>
             <p class="mt-1 text-xs leading-5 text-slate-600">평가 배정·전자결재·결과 공개 알림을 받으려면 알림을 켜주세요.</p>
             <div class="mt-3 flex justify-end gap-2">
-              <button type="button" class="rounded-lg px-3 py-2 text-xs font-bold text-slate-500" onclick="this.closest('#native-push-permission-notice').remove()">나중에</button>
+              <button type="button" class="rounded-lg px-3 py-2 text-xs font-bold text-slate-500" onclick="snoozePushPermissionNotice('android')">나중에</button>
               <button type="button" class="push-action-white rounded-lg bg-teal-700 px-3 py-2 text-xs font-black text-white" onclick="openNativeNotificationSettings()">알림 켜기</button>
             </div>
           </div>
@@ -4264,6 +4285,7 @@
     }
 
     async function openNativeNotificationSettings() {
+      snoozePushPermissionNotice('android');
       try {
         await window.Capacitor?.Plugins?.NotificationSettings?.open();
       } catch (error) {
@@ -4321,6 +4343,7 @@
           permission = await push.requestPermissions();
         }
         if (permission.receive === 'granted') {
+          clearPushPermissionNoticeSnooze('android');
           removeNativePushPermissionNotice();
           await push.register();
         } else {
@@ -4339,6 +4362,7 @@
       try {
         const permission = await push.checkPermissions();
         if (permission.receive === 'granted') {
+          clearPushPermissionNoticeSnooze('android');
           removeNativePushPermissionNotice();
           await push.register();
         } else {
@@ -4417,7 +4441,7 @@
 
     function getAdminSetupCycle() {
       const selectedId = Number(selectedEvaluationCycleId || currentSelectedSummaryCycleId);
-      return cyclesDb.find(cycle => Number(cycle.id) === selectedId)
+      return cyclesDb.find(cycle => Number(cycle.id) === selectedId && !isClosedEvaluationCycle(cycle))
         || [...cyclesDb].sort((a, b) => Number(b.id) - Number(a.id))
           .find(cycle => !isClosedEvaluationCycle(cycle))
         || null;
