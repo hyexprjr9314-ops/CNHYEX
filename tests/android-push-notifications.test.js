@@ -17,6 +17,9 @@ test('Android notification permission is requested and denied users can open set
   assert.match(html, /if \(!settings\?\.status\) return/);
   assert.match(html, /if \(!nativeStatus\?\.pushConfigured\) return/);
   assert.match(html, /앱 알림이 꺼져 있습니다/);
+  assert.match(html, /onclick="snoozePushPermissionNotice\('android'\)">나중에/);
+  assert.match(html, /isPushPermissionNoticeSnoozed\('android'\)/);
+  assert.match(html, /clearPushPermissionNoticeSnooze\('android'\)/);
 });
 
 test('push events are idempotent per recipient and never block business actions', () => {

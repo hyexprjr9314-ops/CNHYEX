@@ -331,6 +331,7 @@ test('administrator setup reveals existing evaluation tabs step by step without 
   assert.match(advance, /usersDb\.some\(user => user\.can_evaluate !== false\)/);
   assert.match(advance, /questionsForCycle\(cycleId\)/);
   assert.match(advance, /customManualMatchingsDb\.filter/);
+  assert.match(index, /cyclesDb\.find\(cycle => Number\(cycle\.id\) === selectedId && !isClosedEvaluationCycle\(cycle\)\)/);
   assert.match(index, /if \(\['진행중', '일시정지'\]\.includes/);
   assert.match(index, /if \(!cycle \|\| isClosedEvaluationCycle\(cycle\)\) return 0/);
   assert.doesNotMatch(index, /action:\s*'admin_setup_step'/);
