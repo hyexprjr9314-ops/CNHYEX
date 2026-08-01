@@ -27,6 +27,12 @@ test('web push permission is user initiated and subscription is registered', () 
   assert.match(html, /class="push-action-white[^"]*" onclick="openNativeNotificationSettings\(\)">알림 켜기/);
 });
 
+test('web push permission notice closes after every enable attempt', () => {
+  const enable = html.match(/async function enableWebPushNotifications\(\) \{([\s\S]*?)\n    \}/)?.[1] || '';
+  assert.match(enable, /finally \{[\s\S]*removeWebPushPermissionNotice\(\)/);
+  assert.doesNotMatch(enable, /showWebPushPermissionNotice\(\)/);
+});
+
 test('server dispatch keeps Android FCM and adds standards web push', () => {
   assert.match(push, /sendFirebaseMessage/);
   assert.match(push, /sendWebPush/);

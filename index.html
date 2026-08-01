@@ -4222,11 +4222,12 @@
     async function enableWebPushNotifications() {
       try {
         const permission = await Notification.requestPermission();
-        if (permission !== 'granted') return showWebPushPermissionNotice();
+        if (permission !== 'granted') return;
         await registerWebPushSubscription();
       } catch (error) {
         console.warn('웹 푸시 알림을 활성화하지 못했습니다.', error);
-        showWebPushPermissionNotice();
+      } finally {
+        removeWebPushPermissionNotice();
       }
     }
 
