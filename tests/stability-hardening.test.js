@@ -46,3 +46,10 @@ test('browser authentication dependency is pinned and colored action labels stay
     assert.match(html, new RegExp(`\\[class~="bg-${color}"\\]`));
   }
 });
+
+test('retired password and sync-status copy cannot mislead users', async () => {
+  const html = await read('index.html');
+  assert.doesNotMatch(html, /초기: 휴대폰 번호 뒤 4자리/);
+  assert.doesNotMatch(html, /서버 동기화 정상|sync-footer-status|setCentralSyncStatus/);
+  assert.match(html, /centralRealtimeChannel\.subscribe\(\)/);
+});

@@ -1942,11 +1942,6 @@
       52% { transform: rotate(180deg) scale(.9); }
       62%, 100% { transform: rotate(360deg) scale(1); }
     }
-    .sync-footer-status { color: #64748b; font-size: 11px; }
-    .sync-footer-status::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 999px; background: #14b8a6; }
-    .sync-footer-status[data-state="syncing"]::before { background: #f59e0b; }
-    .sync-footer-status[data-state="error"] { color: #991b1b; }
-    .sync-footer-status[data-state="error"]::before { background: #dc2626; }
     #question-cycle-select, #perm-cycle-select, #matching-cycle-select,
     label[for="matching-cycle-select"] { display: none !important; }
     @media (prefers-reduced-motion: reduce) { .hourglass-turn { animation: none; } }
@@ -4011,7 +4006,7 @@
       <form onsubmit="handleUserPasswordChangeSubmit(event)" class="space-y-4">
         <div>
           <label class="block text-xs font-bold text-slate-300 mb-1">현재 비밀번호</label>
-          <input type="password" id="change-current-pass" placeholder="현재 비밀번호 (초기: 휴대폰 번호 뒤 4자리)" required class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white">
+          <input type="password" id="change-current-pass" placeholder="현재 비밀번호" required class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white">
         </div>
 
         <div>
@@ -6775,22 +6770,17 @@
       clearTimeout(centralReloadTimer);
       if (isEvaluationInteractionActive() || evaluationSubmissionPending) {
         centralReloadDeferred = true;
-        setCentralSyncStatus('ready');
         return;
       }
-      setCentralSyncStatus('syncing');
       centralReloadTimer = setTimeout(async () => {
         if (!currentLoggedInUser) {
-          setCentralSyncStatus('ready');
           return;
         }
         try {
           await loadFromServer();
           renderCurrentCentralViews();
-          setCentralSyncStatus('ready');
         } catch (error) {
           console.error('Central state reload failed:', error);
-          setCentralSyncStatus('error');
         }
       }, 250);
     }
@@ -6811,18 +6801,6 @@
       if (centralBroadcastChannel) centralBroadcastChannel.postMessage({ type: 'server-state-changed', at: Date.now() });
     }
 
-    function setCentralSyncStatus(state = 'ready') {
-      const statusEl = document.getElementById('sync-footer-status');
-      if (!statusEl) return;
-      const labels = {
-        ready: '서버 동기화 정상',
-        syncing: '서버 동기화 중',
-        error: '서버 연결 확인 필요'
-      };
-      statusEl.dataset.state = labels[state] ? state : 'ready';
-      statusEl.textContent = labels[state] || labels.ready;
-    }
-
     function setupCentralStateSync() {
       if (!supabaseClient || centralRealtimeChannel) return;
       if ('BroadcastChannel' in window) {
@@ -6839,11 +6817,7 @@
       ].forEach(table => {
         centralRealtimeChannel.on('postgres_changes', { event: '*', schema: 'public', table }, scheduleCentralReload);
       });
-      centralRealtimeChannel.subscribe(status => {
-        if (status === 'SUBSCRIBED') setCentralSyncStatus('ready');
-        else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') setCentralSyncStatus('error');
-        else setCentralSyncStatus('syncing');
-      });
+      centralRealtimeChannel.subscribe();
       window.addEventListener('focus', () => {
         if (Date.now() - lastCentralLoadAt > 30000) scheduleCentralReload();
       });
@@ -10554,6 +10528,5 @@
       }
     }
   </script>
-  <footer class="px-4 pb-4 pt-2 text-center"><span id="sync-footer-status" class="sync-footer-status" data-state="ready">서버 동기화 정상</span></footer>
 </body>
 </html>
