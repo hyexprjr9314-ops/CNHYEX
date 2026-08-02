@@ -26,7 +26,8 @@ test('QR, camera permission, scanner dependency, and employee-number UI are comp
 test('user registration hides internal login ids and immediately issues a temporary number', async () => {
   const [index, users] = await Promise.all([read('index.html'), read('api/users.js')]);
   assert.match(index, /이름 \+ PIN 간편 로그인/);
-  assert.match(index, /openPinActivation\(created\.id\)/);
+  assert.match(index, /openPinActivation\(createdUserId\)/);
+  assert.match(users, /user_id: write\.data\.id/);
   assert.match(index, /전화로 읽어 주세요/);
   assert.match(users, /PIN-\$\{crypto\.randomBytes\(8\)/);
   assert.match(users, /temporary_code: temporaryCode/);

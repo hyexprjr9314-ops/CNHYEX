@@ -91,13 +91,13 @@ function applyEmployeeTypePermissions(profile, previousType = null) {
 
 async function authorize(req, service) {
   const token = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
-  if (!token) throw new Error('로그인이 필요합니다.');
+  if (!token) throw Object.assign(new Error('로그인이 필요합니다.'), { status: 401 });
   const { data, error } = await service.auth.getUser(token);
-  if (error || !data.user) throw new Error('유효하지 않은 로그인입니다.');
+  if (error || !data.user) throw Object.assign(new Error('유효하지 않은 로그인입니다.'), { status: 401 });
   const { data: profile, error: profileError } = await service
     .from('users').select('id,sys_role,active').eq('auth_user_id', data.user.id).maybeSingle();
   if (profileError || !profile || profile.active !== true || profile.sys_role !== ROLES.admin) {
-    throw new Error('관리자 권한이 필요합니다.');
+    throw Object.assign(new Error('관리자 권한이 필요합니다.'), { status: 403 });
   }
   return { authUser: data.user, profile };
 }
@@ -273,10 +273,10 @@ export default async function handler(req, res) {
         if (row.email === SUPER_ADMIN_EMAIL) profile.sys_role = '관리자';
         const payload = { ...profile, auth_user_id: authUser.id, active: true, updated_at: new Date().toISOString() };
         const write = existing
-          ? await service.from('users').update(payload).eq('id', existing.id)
-          : await service.from('users').insert(payload);
+          ? await service.from('users').update(payload).eq('id', existing.id).select('id').single()
+          : await service.from('users').insert(payload).select('id').single();
         if (write.error) throw write.error;
-        results.push({ email: row.email, name: row.name, status: 'success', message: existing ? 'updated' : 'created' });
+        results.push({ user_id: write.data.id, email: row.email, name: row.name, status: 'success', message: existing ? 'updated' : 'created' });
       } catch (error) {
         if (createdAuthUserId) {
           const rollback = await service.auth.admin.deleteUser(createdAuthUserId);
@@ -287,6 +287,6 @@ export default async function handler(req, res) {
     }
     return send(res, 200, { results, success: results.filter(r => r.status === 'success').length, failed: results.filter(r => r.status === 'failed').length });
   } catch (error) {
-    return send(res, /권한|로그인/.test(error.message) ? 403 : 500, { error: error.message });
+    return send(res, error.status || 500, { error: error.message });
   }
 }

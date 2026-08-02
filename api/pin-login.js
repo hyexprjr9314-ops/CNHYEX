@@ -22,7 +22,7 @@ export default async function handler(req, res) {
   }
 
   const ip = String(req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown').split(',')[0].trim();
-  const loginHash = hash(serviceKey, `${name}|${company}`);
+  const loginHash = hash(serviceKey, name);
   const ipHash = hash(serviceKey, ip || 'unknown');
   const service = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
   const since = new Date(Date.now() - 15 * 60 * 1000).toISOString();
@@ -47,27 +47,28 @@ export default async function handler(req, res) {
     if (company) query = query.eq('company', company);
     const profiles = await query;
     if (profiles.error) throw profiles.error;
-    let candidates = profiles.data || [];
-    const companies = [...new Set(candidates.map(row => row.company).filter(Boolean))];
-    if (!company && companies.length > 1) {
-      return send(res, 409, { requires_company: true, companies });
-    }
-    if (candidates.length > 1 && !phoneSuffix) {
-      return send(res, 409, { requires_phone_suffix: true });
-    }
-    if (phoneSuffix) candidates = candidates.filter(row => String(row.phone || '').replace(/\D/g, '').endsWith(phoneSuffix));
-    if (candidates.length > 1) return send(res, 409, { error: '동명이인 계정을 구분할 수 없습니다. 관리자에게 문의해 주세요.' });
-
-    let session = null;
+    const candidates = profiles.data || [];
+    const authenticated = [];
     const client = createClient(url, publicKey, { auth: { persistSession: false, autoRefreshToken: false } });
-    for (const profile of candidates.slice(0, 5)) {
+    for (const profile of candidates) {
       if (!profile.auth_email || !profile.login_id) continue;
       const signedIn = await client.auth.signInWithPassword({
         email: profile.auth_email,
         password: pinAuthPassword(pin, profile.login_id, serviceKey)
       });
-      if (!signedIn.error) { session = signedIn.data.session; break; }
+      if (!signedIn.error) authenticated.push({ profile, session: signedIn.data.session });
     }
+
+    const companies = [...new Set(authenticated.map(({ profile }) => profile.company).filter(Boolean))];
+    if (!company && companies.length > 1) {
+      return send(res, 409, { requires_company: true, companies });
+    }
+    let matches = authenticated;
+    if (phoneSuffix) matches = matches.filter(({ profile }) => String(profile.phone || '').replace(/\D/g, '').endsWith(phoneSuffix));
+    if (matches.length > 1 && !phoneSuffix) return send(res, 409, { requires_phone_suffix: true });
+    if (matches.length > 1) return send(res, 409, { error: '동명이인 계정을 구분할 수 없습니다. 관리자에게 문의해 주세요.' });
+
+    const session = matches[0]?.session || null;
     const audit = await service.from('pin_login_attempt_audit').insert({
       login_id_hash: loginHash, ip_hash: ipHash, status: session ? 'success' : 'failed'
     });

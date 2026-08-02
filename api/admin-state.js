@@ -819,12 +819,14 @@ export default async function handler(req, res) {
       if (used.count > 0) return send(res, 409, { error: '제출 답변이 연결된 질문은 삭제할 수 없습니다.' });
       result = await service.from('evaluation_questions').delete().eq('id', Number(req.body.id));
     } else if (action === 'permission_update') {
+      await assertGlobalConfigurationMutable(service);
       const changes = {};
       if (typeof req.body.can_evaluate === 'boolean') changes.can_evaluate = req.body.can_evaluate;
       if (typeof req.body.is_evaluatee === 'boolean') changes.is_evaluatee = req.body.is_evaluatee;
       changes.updated_at = new Date().toISOString();
       result = await service.from('users').update(changes).eq('id', Number(req.body.user_id)).select().single();
     } else if (action === 'permission_bulk_update') {
+      await assertGlobalConfigurationMutable(service);
       const userIds = [...new Set((req.body.user_ids || []).map(Number).filter(Number.isInteger))].slice(0, 500);
       if (!userIds.length) return send(res, 400, { error: '변경할 사용자를 선택해 주세요.' });
       const changes = { updated_at: new Date().toISOString() };

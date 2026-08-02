@@ -56,7 +56,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <!-- Supabase Cloud Realtime DB Client CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4"></script>
 
   <style>
     body {
@@ -1823,6 +1823,11 @@
     [class~="bg-rose-600"],
     [class~="bg-blue-600"],
     [class~="bg-purple-600"],
+    [class~="bg-teal-700"],
+    [class~="bg-violet-600"],
+    [class~="bg-indigo-600"],
+    [class~="bg-amber-600"],
+    [class~="bg-orange-600"],
     [class~="bg-gradient-to-r"].text-white,
     [class~="bg-gradient-to-tr"].text-white {
       color: #FFFFFF !important;
@@ -1983,7 +1988,7 @@
       </button>
 
       <!-- Clickable User Profile Badge to Change Password -->
-      <button onclick="openChangePasswordModal()" title="클릭하여 비밀번호 변경" class="hidden md:flex items-center gap-2 bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 hover:border-brandTeal/60 px-3 py-1.5 rounded-xl text-xs transition shadow cursor-pointer group">
+      <button id="change-password-button" onclick="openChangePasswordModal()" title="클릭하여 비밀번호 변경" class="hidden md:flex items-center gap-2 bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 hover:border-brandTeal/60 px-3 py-1.5 rounded-xl text-xs transition shadow cursor-pointer group">
         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
         <span class="text-slate-300 group-hover:text-white font-semibold flex items-center gap-1.5" id="current-user-badge">
           로그인한 사용자
@@ -3587,7 +3592,7 @@
         </div>
       </div>
 
-      <form onsubmit="handlePasswordChangeSubmit(event)" class="space-y-3">
+      <form onsubmit="handleRecoveryPasswordSubmit(event)" class="space-y-3">
         <div>
           <label class="block text-xs font-bold text-slate-300 mb-1">새 비밀번호</label>
           <input type="password" id="modal-new-password" placeholder="새 비밀번호 입력 (4자리 이상)" required class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-brandTeal">
@@ -6515,7 +6520,7 @@
     async function handleLoginSubmit(e) {
       e.preventDefault();
       const loginId = document.getElementById('login-emp-id').value.trim();
-      const pass = document.getElementById('login-password').value.trim();
+      const pass = document.getElementById('login-password').value;
       const company = document.getElementById('login-company')?.value || '';
       const phoneSuffix = document.getElementById('login-phone-suffix')?.value || '';
 
@@ -7145,6 +7150,7 @@
 
       const badge = document.getElementById('current-user-badge');
       if (badge) badge.innerText = `${currentLoggedInUser.name} (${userLoginLabel(currentLoggedInUser)})`;
+      updatePasswordChangeVisibility();
 
       applyRoleBasedNavigationVisibility();
 
@@ -7170,7 +7176,16 @@
     }
 
     // Modal Password Change Controls
+    function updatePasswordChangeVisibility() {
+      const button = document.getElementById('change-password-button');
+      if (button) button.classList.toggle('md:flex', currentLoggedInUser?.login_method !== 'pin');
+    }
+
     function openChangePasswordModal() {
+      if (currentLoggedInUser?.login_method === 'pin') {
+        alert('이름 + PIN 계정은 관리자에게 새 임시번호 발급을 요청해 주세요.');
+        return;
+      }
       const modal = document.getElementById('modal-change-password');
       if (modal) {
         document.getElementById('change-current-pass').value = '';
@@ -7193,8 +7208,15 @@
       e.preventDefault();
       if (!currentLoggedInUser) return;
 
-      const newP = document.getElementById('change-new-pass').value.trim();
-      const confP = document.getElementById('change-confirm-pass').value.trim();
+      if (currentLoggedInUser.login_method === 'pin') {
+        alert('PIN 계정에서는 일반 비밀번호를 변경할 수 없습니다.');
+        closeChangePasswordModal();
+        return;
+      }
+
+      const currentP = document.getElementById('change-current-pass').value;
+      const newP = document.getElementById('change-new-pass').value;
+      const confP = document.getElementById('change-confirm-pass').value;
 
       if (!supabaseClient) return;
 
@@ -7205,6 +7227,15 @@
 
       if (newP !== confP) {
         alert('새 비밀번호와 확인 값이 일치하지 않습니다.');
+        return;
+      }
+
+      const { error: verifyError } = await supabaseClient.auth.signInWithPassword({
+        email: String(currentLoggedInUser.email || '').toLowerCase(),
+        password: currentP
+      });
+      if (verifyError) {
+        alert('현재 비밀번호가 올바르지 않습니다.');
         return;
       }
 
@@ -8389,10 +8420,10 @@
       try {
         const payload = await callUsersApi('POST', { users: [{ ...newUserObj, sys_role: sysRole }] });
         if (payload.failed) throw new Error(payload.results?.[0]?.message || '등록 실패');
+        const createdUserId = Number(payload.results?.[0]?.user_id);
         await refreshAdminUsers();
         if (loginMethod === 'pin') {
-          const created = [...usersDb].reverse().find(user => user.login_method === 'pin' && user.name === name && user.company === company);
-          if (created) await openPinActivation(created.id);
+          if (createdUserId) await openPinActivation(createdUserId);
         } else {
           alert(`사용자 [${name} (${company})] 님을 Auth와 직원 DB에 등록했습니다.`);
         }
@@ -9378,6 +9409,7 @@
 
         const badge = document.getElementById('current-user-badge');
         if (badge) badge.innerText = `${currentLoggedInUser.name} (${userLoginLabel(currentLoggedInUser)})`;
+        updatePasswordChangeVisibility();
 
         const roleInfo = checkUserRole(currentLoggedInUser);
         applyRoleBasedNavigationVisibility();
