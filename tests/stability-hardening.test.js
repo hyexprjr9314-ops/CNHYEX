@@ -53,3 +53,21 @@ test('retired password and sync-status copy cannot mislead users', async () => {
   assert.doesNotMatch(html, /서버 동기화 정상|sync-footer-status|setCentralSyncStatus/);
   assert.match(html, /centralRealtimeChannel\.subscribe\(\)/);
 });
+
+test('password and weight guidance match enforced server behavior', async () => {
+  const html = await read('index.html');
+  assert.match(html, /새 비밀번호 \(8자리 이상\)/);
+  assert.match(html, /id="change-new-pass" minlength="8"/);
+  assert.doesNotMatch(html, /가중치를 언제든 실시간 조정/);
+  assert.match(html, /진행 중이거나 승인 절차 중인 평가 주기가 없을 때 변경/);
+});
+
+test('only the super administrator can delete a completely unused account', async () => {
+  const [html, api] = await Promise.all([read('index.html'), read('api/users.js')]);
+  assert.match(html, /checkUserRole\(currentLoggedInUser\)\.isSuperAdmin[\s\S]*deleteUnusedUser/);
+  assert.match(api, /actor\.authUser\.email\?\.toLowerCase\(\) !== SUPER_ADMIN_EMAIL/);
+  assert.match(api, /await assertUserHasNoHistory\(service, target\.data\)/);
+  assert.match(api, /service\.auth\.admin\.deleteUser\(target\.data\.auth_user_id\)/);
+  assert.match(api, /service\.from\('users'\)\.insert\(removed\.data\)/);
+  assert.match(api, /최고관리자 본인 계정은 삭제할 수 없습니다/);
+});

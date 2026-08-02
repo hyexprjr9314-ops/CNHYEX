@@ -113,6 +113,38 @@ async function findAuthUser(service, email) {
   return null;
 }
 
+async function assertUserHasNoHistory(service, target) {
+  const id = Number(target.id);
+  const checks = [
+    service.from('matchings').select('id', { count: 'exact', head: true }).or(`evaluator_id.eq.${id},target_id.eq.${id}`),
+    service.from('employee_goals').select('id', { count: 'exact', head: true }).eq('user_id', id),
+    service.from('evaluation_result_adjustments').select('id', { count: 'exact', head: true }).eq('target_id', id),
+    service.from('evaluation_result_adjustment_events').select('id', { count: 'exact', head: true }).eq('target_id', id),
+    service.from('evaluation_adjustment_workflow_audit').select('id', { count: 'exact', head: true }).eq('target_id', id),
+    service.from('evaluation_cohort_snapshots').select('id', { count: 'exact', head: true }).eq('target_id', id),
+    service.from('evaluation_final_results').select('target_id', { count: 'exact', head: true }).eq('target_id', id),
+    service.from('evaluation_cycle_approval_steps').select('id', { count: 'exact', head: true }).eq('approver_user_id', id),
+    service.from('evaluation_matching_change_audit').select('id', { count: 'exact', head: true }).eq('evaluator_id', id),
+    service.from('evaluation_mail_dispatch_audit').select('id', { count: 'exact', head: true }).eq('target_id', id),
+    service.from('password_reset_email_audit').select('id', { count: 'exact', head: true }).eq('target_id', id),
+    service.from('password_reset_request_audit').select('id', { count: 'exact', head: true }).eq('target_id', id),
+    service.from('evaluation_notifications').select('id', { count: 'exact', head: true }).eq('recipient_user_id', id),
+    service.from('push_device_tokens').select('id', { count: 'exact', head: true }).eq('user_id', id)
+  ];
+  if (target.auth_user_id) {
+    checks.push(
+      service.from('evaluation_cycle_governance_audit').select('id', { count: 'exact', head: true }).eq('acted_by', target.auth_user_id),
+      service.from('evaluation_matching_change_audit').select('id', { count: 'exact', head: true }).eq('acted_by', target.auth_user_id)
+    );
+  }
+  const results = await Promise.all(checks);
+  const failed = results.find(result => result.error);
+  if (failed) throw failed.error;
+  if (results.some(result => Number(result.count) > 0)) {
+    throw Object.assign(new Error('평가·결재·감사 또는 알림 이력이 있는 계정은 완전 삭제할 수 없습니다. 비활성화를 사용해 주세요.'), { status: 409 });
+  }
+}
+
 export default async function handler(req, res) {
   const url = process.env.SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -185,7 +217,27 @@ export default async function handler(req, res) {
     if (req.method === 'DELETE') {
       const id = Number(req.body?.id);
       if (!id) return send(res, 400, { error: '사용자 ID가 필요합니다.' });
-      return send(res, 405, { error: '영구 삭제는 지원하지 않습니다. 활성화 상태를 변경해 주세요.' });
+      if (actor.authUser.email?.toLowerCase() !== SUPER_ADMIN_EMAIL) return send(res, 403, { error: '최고관리자만 계정을 완전 삭제할 수 있습니다.' });
+      const target = await service.from('users').select('*').eq('id', id).single();
+      if (target.error) throw target.error;
+      if (target.data.email?.toLowerCase() === SUPER_ADMIN_EMAIL || target.data.auth_user_id === actor.authUser.id) {
+        return send(res, 400, { error: '최고관리자 본인 계정은 삭제할 수 없습니다.' });
+      }
+      if (String(req.body?.confirmation_name || '').trim() !== target.data.name) {
+        return send(res, 400, { error: '삭제 확인 이름이 일치하지 않습니다.' });
+      }
+      await assertUserHasNoHistory(service, target.data);
+      const removed = await service.from('users').delete().eq('id', id).select('*').single();
+      if (removed.error) throw removed.error;
+      if (target.data.auth_user_id) {
+        const deletedAuth = await service.auth.admin.deleteUser(target.data.auth_user_id);
+        if (deletedAuth.error) {
+          const restored = await service.from('users').insert(removed.data);
+          if (restored.error) console.error('Deleted user profile rollback failed:', restored.error);
+          throw Object.assign(new Error(restored.error ? '로그인 계정 삭제와 직원 정보 복원에 실패했습니다. 즉시 시스템 점검이 필요합니다.' : '로그인 계정을 삭제하지 못해 직원 정보를 복원했습니다.'), { status: 500 });
+        }
+      }
+      return send(res, 200, { deleted: true, id });
     }
     if (req.method !== 'POST') return send(res, 405, { error: '지원하지 않는 요청입니다.' });
 

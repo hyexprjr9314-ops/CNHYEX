@@ -3859,7 +3859,7 @@
           </div>
           <div class="bg-slate-950/70 p-4 rounded-2xl border border-slate-800 text-xs text-slate-300 space-y-2.5 leading-relaxed">
             <p><i class="fa-solid fa-calendar-check text-amber-400 mr-1.5"></i><strong>주기 상태 라이프사이클:</strong> 초안 ➔ 진행 중(평가 활성화) ➔ 마감/보관됨 순서로 주기를 관리합니다. 마감 시 일반 사원의 평가는 잠깁니다.</p>
-            <p><i class="fa-solid fa-list-ol text-amber-400 mr-1.5"></i><strong>역량 가중치 설정:</strong> 3대 평가 그룹(팀원, 팀장, 부서장)별로 성과/협업/성장 역량 반영 가중치를 언제든 실시간 조정할 수 있습니다.</p>
+            <p><i class="fa-solid fa-list-ol text-amber-400 mr-1.5"></i><strong>역량 가중치 설정:</strong> 가중치는 진행 중이거나 승인 절차 중인 평가 주기가 없을 때 변경할 수 있으며, 변경된 값은 이후 시작되는 평가에 적용됩니다.</p>
           </div>
         </div>
 
@@ -4010,8 +4010,8 @@
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-slate-300 mb-1">새 비밀번호 (4자리 이상)</label>
-          <input type="password" id="change-new-pass" placeholder="새로 사용할 비밀번호 입력" required class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white">
+          <label class="block text-xs font-bold text-slate-300 mb-1">새 비밀번호 (8자리 이상)</label>
+          <input type="password" id="change-new-pass" minlength="8" placeholder="새로 사용할 비밀번호 입력" required class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white">
         </div>
 
         <div>
@@ -8225,6 +8225,11 @@
                 <i class="fa-solid fa-pen-to-square"></i> 수정
               </button>
               ${activeButton}
+              ${checkUserRole(currentLoggedInUser).isSuperAdmin && !isSuperAdmin ? `
+                <button onclick="deleteUnusedUser(${u.id})" class="bg-rose-700 hover:bg-rose-800 text-white px-2 py-1 rounded text-[11px] font-bold transition flex items-center gap-1 border border-rose-800" title="이력이 없는 계정만 완전 삭제">
+                  <i class="fa-solid fa-trash-can"></i> 완전 삭제
+                </button>
+              ` : ''}
               ${u.auth_user_id && u.active && u.login_method === 'pin' ? `
                 <button onclick="openPinActivation(${u.id})" class="bg-amber-600/20 hover:bg-amber-600 text-amber-300 hover:text-white px-2 py-1 rounded text-[11px] font-bold transition flex items-center gap-1 border border-amber-500/30" title="PIN 임시번호 발급">
                   <i class="fa-solid fa-key"></i> 임시번호
@@ -8358,6 +8363,20 @@
         } catch (error) {
           alert(`${actionLabel} 실패: ${error.message}`);
         }
+      }
+    }
+
+    async function deleteUnusedUser(id) {
+      const user = usersDb.find(item => Number(item.id) === Number(id));
+      if (!user || !checkUserRole(currentLoggedInUser).isSuperAdmin) return;
+      if (prompt(`평가·결재·감사 이력이 없는 계정만 삭제됩니다.\n계속하려면 직원 이름 "${user.name}"을 입력하세요.`) !== user.name) return;
+      if (!confirm(`[${user.name}] 계정과 로그인 정보를 완전히 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`)) return;
+      try {
+        await callUsersApi('DELETE', { id: Number(id), confirmation_name: user.name });
+        await refreshAdminUsers();
+        alert(`[${user.name}] 계정을 완전히 삭제했습니다.`);
+      } catch (error) {
+        alert(`계정 삭제 실패: ${error.message}`);
       }
     }
 
