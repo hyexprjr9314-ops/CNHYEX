@@ -9188,43 +9188,25 @@
 
     // CSV Template Download & Upload Handler for Questions
     function downloadCSVQuestionTemplate() {
-      const csvHeader = "\uFEFF카테고리,사원구분,질문유형,질문내용,필수여부,기본질문여부,평가관계\n";
-      const sampleRows = [
-        "성과,팀원급,5지선다형,담당 업무 목표를 책임감 있게 달성하나요?,Y,Y\n",
-        "협업,팀원급,5지선다형,동료 및 유관부서와 원활하게 협업하나요?,Y,Y\n",
-        "성장,팀원급,5지선다형,업무 역량 향상을 위해 지속적으로 노력하나요?,Y,Y\n",
-        "조화,팀원급,5지선다형,조직의 규칙을 지키며 긍정적인 관계를 형성하나요?,Y,Y\n",
-        "리더십,팀장/부서장급,5지선다형,명확한 방향을 제시하고 책임 있게 의사결정하나요?,Y,Y\n",
-        "팀원 육성,팀장/부서장급,5지선다형,구성원의 성장을 지원하고 적절한 피드백을 제공하나요?,Y,Y\n",
-        "소통,팀장/부서장급,5지선다형,구성원 및 유관부서와 투명하게 소통하나요?,Y,Y\n",
-        "전략적 사고,팀장/부서장급,5지선다형,조직 목표를 고려하여 우선순위와 실행 방향을 정하나요?,Y,Y\n",
-        "성과,영업소 직원,5지선다형,영업소에서 맡은 업무와 고객 대응을 책임감 있게 수행하나요?,Y,Y\n",
-        "협업,영업소 직원,5지선다형,영업소 동료 및 유관부서와 원활하게 소통하고 협력하나요?,Y,Y\n",
-        "성장,영업소 직원,5지선다형,현장 업무 역량 향상을 위해 경험과 지식을 꾸준히 익히나요?,Y,Y\n",
-        "조화,영업소 직원,5지선다형,현장의 규칙을 지키며 동료와 긍정적인 관계를 형성하나요?,Y,Y\n",
-        "역량 개발,정비사,5지선다형,정비 기술과 관련 지식을 지속적으로 향상하나요?,Y,Y\n",
-        "정비 능력,정비사,5지선다형,점검과 정비를 정확하고 신속하게 수행하나요?,Y,Y\n",
-        "책임/주인의식,정비사,5지선다형,차량 상태와 정비 결과에 책임감을 보이나요?,Y,Y\n",
-        "안전의식,정비사,5지선다형,작업 절차와 안전수칙을 철저히 준수하나요?,Y,Y,all\n",
-        "조화,팀원급,5지선다형,계열사 동료와 존중하는 태도로 편안한 협업 분위기를 만드나요?,Y,Y,affiliate_peer\n",
-        "성장,팀원급,5지선다형,자신의 업무 경험과 노하우를 계열사 동료에게 이해하기 쉽게 공유하나요?,Y,Y,affiliate_peer\n",
-        "협업,팀원급,5지선다형,업무 요청과 진행 상황을 명확하게 전달하고 필요한 내용을 조율하나요?,Y,Y,affiliate_peer\n",
-        "성과,팀원급,5지선다형,공동 업무에서 맡은 역할과 약속한 기한을 책임감 있게 지키나요?,Y,Y,affiliate_peer\n"
-        ,"리더십,팀장/부서장급,5지선다형,부서 간 공동 목표를 위해 책임 범위와 협업 방향을 명확히 제시하나요?,Y,Y,leader_peer\n"
-        ,"팀원 육성,팀장/부서장급,5지선다형,부서 간 업무 경험과 노하우가 구성원에게 공유되도록 지원하나요?,Y,Y,leader_peer\n"
-        ,"소통,팀장/부서장급,5지선다형,타 부서장과 진행 상황과 쟁점을 투명하게 공유하고 원활하게 조율하나요?,Y,Y,leader_peer\n"
-        ,"전략적 사고,팀장/부서장급,5지선다형,자기 부서만이 아닌 회사 전체 관점에서 합리적인 협업 결정을 하나요?,Y,Y,leader_peer\n"
-      ].join("");
-
-      const blob = new Blob([csvHeader + sampleRows], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `CNHY_HR_Questions_Template_${new Date().toISOString().split('T')[0]}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      fetch('./evaluation-question-template.csv')
+        .then(response => {
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          return response.text();
+        })
+        .then(csv => {
+          const blob = new Blob(["\uFEFF" + csv.replace(/^\uFEFF/, '')], { type: 'text/csv;charset=utf-8;' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `CNHY_HR_Questions_Template_${new Date().toISOString().split('T')[0]}.csv`;
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          URL.revokeObjectURL(url);
+        })
+        .catch(error => alert(`CSV 템플릿 다운로드에 실패했습니다. (${error.message})`));
     }
+
 
     function processCSVQuestionFile(file) {
       if (!file) return;
