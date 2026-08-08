@@ -172,6 +172,17 @@ test('question editor exposes all employee tracks and specialized relationship t
   }
 });
 
+test('question CSV template uses the active branch employee category contract', async () => {
+  const index = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  const template = index.match(/function downloadCSVQuestionTemplate\(\)[\s\S]*?function processCSVQuestionFile/)?.[0] || '';
+  for (const category of ['성과', '협업', '성장', '조화']) {
+    assert.match(template, new RegExp(`"${category},영업소 직원,`));
+  }
+  for (const retired of ['비상대응', '소통 협력', '솔선 수범', '갈등 해소']) {
+    assert.doesNotMatch(template, new RegExp(`"${retired},영업소 직원,`));
+  }
+});
+
 test('progress and summary use the same server-backed evaluation detail modal', async () => {
   const index = await readFile(indexUrl, 'utf8');
   const detail = index.match(/async function openDetailEvalModal\(empId, requestedCycleId = null\) \{[\s\S]*?\n    \}/)?.[0] ?? '';
