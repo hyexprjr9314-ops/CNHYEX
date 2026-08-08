@@ -14,10 +14,18 @@ test('affiliate branch peers reuse headquarters questions and scoring categories
   assert.match(sql, /coalesce\(evaluator\.company::text, ''\)/);
 });
 
-test('manual matching UI and API enforce the branch affiliate-only rule', async () => {
+test('manual matching UI and API enforce exact-branch and mechanic boundaries', async () => {
   const [apiSource, indexSource] = await Promise.all([readFile(api, 'utf8'), readFile(index, 'utf8')]);
   assert.match(apiSource, /allowedMatchingPair/);
-  assert.match(apiSource, /영업소 팀원급은 다른 계열사의 팀원급과만 매칭할 수 있습니다/);
+  assert.match(apiSource, /정비사 또는 영업소 매칭 조건에 맞지 않는 대상입니다/);
   assert.match(indexSource, /allowedInteractiveMatchingPair\(evaluator, target\)/);
+  assert.match(indexSource, /branchLocationForMatching\(evaluator\).*branchLocationForMatching\(target\)/s);
   assert.match(indexSource, /questionAudience === 'affiliate_peer'[\s\S]*?questionTrack === 'headquarters_member'/);
+});
+
+test('leader peers use a server-validated collaboration question audience', async () => {
+  const sql = await readFile(new URL('../supabase/migrations/202608080003_p1_matching_and_leader_peer_questions.sql', import.meta.url), 'utf8');
+  assert.match(sql, /then 'leader_peer'/);
+  assert.match(sql, /question_audience = 'leader_peer'[\s\S]*headquarters_leader/);
+  assert.match(sql, /submit_evaluation_central/);
 });

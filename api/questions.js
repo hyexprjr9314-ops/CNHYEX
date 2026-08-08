@@ -18,7 +18,7 @@ export function normalizeQuestionRows(rawQuestions) {
     cycle_id: Number(raw.cycle_id), category: String(raw.category || '').trim(),
     target_track: normalizeTrack(raw.target_track),
     target_dept: '\uC804\uCCB4', type: String(raw.type || '5\uC9C0\uC120\uB2E4\uD615').trim(),
-    audience: raw.audience === QUESTION_AUDIENCES.affiliatePeer ? QUESTION_AUDIENCES.affiliatePeer : QUESTION_AUDIENCES.standard,
+    audience: Object.values(QUESTION_AUDIENCES).includes(raw.audience) ? raw.audience : QUESTION_AUDIENCES.standard,
     weight: 1, text: String(raw.text || '').trim(),
     required: raw.required !== false, is_default: raw.is_default !== false, max_score: 5
   }));

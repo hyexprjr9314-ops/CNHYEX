@@ -36,3 +36,9 @@ test('affiliate questions apply only to cross-company team-member pairs', () => 
   assert.equal(questionAudience(member('(주)충남고속'), { type: '팀장/부서장급', company: '(주)한양고속' }), 'all');
   assert.equal(questionAudience(member(''), member('(주)한양고속')), 'all');
 });
+
+test('leader peers use collaboration-specific questions', () => {
+  const leader = company => ({ type: '팀장/부서장급', company });
+  assert.equal(questionAudience(leader('(주)충남고속'), leader('(주)한양고속')), 'leader_peer');
+  assert.equal(questionAudience(leader('(주)충남고속'), leader('(주)충남고속')), 'leader_peer');
+});

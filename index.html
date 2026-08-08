@@ -2862,6 +2862,7 @@
                 <select id="q-audience-in" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-cyan-300 font-bold">
                   <option value="all">일반 평가</option>
                   <option value="affiliate_peer">계열사 팀원 간 평가</option>
+                  <option value="leader_peer">팀장·부서장 간 협업 평가</option>
                 </select>
               </div>
 
@@ -3978,6 +3979,7 @@
             <select id="edit-q-audience" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-cyan-300 font-bold">
               <option value="all">일반 평가</option>
               <option value="affiliate_peer">계열사 팀원 간 평가</option>
+              <option value="leader_peer">팀장·부서장 간 협업 평가</option>
             </select>
           </div>
         </div>
@@ -4469,6 +4471,8 @@
     function questionAudienceForAssignment(evaluator = {}, target = {}) {
       const evaluatorCompany = String(evaluator.company || '').trim();
       const targetCompany = String(target.company || '').trim();
+      const leaderTypes = ['팀장/부서장급', '팀장급', '부서실장급'];
+      if (leaderTypes.includes(evaluator.type) && leaderTypes.includes(target.type)) return 'leader_peer';
       return evaluator.type === '팀원급' && target.type === '팀원급'
         && evaluatorCompany && targetCompany && evaluatorCompany !== targetCompany
         ? 'affiliate_peer'
@@ -4477,10 +4481,31 @@
     function isBranchTeamMember(user = {}) {
       return user.type === '팀원급' && `${user.workplace || ''} ${user.dept || ''}`.includes('영업소');
     }
+    function branchLocationForMatching(user = {}) {
+      const normalize = value => String(value || '').replace(/[\sㆍ·._\-()[\]{}]/g, '').replace(/영업소/g, '');
+      const workplace = normalize(user.workplace);
+      return workplace && workplace !== '본사' ? workplace : normalize(user.dept);
+    }
     function allowedInteractiveMatchingPair(evaluator = {}, target = {}) {
+      if (evaluator.type === '정비사' && target.type === '정비사') {
+        return String(evaluator.company || '').trim() === String(target.company || '').trim()
+          && String(evaluator.dept || '').trim() === String(target.dept || '').trim();
+      }
+      const evaluatorBranch = `${evaluator.workplace || ''} ${evaluator.dept || ''}`.includes('영업소');
+      const targetBranch = `${target.workplace || ''} ${target.dept || ''}`.includes('영업소');
+      if ((evaluator.type === '정비사' && targetBranch) || (evaluatorBranch && target.type === '정비사')) {
+        return String(evaluator.company || '').trim() === String(target.company || '').trim()
+          && branchLocationForMatching(evaluator) === branchLocationForMatching(target);
+      }
       if (!isBranchTeamMember(evaluator) && !isBranchTeamMember(target)) return true;
+      const leaderTypes = ['팀장/부서장급', '팀장급', '부서실장급'];
+      if (leaderTypes.includes(evaluator.type) || leaderTypes.includes(target.type)) {
+        return String(evaluator.company || '').trim() === String(target.company || '').trim()
+          && branchLocationForMatching(evaluator) === branchLocationForMatching(target);
+      }
       return evaluator.type === '팀원급' && target.type === '팀원급'
-        && String(evaluator.company || '').trim() !== String(target.company || '').trim();
+        && branchLocationForMatching(evaluator)
+        && branchLocationForMatching(evaluator) === branchLocationForMatching(target);
     }
     function syncQuestionCategoryOptions(mode, selectedCategory = null) {
       const isEdit = mode === 'edit';
@@ -8004,6 +8029,8 @@
         const questionTrack = normalizeQuestionTrack(q.targetTrack);
         const trackMatches = questionAudience === 'affiliate_peer'
           ? questionTrack === 'all' || questionTrack === 'headquarters_member'
+          : questionAudience === 'leader_peer'
+            ? questionTrack === 'all' || questionTrack === 'headquarters_leader'
           : questionTrack === 'all' || questionTrack === targetTrack.key;
         return trackMatches
           && (q.audience || 'all') === questionAudience;
@@ -9035,7 +9062,8 @@
         const targetTrack = normalizeQuestionTrack(q.targetTrack);
         const targetTrackLabel = questionTrackLabel(targetTrack);
         const targetDept = q.targetDept || '전체';
-        const audienceLabel = q.audience === 'affiliate_peer' ? '계열사 팀원 간' : '일반 평가';
+        const audienceLabel = q.audience === 'affiliate_peer' ? '계열사 팀원 간'
+          : q.audience === 'leader_peer' ? '팀장·부서장 간 협업' : '일반 평가';
 
         let trackBadgeStyle = "bg-slate-800 text-slate-300 border border-slate-700";
         if (targetTrack === 'headquarters_member') trackBadgeStyle = "bg-blue-500/20 text-blue-300 border border-blue-500/30";
@@ -9206,6 +9234,10 @@
         "성장,팀원급,5지선다형,자신의 업무 경험과 노하우를 계열사 동료에게 이해하기 쉽게 공유하나요?,Y,Y,affiliate_peer\n",
         "협업,팀원급,5지선다형,업무 요청과 진행 상황을 명확하게 전달하고 필요한 내용을 조율하나요?,Y,Y,affiliate_peer\n",
         "성과,팀원급,5지선다형,공동 업무에서 맡은 역할과 약속한 기한을 책임감 있게 지키나요?,Y,Y,affiliate_peer\n"
+        ,"리더십,팀장/부서장급,5지선다형,부서 간 공동 목표를 위해 책임 범위와 협업 방향을 명확히 제시하나요?,Y,Y,leader_peer\n"
+        ,"팀원 육성,팀장/부서장급,5지선다형,부서 간 업무 경험과 노하우가 구성원에게 공유되도록 지원하나요?,Y,Y,leader_peer\n"
+        ,"소통,팀장/부서장급,5지선다형,타 부서장과 진행 상황과 쟁점을 투명하게 공유하고 원활하게 조율하나요?,Y,Y,leader_peer\n"
+        ,"전략적 사고,팀장/부서장급,5지선다형,자기 부서만이 아닌 회사 전체 관점에서 합리적인 협업 결정을 하나요?,Y,Y,leader_peer\n"
       ].join("");
 
       const blob = new Blob([csvHeader + sampleRows], { type: 'text/csv;charset=utf-8;' });
@@ -9232,7 +9264,7 @@
           const questions = rows.slice(1).map(cols => ({
             cycle_id: cycleId,
             category: cols[0] || '성과', target_track: cols[1] || '팀원급',
-            target_dept: '전체', audience: cols[6] === 'affiliate_peer' ? 'affiliate_peer' : 'all', type: cols[2] || '5지선다형',
+            target_dept: '전체', audience: ['affiliate_peer', 'leader_peer'].includes(cols[6]) ? cols[6] : 'all', type: cols[2] || '5지선다형',
             text: cols[3],
             required: (cols[4] || 'Y').toUpperCase() === 'Y',
             is_default: (cols[5] || 'Y').toUpperCase() === 'Y'

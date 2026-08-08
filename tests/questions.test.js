@@ -43,12 +43,14 @@ test('CSV question rows normalize the same defaults as the question editor', () 
   });
 });
 
-test('CSV question rows preserve only the supported affiliate peer audience', () => {
-  const [affiliate, invalid] = normalizeQuestionRows([
+test('CSV question rows preserve supported specialized audiences', () => {
+  const [affiliate, leader, invalid] = normalizeQuestionRows([
     { cycle_id: 7, category: '협업', text: '계열사 협업', audience: 'affiliate_peer' },
+    { cycle_id: 7, category: '소통', text: '부서장 협업', audience: 'leader_peer' },
     { cycle_id: 7, category: '협업', text: '잘못된 대상', audience: 'unknown' }
   ]);
   assert.equal(affiliate.audience, 'affiliate_peer');
+  assert.equal(leader.audience, 'leader_peer');
   assert.equal(invalid.audience, 'all');
 });
 

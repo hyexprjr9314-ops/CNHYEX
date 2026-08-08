@@ -152,7 +152,7 @@ test('expired sessions are handled consistently by closing-management API wrappe
   }
 });
 
-test('question editor exposes all four employee tracks and the bounded affiliate relationship target', async () => {
+test('question editor exposes all employee tracks and specialized relationship targets', async () => {
   const index = await readFile(indexUrl, 'utf8');
   for (const value of ['headquarters_member', 'headquarters_leader', 'branch_employee', 'mechanic']) {
     assert.match(index, new RegExp(`<option value="${value}">`));
@@ -164,6 +164,7 @@ test('question editor exposes all four employee tracks and the bounded affiliate
   assert.match(index, /id="q-audience-in"/);
   assert.match(index, /id="edit-q-audience"/);
   assert.match(index, /<option value="affiliate_peer">계열사 팀원 간 평가<\/option>/);
+  assert.match(index, /<option value="leader_peer">팀장·부서장 간 협업 평가<\/option>/);
   assert.doesNotMatch(index, /id="q-dept-in"|id="edit-q-dept"/);
   assert.match(index, /function normalizeQuestionTrack\(track\)/);
   for (const label of ['내부 평가', '내부 교류평가', '외부 평가', '부서장 평가', '부서장 교류평가']) {
@@ -194,13 +195,14 @@ test('central state applies score aggregates before optional settings UI work', 
   assert.ok(applyState.indexOf('cycleScoresDb = payload.cycle_scores') < applyState.indexOf('selectWeightTrack(selectedWeightTrack)'));
 });
 
-test('evaluation form selects questions by evaluatee type and affiliate peer relationship', async () => {
+test('evaluation form selects questions by evaluatee type and specialized relationship', async () => {
   const index = await readFile(indexUrl, 'utf8');
   const renderer = index.match(/function renderPeerQuestions\(\) \{[\s\S]*?\n    \}/)?.[0] ?? '';
 
   assert.match(renderer, /questionTrackForTarget\(emp\)/);
   assert.match(renderer, /questionTrack === 'all' \|\| questionTrack === targetTrack\.key/);
   assert.match(renderer, /questionAudienceForAssignment\(currentLoggedInUser, emp\)/);
+  assert.match(renderer, /questionAudience === 'leader_peer'/);
   assert.match(renderer, /\(q\.audience \|\| 'all'\) === questionAudience/);
   assert.doesNotMatch(renderer, /targetDept|target_dept|relationshipType/);
 });

@@ -1,65 +1,69 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { allowedMatchingPair, planAutoMatchings } from '../api/auto-matching.js';
+import { allowedMatchingPair, MAX_STANDARD_TARGETS, planAutoMatchings } from '../api/auto-matching.js';
 
 const user = (id, overrides = {}) => ({
   id, name: `u${id}`, active: true, can_evaluate: true, is_evaluatee: true,
-  company: '한양고속', dept: '인사ㆍ총무', workplace: '본사', type: '팀원급',
-  ...overrides
+  company: '한양고속', dept: '인사ㆍ총무', workplace: '본사', type: '팀원급', ...overrides
 });
 
-test('branch team members are matched only with cross-company team members', () => {
-  const branchTarget = user(20, { workplace: '천안영업소' });
-  const sameCompanyBranch = user(21, { workplace: '아산영업소' });
-  const affiliateHeadquarters = user(22, { company: '충남고속' });
-  const affiliateBranch = user(23, { company: '충남고속', workplace: '서산영업소' });
-  const affiliateLeader = user(24, { company: '충남고속', type: '팀장/부서장급' });
-  assert.equal(allowedMatchingPair(sameCompanyBranch, branchTarget), false);
-  assert.equal(allowedMatchingPair(affiliateHeadquarters, branchTarget), true);
-  assert.equal(allowedMatchingPair(affiliateBranch, branchTarget), true);
-  assert.equal(allowedMatchingPair(affiliateLeader, branchTarget), false);
+test('branch team members stay in the exact branch and include internal plus affiliate peers', () => {
+  const target = user(20, { workplace: '영업소', dept: '천안' });
+  const internal = user(21, { workplace: '천안영업소', dept: '천안' });
+  const affiliate = user(22, { company: '충남고속', workplace: '영업소', dept: '천안' });
+  const wrongBranch = user(23, { company: '충남고속', workplace: '서산영업소', dept: '서산' });
+  assert.equal(allowedMatchingPair(internal, target), true);
+  assert.equal(allowedMatchingPair(affiliate, target), true);
+  assert.equal(allowedMatchingPair(wrongBranch, target), false);
 
-  const result = planAutoMatchings({
-    cycleId: 11,
-    users: [branchTarget, sameCompanyBranch, affiliateHeadquarters, affiliateBranch, affiliateLeader],
-    existing: [], submittedMatchingIds: []
-  });
-  const assigned = result.generated.filter(row => row.target_id === branchTarget.id);
-  assert.deepEqual(new Set(assigned.map(row => row.evaluator_id)), new Set([22, 23]));
-  assert.equal(result.shortages.some(row => row.target_id === branchTarget.id && row.bucket === 'affiliate_peer'), true);
+  const result = planAutoMatchings({ cycleId: 11, users: [target, internal, affiliate, wrongBranch], existing: [], submittedMatchingIds: [] });
+  assert.deepEqual(new Set(result.generated.filter(row => row.target_id === target.id).map(row => row.evaluator_id)), new Set([21, 22]));
 });
 
-test('quota matching preserves manual rows, balances load, and reports shortages', () => {
-  const users = [
-    user(1), user(2), user(3),
-    user(4, { dept: '사업' }),
-    user(5, { company: '충남고속' }),
-    user(6, { company: '충남고속', dept: '사업' }),
-    user(7, { type: '팀장/부서장급' }),
-    user(8, { type: '임원급', sys_role: 'executive' })
-  ];
-  const result = planAutoMatchings({
-    cycleId: 9,
-    users,
-    existing: [{ id: 1, evaluator_id: 2, target_id: 1, type: '관리자 수동 지정' }],
-    submittedMatchingIds: []
-  });
+test('branch leaders and same-company branch mechanics remain bidirectional exceptions', () => {
+  const member = user(40, { workplace: '영업소', dept: '태안' });
+  const leader = user(41, { workplace: '태안영업소', dept: '태안', type: '팀장/부서장급' });
+  const mechanic = user(42, { workplace: '태안영업소', dept: '태안', type: '정비사' });
+  assert.equal(allowedMatchingPair(member, leader), true);
+  assert.equal(allowedMatchingPair(leader, member), true);
+  assert.equal(allowedMatchingPair(member, mechanic), true);
+  assert.equal(allowedMatchingPair(mechanic, member), true);
+});
+
+test('mechanic peers require the same company and department', () => {
+  const target = user(30, { type: '정비사', dept: '정비팀' });
+  const sameGroup = user(31, { type: '정비사', dept: '정비팀' });
+  const otherDepartment = user(32, { type: '정비사', dept: '천안' });
+  const affiliate = user(33, { type: '정비사', dept: '정비팀', company: '충남고속' });
+  assert.equal(allowedMatchingPair(sameGroup, target), true);
+  assert.equal(allowedMatchingPair(otherDepartment, target), false);
+  assert.equal(allowedMatchingPair(affiliate, target), false);
+  const result = planAutoMatchings({ cycleId: 4, users: [target, sameGroup, otherDepartment, affiliate], existing: [], submittedMatchingIds: [] });
+  assert.deepEqual(result.generated.filter(row => row.target_id === target.id).map(row => row.evaluator_id), [31]);
+});
+
+test('office matching excludes same-company other departments and caps ordinary loads', () => {
+  const users = [user(1), ...Array.from({ length: 12 }, (_, index) => user(index + 2)),
+    user(20, { dept: '사업' }), user(21, { company: '충남고속' }),
+    user(22, { company: '충남고속', dept: '사업' }), user(23, { type: '팀장/부서장급' })];
+  const result = planAutoMatchings({ cycleId: 9, users, existing: [], submittedMatchingIds: [] });
   const forTarget = result.generated.filter(row => row.target_id === 1);
-  assert.equal(forTarget.some(row => row.evaluator_id === 2), false);
-  assert.equal(forTarget.some(row => row.evaluator_id === 8), false);
-  assert.equal(forTarget.length, 5);
-  assert.deepEqual(new Set(forTarget.map(row => row.relationship_type)), new Set(['internal', 'exchange']));
-  assert.ok(result.shortages.every(row => row.assigned < row.required));
+  assert.equal(forTarget.some(row => row.evaluator_id === 20 || row.evaluator_id === 22), false);
+  assert.ok(forTarget.length <= MAX_STANDARD_TARGETS);
+  const loads = new Map();
+  result.generated.forEach(row => loads.set(row.evaluator_id, (loads.get(row.evaluator_id) || 0) + 1));
+  for (const evaluator of users.filter(row => row.type !== '팀장/부서장급')) assert.ok((loads.get(evaluator.id) || 0) <= MAX_STANDARD_TARGETS);
 });
 
-test('submitted automatic rows are fixed and deducted from quota', () => {
+test('submitted automatic and manual rows are preserved and deducted from capacity', () => {
   const users = [user(1), user(2), user(3)];
   const result = planAutoMatchings({
-    cycleId: 1,
-    users,
-    existing: [{ id: 10, evaluator_id: 2, target_id: 1, type: '알고리즘 자동 지정' }],
+    cycleId: 1, users,
+    existing: [
+      { id: 10, evaluator_id: 2, target_id: 1, type: '알고리즘 자동 지정' },
+      { id: 11, evaluator_id: 3, target_id: 1, type: '관리자 수동 지정' }
+    ],
     submittedMatchingIds: [10]
   });
-  assert.equal(result.generated.filter(row => row.target_id === 1 && row.evaluator_id === 2).length, 0);
-  assert.equal(result.generated.filter(row => row.target_id === 1).length, 1);
+  assert.equal(result.generated.some(row => row.target_id === 1 && [2, 3].includes(row.evaluator_id)), false);
 });

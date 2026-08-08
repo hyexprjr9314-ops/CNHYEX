@@ -120,9 +120,8 @@ function cyclePayload(body) {
 }
 
 function questionPayload(body) {
-  const audience = body.audience === QUESTION_AUDIENCES.affiliatePeer
-    ? QUESTION_AUDIENCES.affiliatePeer
-    : QUESTION_AUDIENCES.standard;
+  const audience = Object.values(QUESTION_AUDIENCES).includes(body.audience)
+    ? body.audience : QUESTION_AUDIENCES.standard;
   const row = {
     cycle_id: Number(body.cycle_id || body.cycleId), category: String(body.category || '').trim(),
     text: String(body.text || '').trim(), weight: 1,
@@ -853,7 +852,7 @@ export default async function handler(req, res) {
       if (people.error) throw people.error;
       const personById = new Map((people.data || []).map(row => [Number(row.id), row]));
       if (!existing.data && !allowedMatchingPair(personById.get(evaluatorId), personById.get(targetId))) {
-        return send(res, 409, { error: '영업소 팀원급은 다른 계열사의 팀원급과만 매칭할 수 있습니다.' });
+        return send(res, 409, { error: '정비사 또는 영업소 매칭 조건에 맞지 않는 대상입니다.' });
       }
       if (matchingMode === 'paused') {
         const accessToken = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
@@ -882,7 +881,7 @@ export default async function handler(req, res) {
         const peopleById = new Map((people.data || []).map(row => [Number(row.id), row]));
         const evaluator = peopleById.get(evaluatorId);
         if (targetIds.some(targetId => !allowedMatchingPair(evaluator, peopleById.get(targetId)))) {
-          return send(res, 409, { error: '영업소 팀원급은 다른 계열사의 팀원급과만 매칭할 수 있습니다.' });
+          return send(res, 409, { error: '정비사 또는 영업소 매칭 조건에 맞지 않는 대상입니다.' });
         }
         const targets = targetIds.map(targetId => ({
           target_id: targetId,
@@ -905,7 +904,7 @@ export default async function handler(req, res) {
       const peopleById = new Map((people.data || []).map(row => [Number(row.id), row]));
       const evaluator = peopleById.get(evaluatorId);
       if (targetIds.some(targetId => !allowedMatchingPair(evaluator, peopleById.get(targetId)))) {
-        return send(res, 409, { error: '영업소 팀원급은 다른 계열사의 팀원급과만 매칭할 수 있습니다.' });
+        return send(res, 409, { error: '정비사 또는 영업소 매칭 조건에 맞지 않는 대상입니다.' });
       }
       const targets = targetIds.map(targetId => ({
         target_id: targetId,

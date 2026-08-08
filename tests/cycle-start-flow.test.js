@@ -15,7 +15,8 @@ test('automatic matching creates an atomic quota draft that remains manually edi
   assert.match(api, /governance_replace_auto_matchings/);
   assert.match(api, /governance_replace_draft_matchings/);
   assert.match(api, /schema cache\|could not find/);
-  assert.match(autoMatching, /const needed = Math\.max\(0, rule\.quota - already\)/);
+  assert.match(autoMatching, /const desired = rule\.all \? candidates\.length : Math\.max\(0, rule\.quota - already\)/);
+  assert.match(autoMatching, /MAX_STANDARD_TARGETS = 7/);
   assert.match(autoMatching, /load\.get\(Number\(a\.id\)\)/);
   assert.match(ui, /action:\s*'matching_generate'/);
   assert.match(ui, /정원 기반 자동 초안 생성/);
