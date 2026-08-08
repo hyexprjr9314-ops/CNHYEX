@@ -73,7 +73,8 @@ test('office matching excludes same-company other departments and caps ordinary 
   assert.equal(forTarget.some(row => row.evaluator_id === 20 || row.evaluator_id === 22), false);
   assert.ok(forTarget.length <= MAX_STANDARD_TARGETS);
   const loads = new Map();
-  result.generated.forEach(row => loads.set(row.evaluator_id, (loads.get(row.evaluator_id) || 0) + 1));
+  result.generated.filter(row => row.relationship_type !== 'leadership')
+    .forEach(row => loads.set(row.evaluator_id, (loads.get(row.evaluator_id) || 0) + 1));
   for (const evaluator of users.filter(row => row.type !== '팀장/부서장급')) assert.ok((loads.get(evaluator.id) || 0) <= MAX_STANDARD_TARGETS);
 });
 
@@ -90,15 +91,25 @@ test('submitted automatic and manual rows are preserved and deducted from capaci
   assert.equal(result.generated.some(row => row.target_id === 1 && [2, 3].includes(row.evaluator_id)), false);
 });
 
-test('every team member evaluates their own leader even after reaching the ordinary limit', () => {
+test('every headquarters team member evaluates same-department leaders across companies beyond the ordinary limit', () => {
   const member = user(1);
-  const leader = user(2, { type: '팀장/부서장급' });
+  const internalLeader = user(2, { type: '팀장/부서장급' });
+  const affiliateLeader = user(3, { type: '팀장/부서장급', company: '충남고속' });
+  const otherDepartmentLeader = user(4, { type: '팀장/부서장급', company: '충남고속', dept: '사업' });
   const existing = Array.from({ length: MAX_STANDARD_TARGETS }, (_, index) => ({
     id: 100 + index,
     evaluator_id: member.id,
     target_id: 1000 + index,
     type: '관리자 수동 지정'
   }));
-  const result = planAutoMatchings({ cycleId: 12, users: [member, leader], existing, submittedMatchingIds: [] });
-  assert.equal(result.generated.some(row => row.evaluator_id === member.id && row.target_id === leader.id), true);
+  const result = planAutoMatchings({
+    cycleId: 12,
+    users: [member, internalLeader, affiliateLeader, otherDepartmentLeader],
+    existing,
+    submittedMatchingIds: []
+  });
+  assert.equal(result.generated.some(row => row.evaluator_id === member.id && row.target_id === internalLeader.id), true);
+  assert.equal(result.generated.some(row => row.evaluator_id === member.id && row.target_id === affiliateLeader.id), true);
+  assert.equal(result.generated.some(row => row.evaluator_id === member.id && row.target_id === otherDepartmentLeader.id), false);
+  assert.equal(result.generated.find(row => row.evaluator_id === member.id && row.target_id === affiliateLeader.id)?.relationship_type, 'leadership');
 });

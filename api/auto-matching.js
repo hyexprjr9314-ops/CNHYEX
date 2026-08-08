@@ -42,7 +42,7 @@ export function allowedMatchingPair(evaluator, target) {
 function baseRules(target) {
   if (isLeader(target)) {
     return [
-      { key: 'leadership', all: true, test: evaluator => !isLeader(evaluator) && sameCompany(evaluator, target) && sameDepartment(evaluator, target) },
+      { key: 'leadership', all: true, test: evaluator => !isLeader(evaluator) && sameDepartment(evaluator, target) },
       { key: 'leader_exchange', quota: 2, test: evaluator => isLeader(evaluator) }
     ];
   }
