@@ -152,7 +152,7 @@ test('expired sessions are handled consistently by closing-management API wrappe
   }
 });
 
-test('question editor exposes all four employee tracks and removes relationship targeting', async () => {
+test('question editor exposes all four employee tracks and the bounded affiliate relationship target', async () => {
   const index = await readFile(indexUrl, 'utf8');
   for (const value of ['headquarters_member', 'headquarters_leader', 'branch_employee', 'mechanic']) {
     assert.match(index, new RegExp(`<option value="${value}">`));
@@ -161,7 +161,10 @@ test('question editor exposes all four employee tracks and removes relationship 
   assert.match(resolver, /workplace.*dept.*영업소/);
   assert.ok(resolver.indexOf("type === '정비사'") < resolver.indexOf("includes('영업소')"));
   assert.ok(resolver.indexOf('팀장/부서장급') < resolver.indexOf("includes('영업소')"));
-  assert.doesNotMatch(index, /id="q-audience-in"|id="q-dept-in"|id="edit-q-audience"|id="edit-q-dept"/);
+  assert.match(index, /id="q-audience-in"/);
+  assert.match(index, /id="edit-q-audience"/);
+  assert.match(index, /<option value="affiliate_peer">계열사 팀원 간 평가<\/option>/);
+  assert.doesNotMatch(index, /id="q-dept-in"|id="edit-q-dept"/);
   assert.match(index, /function normalizeQuestionTrack\(track\)/);
   for (const label of ['내부 평가', '내부 교류평가', '외부 평가', '부서장 평가', '부서장 교류평가']) {
     assert.match(index, new RegExp(label));
@@ -191,13 +194,15 @@ test('central state applies score aggregates before optional settings UI work', 
   assert.ok(applyState.indexOf('cycleScoresDb = payload.cycle_scores') < applyState.indexOf('selectWeightTrack(selectedWeightTrack)'));
 });
 
-test('evaluation form selects questions only from the evaluatee employee type', async () => {
+test('evaluation form selects questions by evaluatee type and affiliate peer relationship', async () => {
   const index = await readFile(indexUrl, 'utf8');
   const renderer = index.match(/function renderPeerQuestions\(\) \{[\s\S]*?\n    \}/)?.[0] ?? '';
 
   assert.match(renderer, /questionTrackForTarget\(emp\)/);
   assert.match(renderer, /questionTrack === 'all' \|\| questionTrack === targetTrack\.key/);
-  assert.doesNotMatch(renderer, /targetDept|target_dept|workplace|relationshipType|audience/);
+  assert.match(renderer, /questionAudienceForAssignment\(currentLoggedInUser, emp\)/);
+  assert.match(renderer, /\(q\.audience \|\| 'all'\) === questionAudience/);
+  assert.doesNotMatch(renderer, /targetDept|target_dept|relationshipType/);
 });
 
 test('evaluation form clears the previous target comment before loading another target', async () => {

@@ -43,6 +43,15 @@ test('CSV question rows normalize the same defaults as the question editor', () 
   });
 });
 
+test('CSV question rows preserve only the supported affiliate peer audience', () => {
+  const [affiliate, invalid] = normalizeQuestionRows([
+    { cycle_id: 7, category: '협업', text: '계열사 협업', audience: 'affiliate_peer' },
+    { cycle_id: 7, category: '협업', text: '잘못된 대상', audience: 'unknown' }
+  ]);
+  assert.equal(affiliate.audience, 'affiliate_peer');
+  assert.equal(invalid.audience, 'all');
+});
+
 test('CSV question import rejects a closed or approval-pending cycle before writes', async () => {
   await assert.rejects(
     () => assertQuestionCyclesMutable(cycleService([{ id: 7, status: '마감/보관됨', internal_approval_status: 'not_requested' }]), [7]),

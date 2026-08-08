@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { readFileSync } from 'node:fs';
 import { buildRelativeGradePlan, cohortKeyForUser } from './relative-grading.js';
 import { ROLES } from './role-policy.js';
-import { normalizeTrack, relationshipType, targetTrack, TRACK_CATEGORIES } from './evaluation-classification.js';
+import { normalizeTrack, relationshipType, targetTrack, TRACK_CATEGORIES, QUESTION_AUDIENCES } from './evaluation-classification.js';
 import { isMutableDraftCycle } from './questions.js';
 import { planAutoMatchings } from './auto-matching.js';
 import { notifyAndDispatch } from '../lib/push.js';
@@ -120,12 +120,15 @@ function cyclePayload(body) {
 }
 
 function questionPayload(body) {
+  const audience = body.audience === QUESTION_AUDIENCES.affiliatePeer
+    ? QUESTION_AUDIENCES.affiliatePeer
+    : QUESTION_AUDIENCES.standard;
   const row = {
     cycle_id: Number(body.cycle_id || body.cycleId), category: String(body.category || '').trim(),
     text: String(body.text || '').trim(), weight: 1,
     type: String(body.type || '5지선다형').trim(), target_track: normalizeTrack(body.target_track || body.targetTrack),
     target_dept: '전체',
-    audience: 'all', required: body.required !== false,
+    audience, required: body.required !== false,
     is_default: body.is_default !== false, max_score: Number(body.max_score || 5), updated_at: new Date().toISOString()
   };
   if (!row.cycle_id || !row.category || !row.text) {

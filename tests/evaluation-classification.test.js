@@ -1,5 +1,5 @@
 import test from 'node:test'; import assert from 'node:assert/strict';
-import { isLeader, normalizeTrack, normalizedCategory, relationshipType, targetTrack, TRACKS, TRACK_CATEGORIES } from '../api/evaluation-classification.js';
+import { isLeader, normalizeTrack, normalizedCategory, questionAudience, relationshipType, targetTrack, TRACKS, TRACK_CATEGORIES } from '../api/evaluation-classification.js';
 test('classification covers tracks and relationship precedence', () => {
   assert.equal(targetTrack({ type: '정비사', dept: '총무' }), TRACKS.mechanic);
   assert.equal(targetTrack({ type: '팀원급', workplace: '부산영업소' }), TRACKS.branch_employee);
@@ -25,4 +25,13 @@ test('classification covers tracks and relationship precedence', () => {
   assert.equal(normalizeTrack('영업소 직원'), TRACKS.branch_employee);
   assert.equal(normalizeTrack('unrecognized'), 'all');
   assert.deepEqual(TRACK_CATEGORIES.mechanic, ['역량 개발', '정비 능력', '책임/주인의식', '안전의식']);
+});
+
+test('affiliate questions apply only to cross-company team-member pairs', () => {
+  const member = company => ({ type: '팀원급', company });
+  assert.equal(questionAudience(member('(주)충남고속'), member('(주)한양고속')), 'affiliate_peer');
+  assert.equal(questionAudience(member('(주)충남고속'), member('(주)충남고속')), 'all');
+  assert.equal(questionAudience({ type: '팀장/부서장급', company: '(주)충남고속' }, member('(주)한양고속')), 'all');
+  assert.equal(questionAudience(member('(주)충남고속'), { type: '팀장/부서장급', company: '(주)한양고속' }), 'all');
+  assert.equal(questionAudience(member(''), member('(주)한양고속')), 'all');
 });

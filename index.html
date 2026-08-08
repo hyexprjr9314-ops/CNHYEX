@@ -2857,6 +2857,14 @@
                 </select>
               </div>
 
+              <div>
+                <label class="block text-xs font-bold text-slate-300 mb-1">평가 관계</label>
+                <select id="q-audience-in" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-cyan-300 font-bold">
+                  <option value="all">일반 평가</option>
+                  <option value="affiliate_peer">계열사 팀원 간 평가</option>
+                </select>
+              </div>
+
             </div>
 
             <div>
@@ -3964,6 +3972,14 @@
               <option value="서술형">서술형 코멘트</option>
             </select>
           </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1">평가 관계</label>
+            <select id="edit-q-audience" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-cyan-300 font-bold">
+              <option value="all">일반 평가</option>
+              <option value="affiliate_peer">계열사 팀원 간 평가</option>
+            </select>
+          </div>
         </div>
 
         <div>
@@ -4449,6 +4465,14 @@
       if (['팀장/부서장급', '팀장급', '부서실장급'].includes(type)) return QUESTION_TRACKS.headquarters_leader;
       if (`${target.workplace || ''} ${target.dept || ''}`.includes('영업소')) return QUESTION_TRACKS.branch_employee;
       return QUESTION_TRACKS.headquarters_member;
+    }
+    function questionAudienceForAssignment(evaluator = {}, target = {}) {
+      const evaluatorCompany = String(evaluator.company || '').trim();
+      const targetCompany = String(target.company || '').trim();
+      return evaluator.type === '팀원급' && target.type === '팀원급'
+        && evaluatorCompany && targetCompany && evaluatorCompany !== targetCompany
+        ? 'affiliate_peer'
+        : 'all';
     }
     function syncQuestionCategoryOptions(mode, selectedCategory = null) {
       const isEdit = mode === 'edit';
@@ -7962,13 +7986,15 @@
       if (!emp) return;
 
       const targetTrack = questionTrackForTarget(emp);
+      const questionAudience = questionAudienceForAssignment(currentLoggedInUser, emp);
 
       // Dynamically query matching questions from customQuestionsDb
       const selectedCycleId = Number(emp.cycleId);
 
       const matchedQuestions = questionsForCycle(selectedCycleId).filter(q => {
         const questionTrack = normalizeQuestionTrack(q.targetTrack);
-        return questionTrack === 'all' || questionTrack === targetTrack.key;
+        return (questionTrack === 'all' || questionTrack === targetTrack.key)
+          && (q.audience || 'all') === questionAudience;
       });
 
       currentMatchedScoringQuestionIds = matchedQuestions.filter(q => q.type !== '서술형').map(q => Number(q.id));
@@ -8997,6 +9023,7 @@
         const targetTrack = normalizeQuestionTrack(q.targetTrack);
         const targetTrackLabel = questionTrackLabel(targetTrack);
         const targetDept = q.targetDept || '전체';
+        const audienceLabel = q.audience === 'affiliate_peer' ? '계열사 팀원 간' : '일반 평가';
 
         let trackBadgeStyle = "bg-slate-800 text-slate-300 border border-slate-700";
         if (targetTrack === 'headquarters_member') trackBadgeStyle = "bg-blue-500/20 text-blue-300 border border-blue-500/30";
@@ -9013,6 +9040,7 @@
               <span class="bg-brandTeal/20 text-brandTeal text-[10px] font-bold px-2 py-0.5 rounded border border-brandTeal/30">${escapeHtml(q.category)}</span>
               <span class="text-[10px] font-bold px-2 py-0.5 rounded ${trackBadgeStyle}">🎯 ${escapeHtml(targetTrackLabel)}</span>
               <span class="bg-cyan-500/20 text-cyan-300 text-[10px] font-bold px-2 py-0.5 rounded border border-cyan-500/30">🏢 ${escapeHtml(targetDept === '전체' ? '전체 부서 공통' : targetDept)}</span>
+              <span class="bg-indigo-500/20 text-indigo-300 text-[10px] font-bold px-2 py-0.5 rounded border border-indigo-500/30">${escapeHtml(audienceLabel)}</span>
               <span class="bg-slate-800 text-slate-300 text-[10px] font-bold px-2 py-0.5 rounded">${escapeHtml(q.type)}</span>
               ${q.required ? '<span class="bg-rose-500/20 text-rose-300 text-[10px] font-bold px-1.5 py-0.5 rounded">필수</span>' : ''}
               ${q.is_default ? '<span class="bg-amber-500/20 text-amber-300 text-[10px] font-bold px-1.5 py-0.5 rounded">기본질문</span>' : ''}
@@ -9046,6 +9074,7 @@
       const category = document.getElementById('q-category-in').value;
       const targetTrack = normalizeQuestionTrack(document.getElementById('q-track-in').value);
       const type = document.getElementById('q-type-in').value;
+      const audience = document.getElementById('q-audience-in').value;
       const text = document.getElementById('q-text-in').value.trim();
       const required = document.getElementById('q-required-check').checked;
       const is_default = document.getElementById('q-default-check').checked;
@@ -9053,7 +9082,7 @@
       try {
         await callAdminStateApi({
           action: 'question_create', cycle_id: cycleId, category, target_track: targetTrack,
-          target_dept: '전체', audience: 'all', type, max_score: 5, text, required, is_default
+          target_dept: '전체', audience, type, max_score: 5, text, required, is_default
         });
         announceCentralChange();
         await loadFromServer();
@@ -9077,6 +9106,7 @@
       document.getElementById('edit-q-category').value = q.category || '성과';
       document.getElementById('edit-q-track').value = q.targetTrack || '기본 필수질문';
       document.getElementById('edit-q-type').value = q.type || '5지선다형';
+      document.getElementById('edit-q-audience').value = q.audience || 'all';
       document.getElementById('edit-q-text').value = q.text || '';
       document.getElementById('edit-q-maxscore').value = q.max_score || 5;
 
@@ -9104,7 +9134,7 @@
         action: 'question_update', id: q.id, cycle_id: q.cycleId || q.cycle_id,
         category: document.getElementById('edit-q-category').value,
         target_track: document.getElementById('edit-q-track').value,
-        target_dept: '전체', audience: 'all',
+        target_dept: '전체', audience: document.getElementById('edit-q-audience').value,
         type: document.getElementById('edit-q-type').value,
         text: document.getElementById('edit-q-text').value.trim(),
         max_score: parseInt(document.getElementById('edit-q-maxscore').value) || 5,
@@ -9142,7 +9172,7 @@
 
     // CSV Template Download & Upload Handler for Questions
     function downloadCSVQuestionTemplate() {
-      const csvHeader = "\uFEFF카테고리,사원구분,질문유형,질문내용,필수여부,기본질문여부\n";
+      const csvHeader = "\uFEFF카테고리,사원구분,질문유형,질문내용,필수여부,기본질문여부,평가관계\n";
       const sampleRows = [
         "성과,팀원급,5지선다형,담당 업무 목표를 책임감 있게 달성하나요?,Y,Y\n",
         "협업,팀원급,5지선다형,동료 및 유관부서와 원활하게 협업하나요?,Y,Y\n",
@@ -9159,7 +9189,11 @@
         "역량 개발,정비사,5지선다형,정비 기술과 관련 지식을 지속적으로 향상하나요?,Y,Y\n",
         "정비 능력,정비사,5지선다형,점검과 정비를 정확하고 신속하게 수행하나요?,Y,Y\n",
         "책임/주인의식,정비사,5지선다형,차량 상태와 정비 결과에 책임감을 보이나요?,Y,Y\n",
-        "안전의식,정비사,5지선다형,작업 절차와 안전수칙을 철저히 준수하나요?,Y,Y\n"
+        "안전의식,정비사,5지선다형,작업 절차와 안전수칙을 철저히 준수하나요?,Y,Y,all\n",
+        "조화,팀원급,5지선다형,계열사 동료와 존중하는 태도로 편안한 협업 분위기를 만드나요?,Y,Y,affiliate_peer\n",
+        "성장,팀원급,5지선다형,자신의 업무 경험과 노하우를 계열사 동료에게 이해하기 쉽게 공유하나요?,Y,Y,affiliate_peer\n",
+        "협업,팀원급,5지선다형,업무 요청과 진행 상황을 명확하게 전달하고 필요한 내용을 조율하나요?,Y,Y,affiliate_peer\n",
+        "성과,팀원급,5지선다형,공동 업무에서 맡은 역할과 약속한 기한을 책임감 있게 지키나요?,Y,Y,affiliate_peer\n"
       ].join("");
 
       const blob = new Blob([csvHeader + sampleRows], { type: 'text/csv;charset=utf-8;' });
@@ -9186,7 +9220,7 @@
           const questions = rows.slice(1).map(cols => ({
             cycle_id: cycleId,
             category: cols[0] || '성과', target_track: cols[1] || '팀원급',
-            target_dept: '전체', audience: 'all', type: cols[2] || '5지선다형',
+            target_dept: '전체', audience: cols[6] === 'affiliate_peer' ? 'affiliate_peer' : 'all', type: cols[2] || '5지선다형',
             text: cols[3],
             required: (cols[4] || 'Y').toUpperCase() === 'Y',
             is_default: (cols[5] || 'Y').toUpperCase() === 'Y'
