@@ -1,11 +1,32 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { planAutoMatchings } from '../api/auto-matching.js';
+import { allowedMatchingPair, planAutoMatchings } from '../api/auto-matching.js';
 
 const user = (id, overrides = {}) => ({
   id, name: `u${id}`, active: true, can_evaluate: true, is_evaluatee: true,
   company: '한양고속', dept: '인사ㆍ총무', workplace: '본사', type: '팀원급',
   ...overrides
+});
+
+test('branch team members are matched only with cross-company team members', () => {
+  const branchTarget = user(20, { workplace: '천안영업소' });
+  const sameCompanyBranch = user(21, { workplace: '아산영업소' });
+  const affiliateHeadquarters = user(22, { company: '충남고속' });
+  const affiliateBranch = user(23, { company: '충남고속', workplace: '서산영업소' });
+  const affiliateLeader = user(24, { company: '충남고속', type: '팀장/부서장급' });
+  assert.equal(allowedMatchingPair(sameCompanyBranch, branchTarget), false);
+  assert.equal(allowedMatchingPair(affiliateHeadquarters, branchTarget), true);
+  assert.equal(allowedMatchingPair(affiliateBranch, branchTarget), true);
+  assert.equal(allowedMatchingPair(affiliateLeader, branchTarget), false);
+
+  const result = planAutoMatchings({
+    cycleId: 11,
+    users: [branchTarget, sameCompanyBranch, affiliateHeadquarters, affiliateBranch, affiliateLeader],
+    existing: [], submittedMatchingIds: []
+  });
+  const assigned = result.generated.filter(row => row.target_id === branchTarget.id);
+  assert.deepEqual(new Set(assigned.map(row => row.evaluator_id)), new Set([22, 23]));
+  assert.equal(result.shortages.some(row => row.target_id === branchTarget.id && row.bucket === 'affiliate_peer'), true);
 });
 
 test('quota matching preserves manual rows, balances load, and reports shortages', () => {
