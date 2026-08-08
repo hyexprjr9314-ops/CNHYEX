@@ -13,11 +13,16 @@ test('mechanic repair removes only unsubmitted draft affiliate pairs and fixes l
 });
 
 test('mechanic assignment repair rejects every unsupported one-sided draft pairing', async () => {
-  const sql = await readFile(new URL('../supabase/migrations/202608080005_remove_invalid_mechanic_draft_pairs.sql', import.meta.url), 'utf8');
-  assert.match(sql, /evaluator\.is_mechanic or target\.is_mechanic/);
-  assert.match(sql, /evaluator\.is_mechanic and target\.is_mechanic[\s\S]*evaluator\.dept/);
-  assert.match(sql, /evaluator\.is_vehicle_safety and target\.is_mechanic/);
-  assert.match(sql, /evaluator\.branch_key = target\.branch_key/);
-  assert.match(sql, /not exists \([\s\S]*public\.evaluations/);
-  assert.doesNotMatch(sql, /delete from public\.evaluations/);
+  const migrations = await Promise.all([
+    '../supabase/migrations/202608080005_remove_invalid_mechanic_draft_pairs.sql',
+    '../supabase/migrations/202608080006_reapply_strict_mechanic_draft_gate.sql'
+  ].map(path => readFile(new URL(path, import.meta.url), 'utf8')));
+  for (const sql of migrations) {
+    assert.match(sql, /evaluator\.is_mechanic or target\.is_mechanic/);
+    assert.match(sql, /and not case[\s\S]*when evaluator\.is_mechanic and target\.is_mechanic[\s\S]*when \(evaluator\.is_mechanic and target\.is_branch\)[\s\S]*when evaluator\.is_vehicle_safety and target\.is_mechanic[\s\S]*when evaluator\.is_mechanic or target\.is_mechanic then false/);
+    assert.match(sql, /nullif\(replace\(regexp_replace\(coalesce\(workplace, ''\)/);
+    assert.match(sql, /evaluator\.branch_key = target\.branch_key/);
+    assert.match(sql, /not exists \([\s\S]*public\.evaluations/);
+    assert.doesNotMatch(sql, /delete from public\.evaluations/);
+  }
 });

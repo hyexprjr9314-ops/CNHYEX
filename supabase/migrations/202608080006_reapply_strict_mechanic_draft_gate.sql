@@ -1,7 +1,7 @@
 begin;
 
--- Align existing draft assignments with the directional mechanic gate used by
--- automatic and manual matching. Submitted and non-draft history is immutable.
+-- Reapply the exact runtime decision order for databases that already executed
+-- the first mechanic draft cleanup. Submitted and non-draft history is preserved.
 with profiles as (
   select
     id,
