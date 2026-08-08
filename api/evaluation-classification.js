@@ -1,6 +1,7 @@
 const LEADER_TYPES = new Set(['\uD300\uC7A5/\uBD80\uC11C\uC7A5\uAE09', '\uD300\uC7A5\uAE09', '\uBD80\uC11C\uC2E4\uC7A5\uAE09']);
 export const TRACKS = Object.freeze({ headquarters_member: 'headquarters_member', headquarters_leader: 'headquarters_leader', branch_employee: 'branch_employee', mechanic: 'mechanic' });
 export const DEFAULT_TRACK = 'all';
+export const QUESTION_AUDIENCES = Object.freeze({ standard: 'all', affiliatePeer: 'affiliate_peer' });
 export const TRACK_ALIASES = Object.freeze({
   all: DEFAULT_TRACK,
   '기본 필수질문': DEFAULT_TRACK,
@@ -52,6 +53,16 @@ export function relationshipType(evaluator = {}, target = {}) {
   if (evaluatorIsLeader && targetIsLeader) return 'exchange';
   if (targetIsLeader) return 'leadership';
   return evaluatorCompany === targetCompany && evaluatorDepartment === targetDepartment ? 'internal' : 'exchange';
+}
+
+export function questionAudience(evaluator = {}, target = {}) {
+  const evaluatorCompany = String(evaluator.company || '').trim();
+  const targetCompany = String(target.company || '').trim();
+  const bothTeamMembers = String(evaluator.type || '').trim() === '\uD300\uC6D0\uAE09'
+    && String(target.type || '').trim() === '\uD300\uC6D0\uAE09';
+  return bothTeamMembers && evaluatorCompany && targetCompany && evaluatorCompany !== targetCompany
+    ? QUESTION_AUDIENCES.affiliatePeer
+    : QUESTION_AUDIENCES.standard;
 }
 
 export function normalizedCategory(category) {
