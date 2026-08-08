@@ -4483,6 +4483,9 @@
       return user.type === '정비사' || (user.type === '팀원급'
         && (/정비/.test(String(user.role || '')) || ['정비', '정비팀'].includes(String(user.dept || '').trim())));
     }
+    function isVehicleSafetyProfile(user = {}) {
+      return /차량|안전/.test(`${user.dept || ''} ${user.workplace || ''}`);
+    }
     function isBranchTeamMember(user = {}) {
       return !isMechanicProfile(user) && user.type === '팀원급' && `${user.workplace || ''} ${user.dept || ''}`.includes('영업소');
     }
@@ -4502,6 +4505,10 @@
         return String(evaluator.company || '').trim() === String(target.company || '').trim()
           && branchLocationForMatching(evaluator) === branchLocationForMatching(target);
       }
+      if (isVehicleSafetyProfile(evaluator) && isMechanicProfile(target)) {
+        return String(evaluator.company || '').trim() === String(target.company || '').trim();
+      }
+      if (isMechanicProfile(evaluator) || isMechanicProfile(target)) return false;
       if (!isBranchTeamMember(evaluator) && !isBranchTeamMember(target)) return true;
       const leaderTypes = ['팀장/부서장급', '팀장급', '부서실장급'];
       if (leaderTypes.includes(evaluator.type) || leaderTypes.includes(target.type)) {

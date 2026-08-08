@@ -11,3 +11,13 @@ test('mechanic repair removes only unsubmitted draft affiliate pairs and fixes l
   assert.match(sql, /update public\.users[\s\S]*set type = '정비사'/);
   assert.doesNotMatch(sql, /delete from public\.evaluations/);
 });
+
+test('mechanic assignment repair rejects every unsupported one-sided draft pairing', async () => {
+  const sql = await readFile(new URL('../supabase/migrations/202608080005_remove_invalid_mechanic_draft_pairs.sql', import.meta.url), 'utf8');
+  assert.match(sql, /evaluator\.is_mechanic or target\.is_mechanic/);
+  assert.match(sql, /evaluator\.is_mechanic and target\.is_mechanic[\s\S]*evaluator\.dept/);
+  assert.match(sql, /evaluator\.is_vehicle_safety and target\.is_mechanic/);
+  assert.match(sql, /evaluator\.branch_key = target\.branch_key/);
+  assert.match(sql, /not exists \([\s\S]*public\.evaluations/);
+  assert.doesNotMatch(sql, /delete from public\.evaluations/);
+});

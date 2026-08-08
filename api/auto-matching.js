@@ -30,6 +30,8 @@ export function allowedMatchingPair(evaluator, target) {
   if ((isMechanic(evaluator) && isBranch(target)) || (isBranch(evaluator) && isMechanic(target))) {
     return sameCompany(evaluator, target) && sameBranch(evaluator, target);
   }
+  if (isVehicleSafety(evaluator) && isMechanic(target)) return sameCompany(evaluator, target);
+  if (isMechanic(evaluator) || isMechanic(target)) return false;
   if ((isBranch(evaluator) && isTeamMember(evaluator)) || (isBranch(target) && isTeamMember(target))) {
     if (isLeader(evaluator) || isLeader(target)) return sameCompany(evaluator, target) && sameBranch(evaluator, target);
     return isTeamMember(evaluator) && isTeamMember(target) && sameBranch(evaluator, target);
