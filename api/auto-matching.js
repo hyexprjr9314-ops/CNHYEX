@@ -11,10 +11,18 @@ const normalize = value => String(value || '')
 const isMechanic = user => normalize(user?.type) === '정비사';
 const isExecutive = user => normalize(user?.type).includes('임원') || normalize(user?.sys_role) === 'executive';
 const isBranch = user => `${normalize(user?.workplace)}${normalize(user?.dept)}`.includes('영업소');
+const isTeamMember = user => normalize(user?.type) === '팀원급';
 const isVehicleSafety = user => /차량|안전/.test(`${normalize(user?.dept)}${normalize(user?.workplace)}`);
 const sameCompany = (a, b) => normalize(a?.company) === normalize(b?.company);
 const sameDepartment = (a, b) => normalize(a?.dept) === normalize(b?.dept);
 const sameWorkplace = (a, b) => normalize(a?.workplace) === normalize(b?.workplace);
+
+export function allowedMatchingPair(evaluator, target) {
+  if ((isBranch(evaluator) && isTeamMember(evaluator)) || (isBranch(target) && isTeamMember(target))) {
+    return isTeamMember(evaluator) && isTeamMember(target) && !sameCompany(evaluator, target);
+  }
+  return true;
+}
 
 function baseRules(target) {
   if (isLeader(target)) {
@@ -32,9 +40,7 @@ function baseRules(target) {
   }
   if (isBranch(target)) {
     return [
-      { key: 'supervisor', quota: 1, test: evaluator => isLeader(evaluator) && sameCompany(evaluator, target) && (sameWorkplace(evaluator, target) || sameDepartment(evaluator, target)) },
-      { key: 'related_department', quota: 1, test: evaluator => isVehicleSafety(evaluator) && sameCompany(evaluator, target) },
-      { key: 'branch_peer', quota: 2, test: evaluator => !isLeader(evaluator) && sameCompany(evaluator, target) && sameWorkplace(evaluator, target) }
+      { key: 'affiliate_peer', quota: 4, test: evaluator => isTeamMember(evaluator) && !sameCompany(evaluator, target) }
     ];
   }
   const rules = [
@@ -84,6 +90,7 @@ export function planAutoMatchings({ cycleId, users = [], existing = [], submitte
       const candidates = evaluators
         .filter(evaluator => Number(evaluator.id) !== Number(target.id))
         .filter(evaluator => !paired.has(`${Number(evaluator.id)}:${Number(target.id)}`))
+        .filter(evaluator => allowedMatchingPair(evaluator, target))
         .filter(rule.test)
         .sort((a, b) =>
           (load.get(Number(a.id)) || 0) - (load.get(Number(b.id)) || 0)

@@ -4443,7 +4443,7 @@
       all: { key: 'all', label: '전사 공통', categories: ['성과', '협업', '성장', '조화'] },
       headquarters_member: { key: 'headquarters_member', label: '팀원급', categories: ['성과', '협업', '성장', '조화'] },
       headquarters_leader: { key: 'headquarters_leader', label: '팀장/부서장급', categories: ['리더십', '팀원 육성', '소통', '전략적 사고'] },
-      branch_employee: { key: 'branch_employee', label: '영업소 직원', categories: ['비상대응', '소통 협력', '솔선 수범', '갈등 해소'] },
+      branch_employee: { key: 'branch_employee', label: '영업소 직원', categories: ['성과', '협업', '성장', '조화'] },
       mechanic: { key: 'mechanic', label: '정비사', categories: ['역량 개발', '정비 능력', '책임/주인의식', '안전의식'] }
     });
     const QUESTION_TRACK_ALIASES = Object.freeze({
@@ -4473,6 +4473,14 @@
         && evaluatorCompany && targetCompany && evaluatorCompany !== targetCompany
         ? 'affiliate_peer'
         : 'all';
+    }
+    function isBranchTeamMember(user = {}) {
+      return user.type === '팀원급' && `${user.workplace || ''} ${user.dept || ''}`.includes('영업소');
+    }
+    function allowedInteractiveMatchingPair(evaluator = {}, target = {}) {
+      if (!isBranchTeamMember(evaluator) && !isBranchTeamMember(target)) return true;
+      return evaluator.type === '팀원급' && target.type === '팀원급'
+        && String(evaluator.company || '').trim() !== String(target.company || '').trim();
     }
     function syncQuestionCategoryOptions(mode, selectedCategory = null) {
       const isEdit = mode === 'edit';
@@ -6173,7 +6181,8 @@
 
       const activeTargetIds = ensureStagedMatchingState();
       const serverTargetIds = new Set(getServerMatchingTargetIds());
-      const targetCandidates = usersDb.filter(target => target.id !== selectedEvaluatorForMatching && target.is_evaluatee !== false);
+      const targetCandidates = usersDb.filter(target => target.id !== selectedEvaluatorForMatching
+        && target.is_evaluatee !== false && allowedInteractiveMatchingPair(evaluator, target));
       const candidateIds = new Set(targetCandidates.map(target => Number(target.id)));
       selectedMatchingTargetIds = new Set([...selectedMatchingTargetIds].filter(id => candidateIds.has(Number(id))));
       ensureDirectoryToolbar('matchingTargets', toolbarAnchor || availableGrid, targetCandidates, {
@@ -7993,7 +8002,10 @@
 
       const matchedQuestions = questionsForCycle(selectedCycleId).filter(q => {
         const questionTrack = normalizeQuestionTrack(q.targetTrack);
-        return (questionTrack === 'all' || questionTrack === targetTrack.key)
+        const trackMatches = questionAudience === 'affiliate_peer'
+          ? questionTrack === 'all' || questionTrack === 'headquarters_member'
+          : questionTrack === 'all' || questionTrack === targetTrack.key;
+        return trackMatches
           && (q.audience || 'all') === questionAudience;
       });
 

@@ -22,7 +22,7 @@ export const TRACK_ALIASES = Object.freeze({
 export const TRACK_CATEGORIES = Object.freeze({
   headquarters_member: ['\uC131\uACFC', '\uD611\uC5C5', '\uC131\uC7A5', '\uC870\uD654'],
   headquarters_leader: ['\uB9AC\uB354\uC2ED', '\uD300\uC6D0 \uC721\uC131', '\uC18C\uD1B5', '\uC804\uB7B5\uC801 \uC0AC\uACE0'],
-  branch_employee: ['\uBE44\uC0C1\uB300\uC751', '\uC18C\uD1B5 \uD611\uB825', '\uC194\uC120 \uC218\uBC94', '\uAC08\uB4F1 \uD574\uC18C'],
+  branch_employee: ['\uC131\uACFC', '\uD611\uC5C5', '\uC131\uC7A5', '\uC870\uD654'],
   mechanic: ['\uC5ED\uB7C9 \uAC1C\uBC1C', '\uC815\uBE44 \uB2A5\uB825', '\uCC45\uC784/\uC8FC\uC778\uC758\uC2DD', '\uC548\uC804\uC758\uC2DD']
 });
 export function isLeader(user = {}) {

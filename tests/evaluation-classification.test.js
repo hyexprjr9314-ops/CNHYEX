@@ -25,6 +25,7 @@ test('classification covers tracks and relationship precedence', () => {
   assert.equal(normalizeTrack('영업소 직원'), TRACKS.branch_employee);
   assert.equal(normalizeTrack('unrecognized'), 'all');
   assert.deepEqual(TRACK_CATEGORIES.mechanic, ['역량 개발', '정비 능력', '책임/주인의식', '안전의식']);
+  assert.deepEqual(TRACK_CATEGORIES.branch_employee, TRACK_CATEGORIES.headquarters_member);
 });
 
 test('affiliate questions apply only to cross-company team-member pairs', () => {
