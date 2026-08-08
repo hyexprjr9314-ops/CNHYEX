@@ -34,9 +34,10 @@ with profiles as (
       when evaluator.is_mechanic and target.is_mechanic then
         trim(evaluator.company::text) = trim(target.company::text)
         and trim(coalesce(evaluator.dept, '')) = trim(coalesce(target.dept, ''))
-      when evaluator.is_branch and target.is_branch
-        and (evaluator.is_mechanic or target.is_mechanic) then
+      when (evaluator.is_mechanic and target.is_branch)
+        or (evaluator.is_branch and target.is_mechanic) then
         trim(evaluator.company::text) = trim(target.company::text)
+        and evaluator.is_branch and target.is_branch
         and evaluator.branch_key <> ''
         and evaluator.branch_key = target.branch_key
       when evaluator.is_vehicle_safety and target.is_mechanic then

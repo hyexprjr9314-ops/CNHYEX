@@ -4501,9 +4501,10 @@
       }
       const evaluatorBranch = `${evaluator.workplace || ''} ${evaluator.dept || ''}`.includes('영업소');
       const targetBranch = `${target.workplace || ''} ${target.dept || ''}`.includes('영업소');
-      if (evaluatorBranch && targetBranch
-          && (isMechanicProfile(evaluator) || isMechanicProfile(target))) {
+      if ((isMechanicProfile(evaluator) && targetBranch)
+          || (evaluatorBranch && isMechanicProfile(target))) {
         return String(evaluator.company || '').trim() === String(target.company || '').trim()
+          && evaluatorBranch && targetBranch
           && branchLocationForMatching(evaluator) === branchLocationForMatching(target);
       }
       if (isVehicleSafetyProfile(evaluator) && isMechanicProfile(target)) {

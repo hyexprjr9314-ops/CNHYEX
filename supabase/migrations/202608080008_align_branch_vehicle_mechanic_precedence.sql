@@ -1,7 +1,7 @@
 begin;
 
--- Require both profiles to be actual branch workers before applying the
--- same-location mechanic exception. Submitted and historical rows are preserved.
+-- Preserve the server's branch-before-vehicle decision order for mechanic pairs.
+-- Submitted and non-draft history remains immutable.
 with profiles as (
   select
     id,

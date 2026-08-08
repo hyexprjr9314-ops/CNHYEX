@@ -41,6 +41,7 @@ test('mechanic peers require the same company and department', () => {
   const officeMember = user(34);
   const vehicleEvaluator = user(35, { dept: '차량안전' });
   const affiliateVehicleEvaluator = user(36, { dept: '차량안전', company: '충남고속' });
+  const branchVehicleEvaluator = user(37, { dept: '차량안전', workplace: '천안영업소' });
   assert.equal(allowedMatchingPair(sameGroup, target), true);
   assert.equal(allowedMatchingPair(otherDepartment, target), false);
   assert.equal(allowedMatchingPair(affiliate, target), false);
@@ -48,7 +49,8 @@ test('mechanic peers require the same company and department', () => {
   assert.equal(allowedMatchingPair(target, officeMember), false);
   assert.equal(allowedMatchingPair(vehicleEvaluator, target), true);
   assert.equal(allowedMatchingPair(affiliateVehicleEvaluator, target), false);
-  const result = planAutoMatchings({ cycleId: 4, users: [target, sameGroup, otherDepartment, affiliate, officeMember, vehicleEvaluator, affiliateVehicleEvaluator], existing: [], submittedMatchingIds: [] });
+  assert.equal(allowedMatchingPair(branchVehicleEvaluator, target), false);
+  const result = planAutoMatchings({ cycleId: 4, users: [target, sameGroup, otherDepartment, affiliate, officeMember, vehicleEvaluator, affiliateVehicleEvaluator, branchVehicleEvaluator], existing: [], submittedMatchingIds: [] });
   assert.deepEqual(new Set(result.generated.filter(row => row.target_id === target.id).map(row => row.evaluator_id)), new Set([31, 35]));
 });
 
