@@ -4,7 +4,7 @@ import { buildRelativeGradePlan, cohortKeyForUser } from './relative-grading.js'
 import { ROLES } from './role-policy.js';
 import { normalizeTrack, relationshipType, targetTrack, TRACK_CATEGORIES, QUESTION_AUDIENCES } from './evaluation-classification.js';
 import { isMutableDraftCycle } from './questions.js';
-import { allowedMatchingPair, planAutoMatchings } from './auto-matching.js';
+import { planAutoMatchings } from './auto-matching.js';
 import { notifyAndDispatch } from '../lib/push.js';
 
 const PRIVILEGED = new Set([ROLES.admin, ROLES.executive]);
@@ -817,9 +817,6 @@ export default async function handler(req, res) {
       const people = await service.from('users').select('id,dept,workplace,role,type,company').in('id', [evaluatorId, targetId]);
       if (people.error) throw people.error;
       const personById = new Map((people.data || []).map(row => [Number(row.id), row]));
-      if (!existing.data && !allowedMatchingPair(personById.get(evaluatorId), personById.get(targetId))) {
-        return send(res, 409, { error: '정비사 또는 영업소 매칭 조건에 맞지 않는 대상입니다.' });
-      }
       if (matchingMode === 'paused') {
         const accessToken = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
         result = await authenticatedRpcClient(accessToken).rpc('governance_toggle_paused_matching', {
@@ -846,9 +843,6 @@ export default async function handler(req, res) {
         if (people.error) throw people.error;
         const peopleById = new Map((people.data || []).map(row => [Number(row.id), row]));
         const evaluator = peopleById.get(evaluatorId);
-        if (targetIds.some(targetId => !allowedMatchingPair(evaluator, peopleById.get(targetId)))) {
-          return send(res, 409, { error: '정비사 또는 영업소 매칭 조건에 맞지 않는 대상입니다.' });
-        }
         const targets = targetIds.map(targetId => ({
           target_id: targetId,
           relationship_type: relationshipType(evaluator, peopleById.get(targetId))
@@ -869,9 +863,6 @@ export default async function handler(req, res) {
       if (people.error) throw people.error;
       const peopleById = new Map((people.data || []).map(row => [Number(row.id), row]));
       const evaluator = peopleById.get(evaluatorId);
-      if (targetIds.some(targetId => !allowedMatchingPair(evaluator, peopleById.get(targetId)))) {
-        return send(res, 409, { error: '정비사 또는 영업소 매칭 조건에 맞지 않는 대상입니다.' });
-      }
       const targets = targetIds.map(targetId => ({
         target_id: targetId,
         relationship_type: relationshipType(evaluator, peopleById.get(targetId))
