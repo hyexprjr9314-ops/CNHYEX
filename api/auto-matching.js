@@ -1,4 +1,4 @@
-import { isLeader, relationshipType } from './evaluation-classification.js';
+import { isLeader, isMechanic, relationshipType } from './evaluation-classification.js';
 
 export const AUTO_MATCHING_TYPE = '알고리즘 자동 지정';
 export const MAX_STANDARD_TARGETS = 7;
@@ -9,10 +9,9 @@ const normalize = value => String(value || '')
   .replace(/㈜|주식회사|\(주\)/g, '')
   .trim();
 
-const isMechanic = user => normalize(user?.type) === '정비사';
 const isExecutive = user => normalize(user?.type).includes('임원') || normalize(user?.sys_role) === 'executive';
 const isBranch = user => `${normalize(user?.workplace)}${normalize(user?.dept)}`.includes('영업소');
-const isTeamMember = user => normalize(user?.type) === '팀원급';
+const isTeamMember = user => normalize(user?.type) === '팀원급' && !isMechanic(user);
 const isVehicleSafety = user => /차량|안전/.test(`${normalize(user?.dept)}${normalize(user?.workplace)}`);
 const sameCompany = (a, b) => normalize(a?.company) === normalize(b?.company);
 const sameDepartment = (a, b) => normalize(a?.dept) === normalize(b?.dept);

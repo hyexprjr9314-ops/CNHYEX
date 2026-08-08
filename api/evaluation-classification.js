@@ -30,13 +30,21 @@ export function isLeader(user = {}) {
   return LEADER_TYPES.has(employeeType);
 }
 
+export function isMechanic(user = {}) {
+  const employeeType = String(user.type || '').trim();
+  const role = String(user.role || '').trim();
+  const dept = String(user.dept || '').trim();
+  return employeeType === '\uC815\uBE44\uC0AC'
+    || (employeeType === '\uD300\uC6D0\uAE09' && (/\uC815\uBE44/.test(role) || ['\uC815\uBE44', '\uC815\uBE44\uD300'].includes(dept)));
+}
+
 export function normalizeTrack(track, fallback = DEFAULT_TRACK) {
   return TRACK_ALIASES[String(track || '').trim()] || fallback;
 }
 
 export function targetTrack(user = {}) {
   const employeeType = String(user.type || '').trim();
-  if (employeeType === '\uC815\uBE44\uC0AC') return TRACKS.mechanic;
+  if (isMechanic(user)) return TRACKS.mechanic;
   if (LEADER_TYPES.has(employeeType)) return TRACKS.headquarters_leader;
   if (`${user.workplace || ''} ${user.dept || ''}`.includes('\uC601\uC5C5\uC18C')) return TRACKS.branch_employee;
   return TRACKS.headquarters_member;
@@ -58,7 +66,8 @@ export function relationshipType(evaluator = {}, target = {}) {
 export function questionAudience(evaluator = {}, target = {}) {
   const evaluatorCompany = String(evaluator.company || '').trim();
   const targetCompany = String(target.company || '').trim();
-  const bothTeamMembers = String(evaluator.type || '').trim() === '\uD300\uC6D0\uAE09'
+  const bothTeamMembers = !isMechanic(evaluator) && !isMechanic(target)
+    && String(evaluator.type || '').trim() === '\uD300\uC6D0\uAE09'
     && String(target.type || '').trim() === '\uD300\uC6D0\uAE09';
   if (isLeader(evaluator) && isLeader(target)) return QUESTION_AUDIENCES.leaderPeer;
   return bothTeamMembers && evaluatorCompany && targetCompany && evaluatorCompany !== targetCompany

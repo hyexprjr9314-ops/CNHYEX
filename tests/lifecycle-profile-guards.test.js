@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import { assertGlobalConfigurationMutable, isCurrentGovernanceCycle } from '../api/admin-state.js';
-import { assertPersonnelClassificationMutable, hasClassificationChange } from '../api/users.js';
+import { assertPersonnelClassificationMutable, hasClassificationChange, normalizeEmployeeType } from '../api/users.js';
 
 function cycleService(cycles) {
   return {
@@ -52,4 +52,10 @@ test('classification changes are denied while a current cycle exists but harmles
   await assert.doesNotReject(() => assertPersonnelClassificationMutable(cycleService([
     { status: '\uC9C4\uD589\uC911', internal_approval_status: 'not_requested' }
   ]), oldProfile, { ...oldProfile, name: 'Lee' }));
+});
+
+test('maintenance roles cannot be imported as generic team members', () => {
+  assert.equal(normalizeEmployeeType('팀원급', '촉탁정비원', '천안'), '정비사');
+  assert.equal(normalizeEmployeeType('팀원급', '사원', '정비'), '정비사');
+  assert.equal(normalizeEmployeeType('팀장/부서장급', '정비팀장', '정비'), '팀장/부서장급');
 });

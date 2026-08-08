@@ -42,6 +42,16 @@ test('mechanic peers require the same company and department', () => {
   assert.deepEqual(result.generated.filter(row => row.target_id === target.id).map(row => row.evaluator_id), [31]);
 });
 
+test('legacy team-member maintenance profiles are still treated as mechanics', () => {
+  const target = user(50, { role: '촉탁정비원', dept: '정비' });
+  const sameGroup = user(51, { role: '정비사', dept: '정비' });
+  const affiliate = user(52, { role: '정비사', dept: '정비', company: '충남고속' });
+  assert.equal(allowedMatchingPair(sameGroup, target), true);
+  assert.equal(allowedMatchingPair(affiliate, target), false);
+  const result = planAutoMatchings({ cycleId: 5, users: [target, sameGroup, affiliate], existing: [], submittedMatchingIds: [] });
+  assert.deepEqual(result.generated.filter(row => row.target_id === target.id).map(row => row.evaluator_id), [51]);
+});
+
 test('office matching excludes same-company other departments and caps ordinary loads', () => {
   const users = [user(1), ...Array.from({ length: 12 }, (_, index) => user(index + 2)),
     user(20, { dept: '사업' }), user(21, { company: '충남고속' }),

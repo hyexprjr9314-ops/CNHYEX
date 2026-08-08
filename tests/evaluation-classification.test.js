@@ -1,5 +1,5 @@
 import test from 'node:test'; import assert from 'node:assert/strict';
-import { isLeader, normalizeTrack, normalizedCategory, questionAudience, relationshipType, targetTrack, TRACKS, TRACK_CATEGORIES } from '../api/evaluation-classification.js';
+import { isLeader, isMechanic, normalizeTrack, normalizedCategory, questionAudience, relationshipType, targetTrack, TRACKS, TRACK_CATEGORIES } from '../api/evaluation-classification.js';
 test('classification covers tracks and relationship precedence', () => {
   assert.equal(targetTrack({ type: '정비사', dept: '총무' }), TRACKS.mechanic);
   assert.equal(targetTrack({ type: '팀원급', workplace: '부산영업소' }), TRACKS.branch_employee);
@@ -14,6 +14,10 @@ test('classification covers tracks and relationship precedence', () => {
   assert.equal(isLeader({ type: '부서실장급' }), true);
   assert.equal(isLeader({ type: '임원급', role: '부장' }), false);
   assert.equal(isLeader({ role: '대리' }), false);
+  assert.equal(isMechanic({ type: '팀원급', role: '촉탁정비원', dept: '정비' }), true);
+  assert.equal(targetTrack({ type: '팀원급', role: '정비사', dept: '정비' }), TRACKS.mechanic);
+  assert.equal(isMechanic({ type: '팀장/부서장급', role: '정비팀장', dept: '정비' }), false);
+  assert.equal(targetTrack({ type: '팀장/부서장급', role: '정비팀장', dept: '정비' }), TRACKS.headquarters_leader);
   assert.equal(relationshipType({ type: '팀장/부서장급' }, { type: '팀장/부서장급' }), 'exchange');
   assert.equal(relationshipType({}, { type: '팀장/부서장급' }), 'leadership');
   assert.equal(relationshipType({ company: '(주)한양고속', dept: '인사' }, { company: '(주)한양고속', dept: '인사' }), 'internal');

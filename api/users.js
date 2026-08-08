@@ -40,6 +40,13 @@ function normalizeCompany(value) {
   return normalized;
 }
 
+export function normalizeEmployeeType(type, role, dept) {
+  const current = String(type || '').trim();
+  const mechanicProfile = /정비/.test(String(role || '').trim())
+    || ['정비', '정비팀'].includes(String(dept || '').trim());
+  return current === '팀원급' && mechanicProfile ? '정비사' : current;
+}
+
 function send(res, status, payload) {
   res.status(status).json(payload);
 }
@@ -50,6 +57,8 @@ function normalize(row) {
     ? normalizeLoginId(row.login_id || `PIN-${crypto.randomBytes(8).toString('hex')}`)
     : String(row.email || '').trim().toLowerCase();
   const email = loginMethod === 'pin' ? `${loginId.toLowerCase()}@noemail.cnhyex.invalid` : String(row.email || '').trim().toLowerCase();
+  const dept = String(row.dept || '').trim();
+  const role = String(row.role || '').trim();
   return {
     name: normalizeLoginName(row.name),
     pin_login_name: loginMethod === 'pin' ? normalizeLoginName(row.name) : null,
@@ -58,11 +67,11 @@ function normalize(row) {
     login_method: loginMethod,
     login_id: loginMethod === 'none' ? null : loginId,
     company: normalizeCompany(row.company),
-    dept: String(row.dept || '').trim(),
+    dept,
     workplace: String(row.workplace || '').trim(),
-    role: String(row.role || '').trim(),
+    role,
     joindate: row.joindate ? String(row.joindate).trim() : null,
-    type: String(row.type || '').trim(),
+    type: normalizeEmployeeType(row.type, role, dept),
     phone: String(row.phone || '010-0000-0000').trim(),
     sys_role: String(row.sys_role || '일반사용자').trim()
   };

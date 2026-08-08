@@ -4463,7 +4463,7 @@
     }
     function questionTrackForTarget(target = {}) {
       const type = String(target.type || '');
-      if (type === '정비사') return QUESTION_TRACKS.mechanic;
+      if (isMechanicProfile(target)) return QUESTION_TRACKS.mechanic;
       if (['팀장/부서장급', '팀장급', '부서실장급'].includes(type)) return QUESTION_TRACKS.headquarters_leader;
       if (`${target.workplace || ''} ${target.dept || ''}`.includes('영업소')) return QUESTION_TRACKS.branch_employee;
       return QUESTION_TRACKS.headquarters_member;
@@ -4473,13 +4473,18 @@
       const targetCompany = String(target.company || '').trim();
       const leaderTypes = ['팀장/부서장급', '팀장급', '부서실장급'];
       if (leaderTypes.includes(evaluator.type) && leaderTypes.includes(target.type)) return 'leader_peer';
-      return evaluator.type === '팀원급' && target.type === '팀원급'
+      return !isMechanicProfile(evaluator) && !isMechanicProfile(target)
+        && evaluator.type === '팀원급' && target.type === '팀원급'
         && evaluatorCompany && targetCompany && evaluatorCompany !== targetCompany
         ? 'affiliate_peer'
         : 'all';
     }
+    function isMechanicProfile(user = {}) {
+      return user.type === '정비사' || (user.type === '팀원급'
+        && (/정비/.test(String(user.role || '')) || ['정비', '정비팀'].includes(String(user.dept || '').trim())));
+    }
     function isBranchTeamMember(user = {}) {
-      return user.type === '팀원급' && `${user.workplace || ''} ${user.dept || ''}`.includes('영업소');
+      return !isMechanicProfile(user) && user.type === '팀원급' && `${user.workplace || ''} ${user.dept || ''}`.includes('영업소');
     }
     function branchLocationForMatching(user = {}) {
       const normalize = value => String(value || '').replace(/[\sㆍ·._\-()[\]{}]/g, '').replace(/영업소/g, '');
@@ -4487,13 +4492,13 @@
       return workplace && workplace !== '본사' ? workplace : normalize(user.dept);
     }
     function allowedInteractiveMatchingPair(evaluator = {}, target = {}) {
-      if (evaluator.type === '정비사' && target.type === '정비사') {
+      if (isMechanicProfile(evaluator) && isMechanicProfile(target)) {
         return String(evaluator.company || '').trim() === String(target.company || '').trim()
           && String(evaluator.dept || '').trim() === String(target.dept || '').trim();
       }
       const evaluatorBranch = `${evaluator.workplace || ''} ${evaluator.dept || ''}`.includes('영업소');
       const targetBranch = `${target.workplace || ''} ${target.dept || ''}`.includes('영업소');
-      if ((evaluator.type === '정비사' && targetBranch) || (evaluatorBranch && target.type === '정비사')) {
+      if ((isMechanicProfile(evaluator) && targetBranch) || (evaluatorBranch && isMechanicProfile(target))) {
         return String(evaluator.company || '').trim() === String(target.company || '').trim()
           && branchLocationForMatching(evaluator) === branchLocationForMatching(target);
       }
