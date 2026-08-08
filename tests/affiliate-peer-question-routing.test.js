@@ -12,7 +12,7 @@ test('database routes only cross-company team-member pairs to affiliate question
   for (const source of [assigned, coverage]) {
     assert.match(source, /evaluator\.type::text[\s\S]*?= '팀원급'/);
     assert.match(source, /target\.type::text[\s\S]*?= '팀원급'/);
-    assert.match(source, /trim\(evaluator\.company\) <> trim\(target\.company\)/);
+    assert.match(source, /trim\(evaluator\.company::text\) <> trim\(target\.company::text\)/);
     assert.match(source, /then 'affiliate_peer'[\s\S]*?else 'all'/);
   }
   assert.match(assigned, /coalesce\(question\.audience, 'all'\) = assignment\.question_audience/);

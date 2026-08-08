@@ -17,9 +17,9 @@ as $$
       case
         when trim(coalesce(evaluator.type::text, '')) = '팀원급'
          and trim(coalesce(target.type::text, '')) = '팀원급'
-         and trim(coalesce(evaluator.company, '')) <> ''
-         and trim(coalesce(target.company, '')) <> ''
-         and trim(evaluator.company) <> trim(target.company)
+         and trim(coalesce(evaluator.company::text, '')) <> ''
+         and trim(coalesce(target.company::text, '')) <> ''
+         and trim(evaluator.company::text) <> trim(target.company::text)
         then 'affiliate_peer'
         else 'all'
       end as question_audience
@@ -58,9 +58,9 @@ as $$
       case
         when trim(coalesce(evaluator.type::text, '')) = '팀원급'
          and trim(coalesce(target.type::text, '')) = '팀원급'
-         and trim(coalesce(evaluator.company, '')) <> ''
-         and trim(coalesce(target.company, '')) <> ''
-         and trim(evaluator.company) <> trim(target.company)
+         and trim(coalesce(evaluator.company::text, '')) <> ''
+         and trim(coalesce(target.company::text, '')) <> ''
+         and trim(evaluator.company::text) <> trim(target.company::text)
         then 'affiliate_peer'
         else 'all'
       end question_audience
