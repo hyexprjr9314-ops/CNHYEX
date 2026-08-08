@@ -1,7 +1,7 @@
 begin;
 
--- Align existing draft assignments with the directional mechanic gate used by
--- automatic and manual matching. Submitted and non-draft history is immutable.
+-- Require both profiles to be actual branch workers before applying the
+-- same-location mechanic exception. Submitted and historical rows are preserved.
 with profiles as (
   select
     id,

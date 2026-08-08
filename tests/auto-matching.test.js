@@ -24,10 +24,13 @@ test('branch leaders and same-company branch mechanics remain bidirectional exce
   const member = user(40, { workplace: '영업소', dept: '태안' });
   const leader = user(41, { workplace: '태안영업소', dept: '태안', type: '팀장/부서장급' });
   const mechanic = user(42, { workplace: '태안영업소', dept: '태안', type: '정비사' });
+  const headquartersMechanic = user(43, { workplace: '본사', dept: '태안', type: '정비사' });
   assert.equal(allowedMatchingPair(member, leader), true);
   assert.equal(allowedMatchingPair(leader, member), true);
   assert.equal(allowedMatchingPair(member, mechanic), true);
   assert.equal(allowedMatchingPair(mechanic, member), true);
+  assert.equal(allowedMatchingPair(member, headquartersMechanic), false);
+  assert.equal(allowedMatchingPair(headquartersMechanic, member), false);
 });
 
 test('mechanic peers require the same company and department', () => {

@@ -19,6 +19,7 @@ test('manual matching UI and API enforce exact-branch and mechanic boundaries', 
   assert.match(apiSource, /allowedMatchingPair/);
   assert.match(apiSource, /정비사 또는 영업소 매칭 조건에 맞지 않는 대상입니다/);
   assert.match(indexSource, /allowedInteractiveMatchingPair\(evaluator, target\)/);
+  assert.match(indexSource, /if \(evaluatorBranch && targetBranch[\s\S]*isMechanicProfile/);
   assert.match(indexSource, /branchLocationForMatching\(evaluator\).*branchLocationForMatching\(target\)/s);
   assert.match(indexSource, /questionAudience === 'affiliate_peer'[\s\S]*?questionTrack === 'headquarters_member'/);
 });
