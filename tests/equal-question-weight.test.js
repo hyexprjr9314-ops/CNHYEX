@@ -14,7 +14,7 @@ test('question weight is server-owned and hidden from all management inputs', as
 
   assert.doesNotMatch(index, /q-weight-in|edit-q-weight|가중치 반영|질문유형,가중치\(%\)/);
   assert.doesNotMatch(index, /가중치 \$\{q\.weight\}%/);
-  assert.match(index, /비상대응,영업소 직원,5지선다형/);
+  assert.match(index, /성과,영업소 직원,5지선다형/);
   assert.match(adminState, /weight: 1/);
   assert.match(questions, /weight: 1/);
   assert.match(migration, /new\.weight := 1/);
