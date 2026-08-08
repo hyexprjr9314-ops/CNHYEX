@@ -89,3 +89,16 @@ test('submitted automatic and manual rows are preserved and deducted from capaci
   });
   assert.equal(result.generated.some(row => row.target_id === 1 && [2, 3].includes(row.evaluator_id)), false);
 });
+
+test('every team member evaluates their own leader even after reaching the ordinary limit', () => {
+  const member = user(1);
+  const leader = user(2, { type: '팀장/부서장급' });
+  const existing = Array.from({ length: MAX_STANDARD_TARGETS }, (_, index) => ({
+    id: 100 + index,
+    evaluator_id: member.id,
+    target_id: 1000 + index,
+    type: '관리자 수동 지정'
+  }));
+  const result = planAutoMatchings({ cycleId: 12, users: [member, leader], existing, submittedMatchingIds: [] });
+  assert.equal(result.generated.some(row => row.evaluator_id === member.id && row.target_id === leader.id), true);
+});

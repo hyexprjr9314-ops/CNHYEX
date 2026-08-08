@@ -104,7 +104,7 @@ export function planAutoMatchings({ cycleId, users = [], existing = [], submitte
       const candidates = evaluators
         .filter(evaluator => Number(evaluator.id) !== Number(target.id))
         .filter(evaluator => !paired.has(`${Number(evaluator.id)}:${Number(target.id)}`))
-        .filter(evaluator => isLeader(evaluator) || (load.get(Number(evaluator.id)) || 0) < MAX_STANDARD_TARGETS)
+        .filter(evaluator => rule.key === 'leadership' || isLeader(evaluator) || (load.get(Number(evaluator.id)) || 0) < MAX_STANDARD_TARGETS)
         .filter(evaluator => allowedMatchingPair(evaluator, target))
         .filter(rule.test)
         .sort((a, b) =>
