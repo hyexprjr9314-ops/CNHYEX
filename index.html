@@ -2217,10 +2217,10 @@
             <i class="fa-solid fa-pen-nib text-brandGold"></i>
             <span>동료평가 서술형 종합 피드백 (익명)</span>
           </h3>
-          <span class="text-xs font-bold text-slate-400" id="comment-char-counter">0 / 50자 이상</span>
+          <span class="text-xs font-bold text-slate-400" id="comment-char-counter">0 / 10자 이상</span>
         </div>
 
-        <textarea id="eval-comment-input" rows="4" placeholder="이번 평가 기간 중 이 동료가 담당한 업무에서 가장 의미 있었던 성과나 문제를 해결했던 사례, 앞으로 더 성장하기 위해 개선하면 좋을 점을 50자 이상 기술해 주세요." class="w-full bg-slate-900 border border-slate-700/80 rounded-xl p-4 text-sm text-white focus:outline-none focus:border-brandTeal" oninput="updateCommentCounter()"></textarea>
+        <textarea id="eval-comment-input" rows="4" placeholder="이번 평가 기간 중 이 동료가 담당한 업무에서 가장 의미 있었던 성과나 문제를 해결했던 사례, 앞으로 더 성장하기 위해 개선하면 좋을 점을 10자 이상 기술해 주세요." class="w-full bg-slate-900 border border-slate-700/80 rounded-xl p-4 text-sm text-white focus:outline-none focus:border-brandTeal" oninput="updateCommentCounter()"></textarea>
 
         <div class="flex justify-end gap-3 pt-2">
           <button onclick="openPreviewModal()" class="bg-gradient-to-r from-brandTeal to-teal-500 hover:from-teal-600 hover:to-teal-400 text-white font-bold px-6 py-3 rounded-xl shadow-lg transition text-sm flex items-center gap-2">
@@ -2262,7 +2262,7 @@
           <ol class="space-y-3 text-sm text-slate-300">
             <li class="flex gap-3"><span class="w-6 h-6 rounded-full bg-brandTeal text-slate-950 font-black text-xs flex items-center justify-center flex-shrink-0">1</span><p><strong class="text-white">평가 대상자 목록</strong>에서 서버가 배정한 동료를 선택합니다.</p></li>
             <li class="flex gap-3"><span class="w-6 h-6 rounded-full bg-brandTeal text-slate-950 font-black text-xs flex items-center justify-center flex-shrink-0">2</span><p>최근 평가기간에 직접 관찰한 업무 행동과 결과를 기준으로 각 항목에 응답합니다.</p></li>
-            <li class="flex gap-3"><span class="w-6 h-6 rounded-full bg-brandTeal text-slate-950 font-black text-xs flex items-center justify-center flex-shrink-0">3</span><p>구체적인 사례와 개선 방향을 포함하여 <strong class="text-white">50자 이상의 종합 피드백</strong>을 작성합니다.</p></li>
+            <li class="flex gap-3"><span class="w-6 h-6 rounded-full bg-brandTeal text-slate-950 font-black text-xs flex items-center justify-center flex-shrink-0">3</span><p>구체적인 사례와 개선 방향을 포함하여 <strong class="text-white">10자 이상의 종합 피드백</strong>을 작성합니다.</p></li>
             <li class="flex gap-3"><span class="w-6 h-6 rounded-full bg-brandTeal text-slate-950 font-black text-xs flex items-center justify-center flex-shrink-0">4</span><p>미리보기에서 대상자와 내용을 확인한 뒤 제출합니다. 주기가 열려 있는 동안에는 수정할 수 있습니다.</p></li>
           </ol>
         </article>
@@ -3888,7 +3888,7 @@
             </div>
             <div class="flex items-start gap-2.5">
               <span class="w-5 h-5 rounded-full bg-brandTeal text-slate-950 font-black text-[11px] flex items-center justify-center flex-shrink-0">3</span>
-              <p><strong>서술형 코멘트 입력 (최소 50자):</strong> 동료의 성장을 돕는 구체적인 정성 피드백 작성을 완료 후 최종 제출합니다.</p>
+              <p><strong>서술형 코멘트 입력 (최소 10자):</strong> 동료의 성장을 돕는 구체적인 정성 피드백 작성을 완료 후 최종 제출합니다.</p>
             </div>
           </div>
         </div>
@@ -8187,7 +8187,7 @@
     function updateCommentCounter() {
       const text = document.getElementById('eval-comment-input').value;
       const counter = document.getElementById('comment-char-counter');
-      counter.innerText = `${text.length} / 50자 이상`;
+      counter.innerText = `${text.length} / 10자 이상`;
       if (text.length >= 50) {
         counter.className = "text-xs font-bold text-emerald-400";
       } else {
@@ -8197,8 +8197,8 @@
 
     function openPreviewModal() {
       const text = document.getElementById('eval-comment-input').value;
-      if (text.length < 50) {
-        alert('신뢰도 높은 피드백을 위해 동료평가 서술 코멘트는 50자 이상 작성해야 합니다.');
+      if (text.length < 10) {
+        alert('동료평가 서술 코멘트는 10자 이상 작성해야 합니다.');
         return;
       }
       const answeredCount = document.querySelectorAll('input[name^="pq_dynamic_"]:checked').length;
@@ -8232,7 +8232,7 @@
     function evaluationSubmitErrorMessage(error) {
       const detail = String(error?.message || error?.details || '알 수 없는 서버 오류');
       const mappings = [
-        [/Comment must contain at least 50 characters/i, '서술형 종합 피드백을 50자 이상 입력해 주세요.'],
+        [/Comment must contain at least 10 characters/i, '서술형 종합 피드백을 10자 이상 입력해 주세요.'],
         [/Every multiple-choice evaluation question must be answered/i, '이 평가에 필요한 모든 5지선다 문항에 답변해 주세요.'],
         [/An answer is invalid or does not belong/i, '현재 평가주기·직군·부서에 맞지 않는 질문 응답이 포함되어 있습니다. 새로고침 후 다시 작성해 주세요.'],
         [/Category .+ needs at least one/i, '성과·협업·성장·조화 중 질문 구성이 누락된 영역이 있습니다. 관리자에게 평가주기 사전점검을 요청해 주세요.'],
