@@ -25,6 +25,7 @@
 - Evaluation management follows one left-to-right administrator workflow: cycle setup → permissions → questions/weights → matching → lifecycle controls → progress monitoring → final adjustment → history.
 - Cycle setup owns creation and metadata editing. Lifecycle management owns preflight, activation, pause, resume, cancellation, emergency force-close, and deletion without changing the existing server governance rules.
 - Top-level management is split by responsibility: administrators configure and operate evaluations in `평가 관리`; administrators and executives review progress, adjust/finalize results, approve, publish, and inspect history in `집계·마감 관리`.
+- The administrator dashboard contains desktop-only `사용자 관리` and `관계 메모` subtabs. Relationship notes are operational observations only and never participate in matching, scoring, or evaluation visibility.
 - Executives never enter evaluation configuration. Their privileged entry point is `집계·마감 관리`, containing progress, summary/final adjustment, and history as its only subtabs.
 - Primary navigation: 평가 대상자 목록, 내 평가 결과, 평가 관리, 집계·마감 관리, 관리자 대시보드
 - Core routes/screens: 단일 페이지 내 역할별 탭
@@ -48,7 +49,7 @@
 ## Components
 - Evaluator folder cards: use a two-line identity layout with name/role on the first line, company/department/workplace on the second line, and a fixed matching-count badge on the right. Preserve readable type size and truncate only overflowing metadata with a native tooltip.
 - Existing components to reuse: glass-card, 관계별 그룹, 표, 필터, 등급 배지
-- New/changed components: 화이트 테마용 EX/S/A 등급 표면, 단색 등급 라벨, 조정 수정·취소 의미형 버튼, 평가자 폴더 기반 드래그앤드롭 매칭 작업대, RTS형 박스 다중 선택과 전체화면 작업 모드
+- New/changed components: 화이트 테마용 EX/S/A 등급 표면, 단색 등급 라벨, 조정 수정·취소 의미형 버튼, 평가자 폴더 기반 드래그앤드롭 매칭 작업대, RTS형 박스 다중 선택과 전체화면 작업 모드, 관리자 전용 관계 메모 입력·검색·감사이력 표
 - Variants and states: EX, S, A, B, C, D, 미평가, 조정됨, 배정 가능, 배정 완료, 배정 예정, 해제 예정, 다중 선택
 - Token/component ownership: `index.html`의 화이트 테마 CSS와 `data-font-scale` 기반 가독성 토큰
 
@@ -66,6 +67,7 @@
 - Supported breakpoints/devices: 데스크톱 우선, 640px 이하 모바일
 - Layout adaptations: 기존 고정 하단 탐색과 반응형 표/카드를 유지하며 글자 확대 시 카드 최소 폭을 넓히고 열 수를 자동 축소. 매칭 화면은 넓은 데스크톱에서 평가자 폴더·배정 가능 인원·현재 배정 인원의 3열 구조를 사용하고, 검색·필터는 두 인원 열 상단 전체에 걸쳐 배치하여 두 드롭 영역의 시작선과 높이를 일치시킴. 작은 화면에서만 세로로 전환
 - Touch/hover differences: 데스크톱은 드래그앤드롭, 모바일·키보드는 배정·해제 버튼을 제공하며 핵심 동작은 hover에 의존하지 않음
+- Relationship notes are unavailable below the 1024px desktop breakpoint and must not issue data requests from mobile, Android wrapper, or iPhone home-screen layouts.
 
 ## Interaction states
 - Permission toggles: inactive controls use a visible slate track and explicit `비활성` text; evaluator-active controls use dark teal, and evaluatee-active controls use dark amber with explicit `활성` text.

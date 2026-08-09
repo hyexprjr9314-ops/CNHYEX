@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
 import { activationCodeHash, normalizeLoginId, normalizeLoginName } from '../lib/pin-auth.js';
+import { handleRelationshipNotes } from '../lib/relationship-notes.js';
 import { ROLES } from './role-policy.js';
 import { isMutableDraftCycle } from './questions.js';
 
@@ -138,7 +139,8 @@ async function assertUserHasNoHistory(service, target) {
     service.from('password_reset_email_audit').select('id', { count: 'exact', head: true }).eq('target_id', id),
     service.from('password_reset_request_audit').select('id', { count: 'exact', head: true }).eq('target_id', id),
     service.from('evaluation_notifications').select('id', { count: 'exact', head: true }).eq('recipient_user_id', id),
-    service.from('push_device_tokens').select('id', { count: 'exact', head: true }).eq('user_id', id)
+    service.from('push_device_tokens').select('id', { count: 'exact', head: true }).eq('user_id', id),
+    service.from('relationship_notes').select('id', { count: 'exact', head: true }).or(`subject_user_id.eq.${id},related_user_id.eq.${id}`)
   ];
   if (target.auth_user_id) {
     checks.push(
@@ -161,6 +163,9 @@ export default async function handler(req, res) {
   const service = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
   try {
     const actor = await authorize(req, service);
+    if (req.query?.resource === 'relationship-notes') {
+      return handleRelationshipNotes(req, res, service, actor);
+    }
     if (req.method === 'GET') {
       const { data, error } = await service.from('users').select(
         'id,name,email,company,dept,workplace,role,joindate,type,phone,sys_role,active,auth_user_id,can_evaluate,is_evaluatee,login_method,login_id,pin_login_name,pin_enrolled,pin_enrollment_expires_at'

@@ -1945,6 +1945,12 @@
     #question-cycle-select, #perm-cycle-select, #matching-cycle-select,
     label[for="matching-cycle-select"] { display: none !important; }
     @media (prefers-reduced-motion: reduce) { .hourglass-turn { animation: none; } }
+    @media (max-width: 1023px) {
+      .relationship-notes-desktop-only { display: none !important; }
+    }
+    @media (min-width: 1024px) {
+      #admin-relationship-notes-nav { display: flex !important; }
+    }
   </style>
 </head>
 <body class="min-h-screen flex flex-col antialiased selection:bg-brandTeal selection:text-white custom-scrollbar">
@@ -2493,6 +2499,15 @@
         </div>
       </div>
 
+      <div id="admin-relationship-notes-nav" class="relationship-notes-desktop-only hidden lg:flex items-center gap-2 border-b border-slate-800 pb-3 text-xs font-bold">
+        <button onclick="switchAdminTab('users')" id="admin-tab-users" class="px-4 py-2 rounded-xl transition bg-brandTeal text-white shadow-lg flex items-center gap-2">
+          <i class="fa-solid fa-users-gear"></i><span>사용자 관리</span>
+        </button>
+        <button onclick="switchAdminTab('relationship-notes')" id="admin-tab-relationship-notes" class="px-4 py-2 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white flex items-center gap-2">
+          <i class="fa-solid fa-people-arrows"></i><span>관계 메모</span>
+        </button>
+      </div>
+
       <!-- ADMIN SUB-TAB 1: USER BULK REGISTRATION (CSV / EMAIL ID) -->
       <div id="admin-subtab-users" class="space-y-6">
         <div id="admin-user-entry-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -2626,6 +2641,63 @@
               <tbody id="user-table-body" class="divide-y divide-slate-800/60">
                 <!-- Rendered Dynamically -->
               </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="admin-subtab-relationship-notes" class="relationship-notes-desktop-only hidden space-y-6">
+        <div class="glass-card rounded-2xl border border-slate-800 p-6 space-y-5">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <h3 class="text-base font-black text-white flex items-center gap-2"><i class="fa-solid fa-people-arrows text-brandTeal"></i>관계 메모 등록</h3>
+              <p class="mt-1 text-xs leading-relaxed text-slate-400">업무상 관찰 기록만 작성하세요. 이 데이터는 현재 자동매칭·평가·점수 산정에 사용되지 않습니다.</p>
+            </div>
+            <span class="rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 text-[11px] font-black text-amber-300">관리자 전용 · 데스크톱</span>
+          </div>
+          <form id="relationship-note-form" onsubmit="saveRelationshipNote(event)" class="grid grid-cols-2 gap-4">
+            <input type="hidden" id="relationship-note-id">
+            <div>
+              <label class="mb-1 block text-xs font-bold text-slate-300">기준 직원</label>
+              <select id="relationship-note-subject" required class="w-full rounded-xl border border-slate-700 bg-slate-900 p-3 text-sm text-white"></select>
+            </div>
+            <div>
+              <label class="mb-1 block text-xs font-bold text-slate-300">관계 직원</label>
+              <select id="relationship-note-related" required class="w-full rounded-xl border border-slate-700 bg-slate-900 p-3 text-sm text-white"></select>
+            </div>
+            <div>
+              <label class="mb-1 block text-xs font-bold text-slate-300">분류</label>
+              <select id="relationship-note-category" required class="w-full rounded-xl border border-slate-700 bg-slate-900 p-3 text-sm text-white">
+                <option value="업무 접점">업무 접점</option><option value="협업 관찰">협업 관찰</option><option value="반복 배정">반복 배정</option><option value="배제 검토">배제 검토</option><option value="기타">기타</option>
+              </select>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div><label class="mb-1 block text-xs font-bold text-slate-300">관찰일</label><input id="relationship-note-observed-on" type="date" required class="w-full rounded-xl border border-slate-700 bg-slate-900 p-3 text-sm text-white"></div>
+              <div><label class="mb-1 block text-xs font-bold text-slate-300">유효기간 종료</label><input id="relationship-note-expires-on" type="date" class="w-full rounded-xl border border-slate-700 bg-slate-900 p-3 text-sm text-white"></div>
+            </div>
+            <div class="col-span-2">
+              <label class="mb-1 block text-xs font-bold text-slate-300">자연어 메모 <span class="font-normal text-slate-500">(10~2000자)</span></label>
+              <textarea id="relationship-note-text" minlength="10" maxlength="2000" required rows="5" placeholder="확인 가능한 업무 상황과 관찰 내용을 작성해 주세요." class="w-full resize-y rounded-xl border border-slate-700 bg-slate-900 p-3 text-sm leading-relaxed text-white"></textarea>
+            </div>
+            <div class="col-span-2 flex justify-end gap-2">
+              <button type="button" onclick="resetRelationshipNoteForm()" class="rounded-xl border border-slate-600 px-4 py-2.5 text-xs font-bold text-slate-300 hover:bg-slate-800">입력 초기화</button>
+              <button id="relationship-note-save" type="submit" class="rounded-xl bg-brandTeal px-5 py-2.5 text-xs font-black text-white hover:bg-teal-600">메모 저장</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="glass-card rounded-2xl border border-slate-800 p-6 space-y-4">
+          <div class="flex items-center justify-between gap-4">
+            <h3 class="text-base font-black text-white">축적된 관계 메모 <span id="relationship-note-count" class="text-brandTeal">0</span>건</h3>
+            <div class="flex gap-2">
+              <input id="relationship-note-search" type="search" oninput="renderRelationshipNotes()" placeholder="직원·부서·메모 검색" class="w-64 rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white">
+              <select id="relationship-note-status-filter" onchange="renderRelationshipNotes()" class="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white"><option value="active">사용 중</option><option value="inactive">비활성</option><option value="all">전체</option></select>
+            </div>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead><tr class="border-b border-slate-800 text-slate-400"><th class="px-3 py-3">직원 관계</th><th class="px-3 py-3">분류·기간</th><th class="px-3 py-3">메모</th><th class="px-3 py-3">상태</th><th class="px-3 py-3 text-right">관리</th></tr></thead>
+              <tbody id="relationship-note-table-body" class="divide-y divide-slate-800/60"></tbody>
             </table>
           </div>
         </div>
@@ -4153,6 +4225,8 @@
     let adjustmentEventsDb = [];
     let pendingApprovalNotifications = [];
     let notificationsDb = [];
+    let relationshipNotesDb = [];
+    let relationshipNotesLoaded = false;
     let sentGradeMailKeys = new Set();
     let expandedHistoryCycleId = null;
     let nativePushInitialized = false;
@@ -5783,6 +5857,7 @@
     // Admin Subtab Switcher
     function switchAdminTab(subtab) {
       const isExecOnly = currentLoggedInUser.isExecutive && !currentLoggedInUser.isAdmin;
+      if (subtab === 'relationship-notes' && window.innerWidth < 1024) subtab = 'users';
       
       // Permission check for History subtab (Executive & Admin only)
       if (subtab === 'history' && !currentLoggedInUser.isAdmin && !currentLoggedInUser.isExecutive) {
@@ -5800,7 +5875,7 @@
       }
 
       // Hide/Show subtab navigation buttons for Executives
-      ['users', 'cycles', 'questions', 'permissions', 'matching', 'lifecycle', 'progress'].forEach(st => {
+      ['users', 'relationship-notes', 'cycles', 'questions', 'permissions', 'matching', 'lifecycle', 'progress'].forEach(st => {
         const btn = document.getElementById(`admin-tab-${st}`);
         if (btn) {
           if (isExecOnly && st !== 'progress') btn.classList.add('hidden');
@@ -5809,7 +5884,7 @@
       });
       if (!isExecOnly) applyAdminSetupVisibility();
 
-      const subtabs = ['users', 'cycles', 'questions', 'permissions', 'matching', 'lifecycle', 'progress', 'summary', 'history'];
+      const subtabs = ['users', 'relationship-notes', 'cycles', 'questions', 'permissions', 'matching', 'lifecycle', 'progress', 'summary', 'history'];
       subtabs.forEach(st => {
         const el = document.getElementById(`admin-subtab-${st}`);
         const btn = document.getElementById(`admin-tab-${st}`);
@@ -5828,6 +5903,7 @@
       populateCycleSelects();
 
       if (subtab === 'users') renderUsersTable();
+      if (subtab === 'relationship-notes') loadRelationshipNotes();
       if (subtab === 'cycles') renderCyclesList();
       if (subtab === 'questions') renderQuestionsList();
       if (subtab === 'permissions') renderPermissionsTable();
@@ -6665,6 +6741,29 @@
       }
       if (!response.ok) throw new Error(payload.error || '사용자 처리 요청에 실패했습니다.');
       if (method !== 'GET') announceCentralChange();
+      return payload;
+    }
+
+    async function callRelationshipNotesApi(method = 'GET', body, query = '') {
+      if (!supabaseClient) throw new Error('Supabase 연결이 없습니다.');
+      const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
+      if (sessionError || !sessionData.session) {
+        await handleLogout();
+        throw new Error('로그인이 만료되었습니다. 다시 로그인해 주세요.');
+      }
+      const suffix = query ? `&${query.replace(/^\?/, '')}` : '';
+      const response = await fetch(`/api/users?resource=relationship-notes${suffix}`, {
+        method,
+        cache: method === 'GET' ? 'no-store' : 'default',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sessionData.session.access_token}` },
+        body: body === undefined ? undefined : JSON.stringify(body)
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (response.status === 401) {
+        await handleLogout();
+        throw new Error('로그인이 만료되었습니다. 다시 로그인해 주세요.');
+      }
+      if (!response.ok) throw new Error(payload.error || '관계 메모 처리에 실패했습니다.');
       return payload;
     }
 
@@ -8215,6 +8314,151 @@
     let currentEditingUserId = null;
 
     // ADMIN SUBTAB 1: USERS & CSV BULK REGISTRATION
+    function relationshipNoteUser(id) {
+      return usersDb.find(user => Number(user.id) === Number(id));
+    }
+
+    function relationshipNoteUserLabel(user) {
+      return user ? `${user.name} · ${user.company || ''} ${user.dept || ''}`.trim() : '삭제되거나 확인할 수 없는 직원';
+    }
+
+    function populateRelationshipNoteUsers() {
+      const options = usersDb
+        .filter(user => user.active !== false)
+        .sort((a, b) => String(a.name).localeCompare(String(b.name), 'ko'))
+        .map(user => `<option value="${Number(user.id)}">${escapeHtml(relationshipNoteUserLabel(user))}</option>`).join('');
+      ['relationship-note-subject', 'relationship-note-related'].forEach(id => {
+        const select = document.getElementById(id);
+        if (select) select.innerHTML = `<option value="">직원을 선택하세요</option>${options}`;
+      });
+    }
+
+    async function loadRelationshipNotes(force = false) {
+      if (window.innerWidth < 1024 || !checkUserRole(currentLoggedInUser).isAdmin) return;
+      populateRelationshipNoteUsers();
+      if (relationshipNotesLoaded && !force) return renderRelationshipNotes();
+      const tbody = document.getElementById('relationship-note-table-body');
+      if (tbody) tbody.innerHTML = '<tr><td colspan="5" class="px-3 py-8 text-center text-slate-400">관계 메모를 불러오는 중입니다.</td></tr>';
+      try {
+        const payload = await callRelationshipNotesApi('GET');
+        relationshipNotesDb = payload.notes || [];
+        relationshipNotesLoaded = true;
+        resetRelationshipNoteForm();
+        renderRelationshipNotes();
+      } catch (error) {
+        if (tbody) tbody.innerHTML = `<tr><td colspan="5" class="px-3 py-8 text-center text-rose-400">${escapeHtml(error.message)}</td></tr>`;
+      }
+    }
+
+    function resetRelationshipNoteForm() {
+      document.getElementById('relationship-note-form')?.reset();
+      const idInput = document.getElementById('relationship-note-id');
+      const observed = document.getElementById('relationship-note-observed-on');
+      const saveButton = document.getElementById('relationship-note-save');
+      if (idInput) idInput.value = '';
+      if (observed) observed.value = new Date().toISOString().slice(0, 10);
+      if (saveButton) saveButton.textContent = '메모 저장';
+    }
+
+    async function saveRelationshipNote(event) {
+      event.preventDefault();
+      const id = Number(document.getElementById('relationship-note-id')?.value);
+      const body = {
+        subject_user_id: Number(document.getElementById('relationship-note-subject').value),
+        related_user_id: Number(document.getElementById('relationship-note-related').value),
+        category: document.getElementById('relationship-note-category').value,
+        observed_on: document.getElementById('relationship-note-observed-on').value,
+        expires_on: document.getElementById('relationship-note-expires-on').value || null,
+        note_text: document.getElementById('relationship-note-text').value.trim()
+      };
+      if (body.subject_user_id === body.related_user_id) return alert('서로 다른 두 직원을 선택해 주세요.');
+      const button = document.getElementById('relationship-note-save');
+      button.disabled = true;
+      try {
+        await callRelationshipNotesApi(id ? 'PATCH' : 'POST', id ? { ...body, id } : body);
+        relationshipNotesLoaded = false;
+        await loadRelationshipNotes(true);
+      } catch (error) {
+        alert(error.message);
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    function editRelationshipNote(id) {
+      const note = relationshipNotesDb.find(row => Number(row.id) === Number(id));
+      if (!note) return;
+      document.getElementById('relationship-note-id').value = note.id;
+      document.getElementById('relationship-note-subject').value = note.subject_user_id;
+      document.getElementById('relationship-note-related').value = note.related_user_id;
+      document.getElementById('relationship-note-category').value = note.category;
+      document.getElementById('relationship-note-observed-on').value = note.observed_on;
+      document.getElementById('relationship-note-expires-on').value = note.expires_on || '';
+      document.getElementById('relationship-note-text').value = note.note_text;
+      document.getElementById('relationship-note-save').textContent = '수정 저장';
+      document.getElementById('relationship-note-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    async function setRelationshipNoteStatus(id, status) {
+      if (!confirm(status === 'inactive' ? '이 메모를 비활성화하시겠습니까?' : '이 메모를 다시 사용 상태로 전환하시겠습니까?')) return;
+      try {
+        await callRelationshipNotesApi('PATCH', { id: Number(id), status });
+        relationshipNotesLoaded = false;
+        await loadRelationshipNotes(true);
+      } catch (error) { alert(error.message); }
+    }
+
+    async function showRelationshipNoteHistory(id) {
+      try {
+        const payload = await callRelationshipNotesApi('GET', undefined, `?history=1&note_id=${Number(id)}`);
+        const actionLabels = { created: '등록', updated: '수정', deactivated: '비활성화', reactivated: '재활성화', hard_deleted: '영구 삭제' };
+        const lines = (payload.history || []).slice(0, 20).map(row => `${String(row.acted_at || '').replace('T', ' ').slice(0, 16)} · ${actionLabels[row.action] || row.action}`);
+        alert(lines.length ? `변경 이력\n\n${lines.join('\n')}` : '변경 이력이 없습니다.');
+      } catch (error) { alert(error.message); }
+    }
+
+    async function hardDeleteRelationshipNote(id) {
+      if (!checkUserRole(currentLoggedInUser).isSuperAdmin) return;
+      const confirmation = prompt('영구 삭제하려면 [영구 삭제]를 입력해 주세요.');
+      if (confirmation !== '영구 삭제') return;
+      try {
+        await callRelationshipNotesApi('DELETE', { id: Number(id), confirmation });
+        relationshipNotesLoaded = false;
+        await loadRelationshipNotes(true);
+      } catch (error) { alert(error.message); }
+    }
+
+    function renderRelationshipNotes() {
+      const tbody = document.getElementById('relationship-note-table-body');
+      if (!tbody) return;
+      const search = String(document.getElementById('relationship-note-search')?.value || '').trim().toLowerCase();
+      const status = document.getElementById('relationship-note-status-filter')?.value || 'active';
+      const visible = relationshipNotesDb.filter(note => {
+        if (status !== 'all' && note.status !== status) return false;
+        const subject = relationshipNoteUser(note.subject_user_id);
+        const related = relationshipNoteUser(note.related_user_id);
+        return !search || [note.category, note.note_text, relationshipNoteUserLabel(subject), relationshipNoteUserLabel(related)].join(' ').toLowerCase().includes(search);
+      });
+      const count = document.getElementById('relationship-note-count');
+      if (count) count.textContent = visible.length;
+      if (!visible.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="px-3 py-10 text-center text-slate-400">조건에 맞는 관계 메모가 없습니다.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = visible.map(note => {
+        const subject = relationshipNoteUser(note.subject_user_id);
+        const related = relationshipNoteUser(note.related_user_id);
+        const inactive = note.status !== 'active';
+        return `<tr class="${inactive ? 'opacity-60' : ''}">
+          <td class="px-3 py-4 font-bold text-white">${escapeHtml(relationshipNoteUserLabel(subject))}<span class="mx-2 text-brandTeal">↔</span>${escapeHtml(relationshipNoteUserLabel(related))}</td>
+          <td class="px-3 py-4"><span class="rounded-full bg-teal-500/10 px-2 py-1 font-bold text-brandTeal">${escapeHtml(note.category)}</span><p class="mt-2 text-slate-500">${escapeHtml(note.observed_on)}${note.expires_on ? ` ~ ${escapeHtml(note.expires_on)}` : ' · 만료 없음'}</p></td>
+          <td class="max-w-xl whitespace-pre-wrap px-3 py-4 leading-relaxed text-slate-300">${escapeHtml(note.note_text)}</td>
+          <td class="px-3 py-4 font-bold ${inactive ? 'text-slate-500' : 'text-emerald-400'}">${inactive ? '비활성' : '사용 중'}</td>
+          <td class="px-3 py-4"><div class="flex justify-end gap-1.5 whitespace-nowrap"><button onclick="editRelationshipNote(${Number(note.id)})" class="rounded-lg border border-slate-600 px-2.5 py-1.5 font-bold hover:bg-slate-800">수정</button><button onclick="showRelationshipNoteHistory(${Number(note.id)})" class="rounded-lg border border-blue-600 px-2.5 py-1.5 font-bold text-blue-300 hover:bg-blue-950">이력</button><button onclick="setRelationshipNoteStatus(${Number(note.id)}, '${inactive ? 'active' : 'inactive'}')" class="rounded-lg border border-amber-600 px-2.5 py-1.5 font-bold text-amber-300 hover:bg-amber-950">${inactive ? '재활성' : '비활성'}</button>${checkUserRole(currentLoggedInUser).isSuperAdmin ? `<button onclick="hardDeleteRelationshipNote(${Number(note.id)})" class="rounded-lg bg-rose-700 px-2.5 py-1.5 font-bold text-white hover:bg-rose-600">영구 삭제</button>` : ''}</div></td>
+        </tr>`;
+      }).join('');
+    }
+
     function renderUsersTable() {
       const tbody = document.getElementById('user-table-body');
       tbody.innerHTML = '';
@@ -9403,6 +9647,8 @@
       cycleScoresDb = {};
       finalResultsByCycle = {};
       allGoalsDb = [];
+      relationshipNotesDb = [];
+      relationshipNotesLoaded = false;
       
       const headerUserInfo = document.getElementById('header-user-info');
       const mainNavTabs = document.getElementById('main-nav-tabs');
