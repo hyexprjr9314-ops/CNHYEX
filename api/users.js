@@ -10,6 +10,7 @@ const ALLOWED_TYPES = new Set(['팀원급', '팀장/부서장급', '임원급', 
 const ALLOWED_ROLES = new Set(['일반사용자', '관리자', '임원']);
 const ALLOWED_COMPANIES = new Set(['(주)한양고속', '(주)충남고속']);
 const SUPER_ADMIN_EMAIL = 'admin@cnhyex.com';
+const PIN_INITIAL_ACTIVATION_CODE = '12345678';
 const CLASSIFICATION_FIELDS = Object.freeze(['company', 'dept', 'workplace', 'role', 'type']);
 
 function isClosedHistoricalCycle(cycle = {}) {
@@ -267,18 +268,13 @@ export default async function handler(req, res) {
         return send(res, 409, { error: '활성화된 이름·PIN 사용자만 임시번호를 발급할 수 있습니다.' });
       }
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
-      let temporaryCode;
-      let saved;
-      for (let attempt = 0; attempt < 5; attempt += 1) {
-        temporaryCode = crypto.randomInt(0, 100_000_000).toString().padStart(8, '0');
-        saved = await service.from('users').update({
-          pin_enrolled: false,
-          pin_enrollment_token_hash: activationCodeHash(temporaryCode, serviceKey),
-          pin_enrollment_expires_at: expiresAt,
-          updated_at: new Date().toISOString()
-        }).eq('id', id);
-        if (!saved.error || saved.error.code !== '23505') break;
-      }
+      const temporaryCode = PIN_INITIAL_ACTIVATION_CODE;
+      const saved = await service.from('users').update({
+        pin_enrolled: false,
+        pin_enrollment_token_hash: activationCodeHash(temporaryCode, serviceKey),
+        pin_enrollment_expires_at: expiresAt,
+        updated_at: new Date().toISOString()
+      }).eq('id', id);
       if (saved?.error) throw saved.error;
       const invalidated = await service.auth.admin.updateUserById(target.data.auth_user_id, {
         password: `${crypto.randomBytes(24).toString('base64url')}Aa1!`

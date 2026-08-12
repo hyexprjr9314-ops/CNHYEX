@@ -46,10 +46,9 @@ test('name PIN login handles duplicate companies and rate limits generic credent
   assert.doesNotMatch(source, /login_id:\s*name/);
 });
 
-test('temporary activation is eight digits, ten minutes, one-time, hashed, and compensated on failure', async () => {
+test('temporary activation uses the shared initial code for ten minutes, one time, hashed, and compensated on failure', async () => {
   const [users, enrollment] = await Promise.all([read('api/users.js'), read('api/pin-enrollment.js')]);
-  assert.match(users, /randomInt\(0, 100_000_000\)/);
-  assert.match(users, /padStart\(8, '0'\)/);
+  assert.match(users, /PIN_INITIAL_ACTIVATION_CODE = '12345678'/);
   assert.match(users, /Date\.now\(\) \+ 10 \* 60 \* 1000/);
   assert.match(users, /activationCodeHash\(temporaryCode, serviceKey\)/);
   assert.match(enrollment, /\^\\d\{8\}\$/);
@@ -73,7 +72,7 @@ test('mobile UI supports email or name and an accessible one-screen temporary-nu
   assert.match(index, /id="pin-enrollment-code"[^>]+pattern="\[0-9\]\{8\}"/);
   assert.match(index, /id="pin-enrollment-value"[^>]+pattern="\[0-9\]\{6\}"/);
   assert.match(index, /처음 PIN 설정하기/);
-  assert.match(index, /이메일이 없고, 관리자에게 이름과 8자리 임시번호를 안내받은 직원만 이용해 주세요/);
+  assert.match(index, /관리자에게 최초 설정을 요청한 뒤 임시번호 12345678을 입력해 주세요/);
   assert.ok(index.indexOf('비밀번호 설정 메일 받기') < index.indexOf('id="pin-enrollment-guide"'));
   assert.match(index, /PIN 설정 계속하기/);
   assert.match(index, /id="login-password"[^>]+inputmode="text"/);
