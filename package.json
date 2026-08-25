@@ -15,6 +15,7 @@
     "@capacitor/ios": "8.4.2",
     "@capacitor/push-notifications": "8.0.0",
     "@supabase/supabase-js": "^2.57.4",
+    "exceljs": "^4.4.0",
     "nodemailer": "^9.0.1",
     "web-push": "3.6.7"
   },

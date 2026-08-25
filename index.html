@@ -3301,9 +3301,13 @@
               <select id="summary-cycle-select" onchange="handleCycleSelectChange(this); renderAdminSummaryTable()" class="bg-slate-900 border border-slate-700 text-xs font-bold text-white rounded-xl px-3 py-2">
                 <!-- Dynamically Populated -->
               </select>
-              <button type="button" onclick="downloadCSVReport()" class="bg-brandBlue hover:bg-blue-600 text-white font-bold px-3.5 py-2 rounded-xl transition text-xs flex items-center gap-2 shadow-lg shadow-blue-900/30">
+              <button type="button" onclick="downloadExcelReport(this)" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3.5 py-2 rounded-xl transition text-xs flex items-center gap-2 shadow-lg shadow-emerald-900/30">
+                <i class="fa-solid fa-file-excel"></i>
+                <span>전체 리포트 Excel</span>
+              </button>
+              <button type="button" onclick="downloadCSVReport()" class="border border-slate-500 bg-white hover:bg-slate-100 text-slate-700 font-bold px-3.5 py-2 rounded-xl transition text-xs flex items-center gap-2">
                 <i class="fa-solid fa-file-csv"></i>
-                <span>선택 주기 전체 리포트 CSV</span>
+                <span>CSV 원본</span>
               </button>
               <button id="bulk-grade-mail-btn" type="button" onclick="sendBulkGradeNoticeEmails()" class="hidden summary-action-white bg-violet-600 hover:bg-violet-500 text-white font-bold px-3.5 py-2 rounded-xl transition text-xs flex items-center gap-2 shadow-lg shadow-violet-900/30">
                 <i class="fa-solid fa-envelopes-bulk"></i>
@@ -10634,12 +10638,10 @@
       }
     }
 
-    function downloadCSVReport() {
-      const gradeStatusHeader = "이름,이메일,부서,근무지,직급,구분,최종점수,평가등급,등급상태,조정여부,원점수,평가횟수,평가영역1,영역1점수,평가영역2,영역2점수,평가영역3,영역3점수,평가영역4,영역4점수\n";
+    function buildEvaluationReportRows() {
       const scores = cycleScoresDb[currentSelectedSummaryCycleId] || {};
       const finalized = finalResultsByCycle[currentSelectedSummaryCycleId] || {};
-      const escapeCsv = value => `"${String(value ?? '').replace(/"/g, '""')}"`;
-      const csvRows = usersDb.filter(user => scores[user.id] || finalized[user.id]).map(user => {
+      return usersDb.filter(user => scores[user.id] || finalized[user.id]).map(user => {
         const score = scores[user.id] || {};
         const finalResult = finalized[user.id] || null;
         const categoryLabels = Array.isArray(finalResult?.category_labels)
@@ -10647,34 +10649,80 @@
           : (Array.isArray(score.category_labels) ? score.category_labels : ['성과', '협업', '성장', '조화']);
         const categoryScores = finalResult?.category_scores && typeof finalResult.category_scores === 'object'
           ? ['performance', 'collaboration', 'growth', 'harmony'].map(key => finalResult.category_scores[key])
-          : (finalResult ? ['', '', '', ''] : [score.performance, score.collaboration, score.growth, score.harmony]);
-        const values = [
-          user.name,user.email,user.dept,user.workplace,user.role,user.type,
-          Number(finalResult?.effective_score ?? score.final ?? 0).toFixed(1),
-          finalResult?.approved_grade || finalResult?.relative_grade || score.grade || '',
-          finalResult ? '최종' : (score.grade_status === 'provisional' ? '예상' : ''),
-          score.is_adjusted ? '조정됨' : '미조정',
-          Number(finalResult?.raw_score ?? score.raw ?? 0).toFixed(1), score.completed || '',
-          categoryLabels[0] || '', categoryScores[0] === '' ? '' : Number(categoryScores[0] || 0).toFixed(1),
-          categoryLabels[1] || '', categoryScores[1] === '' ? '' : Number(categoryScores[1] || 0).toFixed(1),
-          categoryLabels[2] || '', categoryScores[2] === '' ? '' : Number(categoryScores[2] || 0).toFixed(1),
-          categoryLabels[3] || '', categoryScores[3] === '' ? '' : Number(categoryScores[3] || 0).toFixed(1)
-        ];
-        return values.map(escapeCsv).join(',');
-      }).join("\n");
+          : [score.performance, score.collaboration, score.growth, score.harmony];
+        return {
+          company: user.company || '', name: user.name || '', department: user.dept || '', workplace: user.workplace || '', role: user.role || '',
+          area1: categoryLabels[0] || '', area1Score: categoryScores[0] ?? '',
+          area2: categoryLabels[1] || '', area2Score: categoryScores[1] ?? '',
+          area3: categoryLabels[2] || '', area3Score: categoryScores[2] ?? '',
+          area4: categoryLabels[3] || '', area4Score: categoryScores[3] ?? '',
+          evaluationCount: Number(score.completed || 0),
+          rawScore: Number(finalResult?.raw_score ?? score.raw ?? 0),
+          adjustmentStatus: (score.is_adjusted || (finalResult && (Number(finalResult.raw_score) !== Number(finalResult.effective_score) || finalResult.approved_grade !== finalResult.relative_grade))) ? '조정됨' : '미조정',
+          finalScore: Number(finalResult?.effective_score ?? score.final ?? 0),
+          grade: finalResult?.approved_grade || finalResult?.relative_grade || score.grade || ''
+        };
+      });
+    }
 
-      const csvContent = "\uFEFF" + gradeStatusHeader + csvRows;
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    function triggerBlobDownload(blob, filename) {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.setAttribute('href', url);
-      const selectedCycle = cyclesDb.find(cycle => Number(cycle.id) === Number(currentSelectedSummaryCycleId));
-      const safeCycleName = String(selectedCycle?.name || `평가주기_${currentSelectedSummaryCycleId}`)
-        .replace(/[\\/:*?"<>|]/g, '_');
-      link.setAttribute('download', `${safeCycleName}_인사평가_전체리포트_${new Date().toISOString().slice(0,10)}.csv`);
+      link.href = url;
+      link.download = filename;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function reportFileContext(extension) {
+      const selectedCycle = cyclesDb.find(cycle => Number(cycle.id) === Number(currentSelectedSummaryCycleId));
+      const cycleName = String(selectedCycle?.name || `평가주기_${currentSelectedSummaryCycleId}`);
+      const safeCycleName = cycleName.replace(/[\\/:*?"<>|]/g, '_');
+      const reportDate = new Date().toISOString().slice(0,10);
+      return { cycleName, reportDate, filename: `${safeCycleName}_인사평가_전체리포트_${reportDate}.${extension}` };
+    }
+
+    async function downloadExcelReport(button) {
+      const originalHtml = button?.innerHTML;
+      if (button) {
+        button.disabled = true;
+        button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Excel 생성 중</span>';
+      }
+      try {
+        const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
+        if (sessionError || !sessionData.session) throw new Error('로그인이 필요합니다.');
+        const context = reportFileContext('xlsx');
+        const response = await fetch('/api/export-report', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sessionData.session.access_token}` },
+          body: JSON.stringify({ cycle_name: context.cycleName, report_date: context.reportDate, rows: buildEvaluationReportRows() })
+        });
+        if (!response.ok) {
+          const payload = await response.json().catch(() => ({}));
+          throw new Error(payload.error || `Excel 생성 실패 (${response.status})`);
+        }
+        triggerBlobDownload(await response.blob(), context.filename);
+      } catch (error) {
+        if (confirm(`Excel 리포트 생성에 실패했습니다.\n${error.message}\n\nCSV 원본으로 다운로드하시겠습니까?`)) downloadCSVReport();
+      } finally {
+        if (button) {
+          button.disabled = false;
+          button.innerHTML = originalHtml;
+        }
+      }
+    }
+
+    function downloadCSVReport() {
+      const headers = ['소속사','이름','부서','근무지','직급','평가영역1','영역1점수','평가영역2','영역2점수','평가영역3','영역3점수','평가영역4','영역4점수','평가횟수','원점수','조정여부','최종점수','평가등급'];
+      const keys = ['company','name','department','workplace','role','area1','area1Score','area2','area2Score','area3','area3Score','area4','area4Score','evaluationCount','rawScore','adjustmentStatus','finalScore','grade'];
+      const escapeCsv = value => `"${String(value ?? '').replace(/"/g, '""')}"`;
+      const csvRows = buildEvaluationReportRows().map(row => keys.map(key => escapeCsv(row[key])).join(',')).join("\n");
+
+      const csvContent = "\uFEFF" + headers.join(',') + "\n" + csvRows;
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      triggerBlobDownload(blob, reportFileContext('csv').filename);
     }
 
     function renderGoalsList() {

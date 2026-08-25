@@ -13,7 +13,8 @@ test('management UI gives administrators and executives one final-adjustment con
   assert.match(index, /최종 점수 조정/);
   assert.doesNotMatch(index, /2차 조정\/확정|1차 조정 대기/);
   assert.match(index, /updatePublishControlVisibility/);
-  assert.match(index, /gradeStatusHeader/);
+  assert.match(index, /downloadExcelReport/);
+  assert.match(index, /'조정여부'/);
   assert.match(index, /function applyRoleBasedNavigationVisibility\(\)/);
   assert.match(index, /const systemRole = user\.sysRole \?\? user\.sys_role \?\? ''/);
   assert.match(index, /const isExecutive = systemRole === '임원'/);

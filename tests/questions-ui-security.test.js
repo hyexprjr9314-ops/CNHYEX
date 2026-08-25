@@ -17,7 +17,7 @@ test('database-backed management, history, and question text is HTML-escaped', a
   ]) assert.equal(index.includes(unsafe), false, `unsafe HTML interpolation remains: ${unsafe}`);
 });
 
-test('CSV report prefers immutable finalized results and emits actual category labels', async () => {
+test('report exports prefer immutable finalized results and emit actual category labels', async () => {
   const index = await readFile(indexUrl, 'utf8');
   assert.match(index, /finalResultsByCycle/);
   assert.match(index, /const finalized = finalResultsByCycle\[currentSelectedSummaryCycleId\] \|\| \{\}/);
@@ -26,5 +26,6 @@ test('CSV report prefers immutable finalized results and emits actual category l
   assert.match(index, /finalResult\?\.category_scores && typeof finalResult\.category_scores === 'object'/);
   assert.match(index, /\['performance', 'collaboration', 'growth', 'harmony'\]/);
   assert.match(index, /categoryLabels\[0\]/);
-  assert.match(index, /평가영역1,영역1점수/);
+  assert.match(index, /'평가영역1',\s*'영역1점수'/);
+  assert.match(index, /buildEvaluationReportRows/);
 });
