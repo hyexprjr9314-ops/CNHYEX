@@ -9,6 +9,8 @@ test('report download exposes Excel first and CSV fallback', () => {
   assert.match(html, />전체 리포트 Excel</);
   assert.match(html, /onclick="downloadCSVReport\(\)"/);
   assert.match(html, />CSV 원본</);
+  assert.match(html, /fetch\('\/api\/admin-state'/);
+  assert.match(html, /action: 'export_report'/);
   assert.match(html, /Excel 리포트 생성에 실패했습니다[\s\S]*CSV 원본으로 다운로드/);
 });
 

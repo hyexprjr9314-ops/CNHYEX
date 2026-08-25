@@ -6,6 +6,7 @@ import { normalizeTrack, relationshipType, targetTrack, TRACK_CATEGORIES, QUESTI
 import { isMutableDraftCycle } from './questions.js';
 import { planAutoMatchings } from './auto-matching.js';
 import { notifyAndDispatch } from '../lib/push.js';
+import { buildEvaluationReportWorkbook } from '../lib/evaluation-report-workbook.js';
 
 const PRIVILEGED = new Set([ROLES.admin, ROLES.executive]);
 const SUPER_ADMIN_EMAIL = 'admin@cnhyex.com';
@@ -14,7 +15,7 @@ const ADMIN_ONLY = new Set([
   'question_delete', 'matching_toggle', 'matching_replace', 'matching_generate', 'matching_mode_update', 'permission_update', 'permission_bulk_update', 'settings_update',
   'goal_status', 'cycle_close', 'cycle_pause', 'cycle_resume', 'cycle_force_close', 'cycle_cancel', 'cycle_hard_delete'
 ]);
-const EXECUTIVE_ALLOWED = new Set(['notification_read', 'notification_read_all', 'push_web_config', 'push_register', 'push_unregister']);
+const EXECUTIVE_ALLOWED = new Set(['notification_read', 'notification_read_all', 'push_web_config', 'push_register', 'push_unregister', 'export_report']);
 const send = (res, status, payload) => res.status(status).json(payload);
 const PWA_ASSETS = Object.freeze({
   manifest: {
@@ -584,6 +585,18 @@ export default async function handler(req, res) {
     if (req.method !== 'POST') return send(res, 405, { error: '지원하지 않는 요청입니다.' });
     const action = String(req.body?.action || '');
     if (profile.sys_role === ROLES.executive && !EXECUTIVE_ALLOWED.has(action)) return send(res, 403, { error: '임원은 점수 집계 및 마감 이력 작업만 수행할 수 있습니다.' });
+    if (action === 'export_report') {
+      if (!PRIVILEGED.has(profile.sys_role)) return send(res, 403, { error: '관리자 또는 임원 권한이 필요합니다.' });
+      const cycleName = String(req.body?.cycle_name || '인사평가').slice(0, 100);
+      const reportDate = String(req.body?.report_date || new Date().toISOString().slice(0, 10)).slice(0, 10);
+      const workbook = buildEvaluationReportWorkbook({ cycleName, reportDate, rows: req.body?.rows });
+      const bytes = await workbook.xlsx.writeBuffer();
+      const safeName = cycleName.replace(/[\\/:*?"<>|]/g, '_');
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(`${safeName}_인사평가_전체리포트_${reportDate}.xlsx`)}`);
+      res.setHeader('Cache-Control', 'no-store');
+      return res.status(200).send(Buffer.from(bytes));
+    }
     if (action === 'push_web_config') {
       return send(res, 200, {
         configured: Boolean(process.env.WEB_PUSH_VAPID_PUBLIC_KEY && process.env.WEB_PUSH_VAPID_PRIVATE_KEY),
